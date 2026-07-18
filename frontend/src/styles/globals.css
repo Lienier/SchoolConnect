@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-navy-50 text-navy-900 antialiased;
+  font-family:
+    "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}

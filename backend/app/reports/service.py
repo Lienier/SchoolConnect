@@ -1,0 +1,96 @@
+"""Business logic for the reports / dashboard analytics module.
+
+Read-only aggregations over events, registrations and attendance. These use
+grouped queries rather than materialized views for simplicity at this scale
+(~5k users); they can be promoted to materialized views later if needed.
+"""
+
+from __future__ import annotations
+
+import uuid
+
+from sqlalchemy import func, select
+
+from app.attendance.model import Attendance
+from app.events.model import Event, EventCategory
+from app.extensions import db
+from app.registrations.model import Registration
+
+
+class ReportService:
+    """Produces dashboard and reporting aggregates."""
+
+    def event_participation(self, event_id: uuid.UUID) -> dict:
+        rows = db.session.execute(
+            select(Registration.status, func.count(Registration.id))
+            .where(Registration.event_id == event_id, Registration.deleted_at.is_(None))
+            .group_by(Registration.status)
+        ).all()
+        return {"event_id": str(event_id), "by_status": {s: c for s, c in rows}}
+
+    def attendance_summary(self, event_id: uuid.UUID) -> dict:
+        rows = db.session.execute(
+            select(Attendance.status, func.count(Attendance.id))
+            .where(Attendance.event_id == event_id)
+            .group_by(Attendance.status)
+        ).all()
+        return {"event_id": str(event_id), "by_status": {s: c for s, c in rows}}
+
+    def registration_statistics(self) -> dict:
+        total = db.session.scalar(
+            select(func.count(Registration.id)).where(Registration.deleted_at.is_(None))
+        ) or 0
+        rows = db.session.execute(
+            select(Registration.status, func.count(Registration.id))
+            .where(Registration.deleted_at.is_(None))
+            .group_by(Registration.status)
+        ).all()
+        return {"total": total, "by_status": {s: c for s, c in rows}}
+
+    def most_active_students(self, limit: int = 10) -> list[dict]:
+        rows = db.session.execute(
+            select(Registration.user_id, func.count(Registration.id).label("cnt"))
+            .where(Registration.deleted_at.is_(None))
+            .group_by(Registration.user_id)
+            .order_by(func.count(Registration.id).desc())
+            .limit(limit)
+        ).all()
+        return [{"user_id": str(uid), "registrations": cnt} for uid, cnt in rows]
+
+    def popular_categories(self, limit: int = 10) -> list[dict]:
+        rows = db.session.execute(
+            select(EventCategory.name, func.count(Registration.id).label("cnt"))
+            .join(Event, Event.category_id == EventCategory.id)
+            .join(Registration, Registration.event_id == Event.id)
+            .where(Registration.deleted_at.is_(None))
+            .group_by(EventCategory.name)
+            .order_by(func.count(Registration.id).desc())
+            .limit(limit)
+        ).all()
+        return [{"category": name, "registrations": cnt} for name, cnt in rows]
+
+    def dashboard(self) -> dict:
+        total_events = db.session.scalar(
+            select(func.count(Event.id)).where(Event.deleted_at.is_(None))
+        ) or 0
+        upcoming = db.session.scalar(
+            select(func.count(Event.id)).where(
+                Event.deleted_at.is_(None),
+                Event.status.in_(("approved", "ongoing")),
+            )
+        ) or 0
+        pending = db.session.scalar(
+            select(func.count(Event.id)).where(
+                Event.deleted_at.is_(None), Event.status == "pending_approval"
+            )
+        ) or 0
+        return {
+            "total_events": total_events,
+            "upcoming_events": upcoming,
+            "pending_approvals": pending,
+            "registrations": self.registration_statistics(),
+            "popular_categories": self.popular_categories(5),
+        }
+
+
+__all__ = ["ReportService"]
