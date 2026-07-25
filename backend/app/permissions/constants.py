@@ -82,19 +82,31 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         for perm in perms
     ],
     "teacher": [
+        # Announcements: create/update/delete own + approve (includes others' drafts)
         "announcements.view",
+        "announcements.create",
+        "announcements.update",
+        "announcements.delete",
+        "announcements.approve",
+        # Events: full management of assigned + approve proposed
         "events.view",
         "events.create",
         "events.update",
         "events.delete",
+        "events.approve",
+        # Registrations: approve/manage/view
         "registrations.view",
         "registrations.approve",
         "registrations.manage",
+        # Attendance: full
         "attendance.view",
         "attendance.manage",
         "attendance.scan",
-        "notifications.view",
+        # Reports: view + generate
         "reports.view",
+        "reports.generate",
+        "notifications.view",
+        # Read-only school structure visibility
         "departments.view",
         "courses.view",
         "sections.view",
@@ -103,15 +115,21 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         "semesters.view",
     ],
     "student_council": [
+        # Announcements: draft only, submit for approval, no publish/approve/delete of others
         "announcements.view",
         "announcements.create",
         "announcements.update",
+        # Events: proposal only, no approve/delete
         "events.view",
         "events.create",
         "events.update",
+        # Registrations: view + manage assigned participants
         "registrations.view",
         "registrations.manage",
+        # Attendance: view + scan assigned events
         "attendance.view",
+        "attendance.scan",
+        # Notifications + read-only reports/school visibility
         "notifications.view",
         "reports.view",
         "departments.view",

@@ -1,12 +1,21 @@
 /** Single announcement card shown in lists/feed. */
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/utils/cn";
 import type { Announcement } from "@/features/announcements/types";
 
-const priorityStyles: Record<string, string> = {
-  normal: "bg-navy-100 text-navy-700",
-  important: "bg-amber-100 text-amber-800",
-  urgent: "bg-red-100 text-red-700",
+const priorityTones: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {
+  normal: "neutral",
+  important: "warning",
+  urgent: "danger",
+};
+
+const statusTones: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {
+  published: "success",
+  draft: "neutral",
+  archived: "info",
+  pending_approval: "warning",
+  rejected: "danger",
 };
 
 export function AnnouncementCard({ announcement }: { announcement: Announcement }) {
@@ -18,25 +27,25 @@ export function AnnouncementCard({ announcement }: { announcement: Announcement 
             {announcement.title}
           </h3>
           {announcement.category && (
-            <span className="mt-1 inline-block rounded-full bg-navy-50 px-2.5 py-0.5 text-xs font-medium text-navy-600">
+            <Badge tone="neutral" className="mt-1 text-xs">
               {announcement.category}
-            </span>
+            </Badge>
           )}
         </div>
-        <span
-          className={cn(
-            "rounded-full px-2.5 py-0.5 text-xs font-medium",
-            priorityStyles[announcement.priority] ?? priorityStyles.normal,
-          )}
-        >
-          {announcement.priority}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge tone={priorityTones[announcement.priority] ?? "neutral"} className="text-xs">
+            {announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)}
+          </Badge>
+          <Badge tone={statusTones[announcement.status] ?? "neutral"} className="text-xs">
+            {announcement.status.replace("_", " ")}
+          </Badge>
+        </div>
       </div>
-      <p className="mt-3 line-clamp-3 text-sm text-accent">
+      <p className="mt-3 line-clamp-3 text-sm text-navy-500">
         {announcement.summary ?? announcement.body}
       </p>
       {announcement.status !== "published" && (
-        <p className="mt-3 text-xs font-medium uppercase tracking-wide text-accent">
+        <p className="mt-3 text-xs font-medium text-navy-500">
           Status: {announcement.status.replace("_", " ")}
         </p>
       )}

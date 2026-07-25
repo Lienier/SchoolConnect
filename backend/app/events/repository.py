@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.events.model import (
     CalendarEvent,
@@ -26,7 +26,7 @@ class EventRepository:
             stmt = stmt.where(Event.deleted_at.is_(None))
         return db.session.scalar(stmt)
 
-    def list_query(self, *, status=None, category_id=None, organizer_id=None):
+    def list_query(self, *, status=None, category_id=None, organizer_id=None, search=None):
         stmt = select(Event)
         if status:
             stmt = stmt.where(Event.status == status)
@@ -34,6 +34,14 @@ class EventRepository:
             stmt = stmt.where(Event.category_id == category_id)
         if organizer_id:
             stmt = stmt.where(Event.organizer_id == organizer_id)
+        if search:
+            stmt = stmt.where(
+                or_(
+                    Event.title.ilike(f"%{search}%"),
+                    Event.description.ilike(f"%{search}%"),
+                    Event.location.ilike(f"%{search}%")
+                )
+            )
         stmt = stmt.where(Event.deleted_at.is_(None)).order_by(Event.start_time.desc())
         return stmt
 

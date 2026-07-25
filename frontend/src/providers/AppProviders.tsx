@@ -5,16 +5,19 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { ToastProvider } from "@/providers/ToastProvider";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <QueryProvider>
-      <ToastProvider>
-        <BrowserRouter>
-          <AuthProvider>{children}</AuthProvider>
-        </BrowserRouter>
-      </ToastProvider>
-    </QueryProvider>
+    <ThemeProvider>
+      <QueryProvider>
+        <ToastProvider>
+          <BrowserRouter>
+            <AuthProvider>{children}</AuthProvider>
+          </BrowserRouter>
+        </ToastProvider>
+      </QueryProvider>
+    </ThemeProvider>
   );
 }
 

@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy import select
+
 from app.auth.model import User
 from app.auth.repository import UserRepository
 from app.common.exceptions import ConflictError, NotFoundError, ValidationError
@@ -25,6 +27,10 @@ class UserService:
         self.user_roles = UserRoleRepository()
 
     # --- admin CRUD -------------------------------------------------------
+    def list_users_query(self):
+        """Return a ``Select`` of active (non-deleted) users for querying."""
+        return select(User).where(User.deleted_at.is_(None))
+
     def create_user(
         self, *, email: str, full_name: str, password: str, roles: list[str],
         first_name=None, last_name=None, username=None, status: str = "active",
@@ -85,6 +91,46 @@ class UserService:
         self.users.commit()
         return user
 
+    # --- status transitions ----------------------------------------------
+    def disable_user(self, user_id: uuid.UUID, *, reason: str | None = None) -> User:
+        """Disable a user (sets status to ``inactive``)."""
+        user = self.get_user(user_id)
+        if user.status == "inactive":
+            return user
+        user.status = "inactive"
+        self.users.commit()
+        return user
+
+    def suspend_user(self, user_id: uuid.UUID) -> User:
+        """Suspend a user (sets status to ``suspended``)."""
+        user = self.get_user(user_id)
+        user.status = "suspended"
+        self.users.commit()
+        return user
+
+    def reactivate_user(self, user_id: uuid.UUID) -> User:
+        """Reactivate a disabled/suspended user (sets status to ``active``)."""
+        user = self.get_user(user_id)
+        user.status = "active"
+        self.users.commit()
+        return user
+
+    # --- admin password reset --------------------------------------------
+    def admin_reset_password(self, user_id: uuid.UUID, *, new_password: str) -> None:
+        """Forcefully set a new password for a user (admin action)."""
+        user = self.get_user(user_id)
+        if len(new_password) < 8:
+            raise ValidationError("Password must be at least 8 characters.")
+        user.password_hash = self._hash_password(new_password)
+        self.users.commit()
+
+    def set_avatar(self, user_id: uuid.UUID, url: str) -> User:
+        """Set a user's profile-picture URL."""
+        user = self.get_user(user_id)
+        user.avatar_url = url
+        self.users.commit()
+        return user
+
     def soft_delete_user(self, user_id: uuid.UUID) -> None:
         """Soft-delete a user."""
         user = self.get_user(user_id)
@@ -118,6 +164,13 @@ class UserService:
         return user
 
     # --- helpers ----------------------------------------------------------
+    @staticmethod
+    def _hash_password(password: str) -> str:
+        """Return a bcrypt hash for an admin-set password."""
+        import bcrypt
+
+        return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
     @staticmethod
     def _validate_status(status: str) -> None:
         allowed = {"active", "inactive", "suspended", "invited"}

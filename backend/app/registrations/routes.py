@@ -33,7 +33,10 @@ def _body() -> dict:
 @jwt_required()
 @require_permission("registrations.view")
 def list_registrations():
-    """List registrations (paginated) filtered by event/user/status."""
+    """List registrations (paginated) filtered by event/user/status.
+    
+    Full participant details (email, phone) should only be visible to organizers/admins.
+    """
     params = PaginationParams.from_request()
     query = _service.list_registrations(
         event_id=request.args.get("event_id"),
@@ -41,7 +44,17 @@ def list_registrations():
         status=request.args.get("status"),
     )
     items, meta = paginate(query, params)
-    return success_response(data=[r.to_dict() for r in items], meta=meta)
+    
+    redact = request.args.get("redact", "true").lower() == "true"
+    results = []
+    for r in items:
+        r_dict = r.to_dict()
+        if redact:
+            r_dict.pop("notes", None)
+            r_dict.pop("reviewed_by", None)
+        results.append(r_dict)
+        
+    return success_response(data=results, meta=meta)
 
 
 @bp.get("/mine")
@@ -86,6 +99,20 @@ def register_team():
     return success_response(
         data=team.to_dict(), message="Team registered.", status_code=201
     )
+
+
+@bp.post("/team/join")
+@jwt_required()
+@require_permission("registrations.create")
+def join_team():
+    """Join an existing team using a team code."""
+    data = _body()
+    team_code = data.get("team_code")
+    if not team_code:
+        raise ValidationError("team_code is required.")
+    actor = uuid.UUID(get_jwt_identity())
+    reg = _service.join_team_by_code(team_code=team_code, user_id=actor)
+    return success_response(data=reg.to_dict(), message="Joined team successfully.", status_code=201)
 
 
 @bp.post("/<registration_id>/decide")

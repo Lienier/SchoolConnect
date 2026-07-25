@@ -1,80 +1,139 @@
-/** Single event card shown in the events list. */
-import { Link } from "react-router-dom";
-
+/** Event card with modern design system components. */
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { type ReactNode } from "react";
 import { cn } from "@/utils/cn";
-import type { SchoolEvent } from "@/features/events/types";
+import { Users, Calendar, Shield } from "lucide-react";
 
-const statusStyles: Record<string, string> = {
-  draft: "bg-navy-100 text-navy-700",
-  pending_approval: "bg-amber-100 text-amber-800",
-  approved: "bg-emerald-100 text-emerald-700",
-  ongoing: "bg-blue-100 text-blue-700",
-  completed: "bg-navy-100 text-navy-600",
-  cancelled: "bg-red-100 text-red-700",
-  archived: "bg-navy-100 text-navy-500",
-};
-
-function formatDate(value: string | null): string {
-  if (!value) return "TBD";
-  return new Date(value).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+interface EventCardProps {
+  title: string;
+  description?: string;
+  startDate: string;
+  endDate?: string;
+  location?: string;
+  capacity?: number;
+  registeredCount?: number;
+  isTeamEvent?: boolean;
+  maxTeamSize?: number;
+  status?: "draft" | "published" | "cancelled" | "completed";
+  priority?: "normal" | "important" | "urgent";
+  category?: string;
+  actions?: ReactNode;
+  className?: string;
 }
 
-export function EventCard({ event }: { event: SchoolEvent }) {
+
+export function EventCard({
+  title,
+  description,
+  startDate,
+  endDate,
+  location,
+  capacity,
+  registeredCount,
+  isTeamEvent,
+  maxTeamSize,
+  status = "published",
+  priority = "normal",
+  category,
+  actions,
+  className,
+}: EventCardProps) {
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
   return (
-    <Card className="p-5">
+    <Card className={cn("p-5 transition-shadow hover:shadow-soft", className)}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <Link to={`/events/${event.id}`}>
-            <h3 className="text-lg font-semibold text-navy-800 hover:underline">
-              {event.title}
-            </h3>
-          </Link>
-          {event.category && (
-            <span className="mt-1 inline-block rounded-full bg-navy-50 px-2.5 py-0.5 text-xs font-medium text-navy-600">
-              {event.category}
-            </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-lg font-semibold text-navy-800 truncate">{title}</h3>
+            {category && (
+              <Badge tone="neutral" className="text-xs">
+                {category}
+              </Badge>
+            )}
+          </div>
+          {description && (
+            <p className="mt-2 line-clamp-2 text-sm text-navy-500">{description}</p>
           )}
         </div>
-        <span
-          className={cn(
-            "rounded-full px-2.5 py-0.5 text-xs font-medium",
-            statusStyles[event.status] ?? statusStyles.draft,
-          )}
-        >
-          {event.status.replace("_", " ")}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge
+            tone={
+              status === "published"
+                ? "success"
+                : status === "draft"
+                ? "neutral"
+                : status === "cancelled"
+                ? "danger"
+                : "info"
+            }
+            className="text-xs"
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Badge>
+          <Badge tone="neutral" className="text-xs">
+            {priority.charAt(0).toUpperCase() + priority.slice(1)}
+          </Badge>
+        </div>
       </div>
-      {event.description && (
-        <p className="mt-3 line-clamp-2 text-sm text-accent">
-          {event.description}
-        </p>
+
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div className="flex items-center gap-2 text-navy-600">
+          <Calendar className="h-4 w-4 text-navy-400 shrink-0" />
+          <div>
+            <p className="font-medium text-navy-800">{formatDate(startDate)}</p>
+            <p className="text-xs text-navy-500">
+              {formatTime(startDate)} {endDate ? `– ${formatTime(endDate)}` : ""}
+            </p>
+          </div>
+        </div>
+        {location && (
+          <div className="flex items-center gap-2 text-navy-600">
+            <Calendar className="h-4 w-4 text-navy-400 shrink-0" />
+            <p className="truncate font-medium text-navy-800">{location}</p>
+          </div>
+        )}
+        {capacity && (
+          <div className="flex items-center gap-2 text-navy-600">
+            <Users className="h-4 w-4 text-navy-400 shrink-0" />
+            <div>
+              <p className="font-medium text-navy-800">
+                {registeredCount ?? 0} / {capacity}
+              </p>
+              <p className="text-xs text-navy-500">Seats filled</p>
+            </div>
+          </div>
+        )}
+        {isTeamEvent && (
+          <div className="flex items-center gap-2 text-navy-600">
+            <Shield className="h-4 w-4 text-navy-400 shrink-0" />
+            <div>
+              <p className="font-medium text-navy-800">Team Event</p>
+              <p className="text-xs text-navy-500">Up to {maxTeamSize} members</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {actions && (
+        <div className="mt-4 flex items-center justify-end gap-2">{actions}</div>
       )}
-      <dl className="mt-4 grid grid-cols-2 gap-2 text-xs text-navy-600">
-        <div>
-          <dt className="font-medium text-navy-500">When</dt>
-          <dd>{formatDate(event.start_time)}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-navy-500">Where</dt>
-          <dd>{event.location ?? "TBD"}</dd>
-        </div>
-        {event.capacity != null && (
-          <div>
-            <dt className="font-medium text-navy-500">Capacity</dt>
-            <dd>{event.capacity}</dd>
-          </div>
-        )}
-        {event.is_team_event && (
-          <div>
-            <dt className="font-medium text-navy-500">Team event</dt>
-            <dd>Up to {event.max_team_size}</dd>
-          </div>
-        )}
-      </dl>
     </Card>
   );
 }

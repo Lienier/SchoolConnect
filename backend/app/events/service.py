@@ -137,10 +137,31 @@ class EventService:
         return event
 
     # --- update -----------------------------------------------------------
-    def update_event(self, event_id: uuid.UUID, actor_id: uuid.UUID, **fields) -> Event:
+    def update_event(
+        self,
+        event_id: uuid.UUID,
+        actor_id: uuid.UUID,
+        *,
+        can_override: bool = False,
+        **fields,
+    ) -> Event:
         event = self.get_event(event_id)
-        if event.status not in {"draft", "pending_approval"}:
-            raise ValidationError("Only draft or pending events can be edited.")
+        if event.status not in {"draft", "pending_approval", "approved"}:
+            raise ValidationError("Only draft, pending, or approved events can be edited.")
+        # Security guardrail: if an approved event is edited by a non-admin,
+        # automatically reset to pending_approval to require re-verification.
+        if event.status == "approved" and not can_override:
+            event.status = "pending_approval"
+        # Enforce owner-or-override: teachers/admins with events.approve may
+        # edit any event; otherwise the actor must be the organizer.
+        from app.common.ownership import enforce_owner_or_permission
+
+        enforce_owner_or_permission(
+            record_owner_id=event.organizer_id,
+            user_id=actor_id,
+            has_permission=can_override,
+            message="You can only edit events you organize.",
+        )
 
         if fields.get("start_time") is not None:
             event.start_time = _parse_dt(fields["start_time"], "start_time")
@@ -190,8 +211,8 @@ class EventService:
         decision: str,
         comment=None,
     ) -> Event:
-        if decision not in {"approved", "rejected"}:
-            raise ValidationError("decision must be 'approved' or 'rejected'.")
+        if decision not in {"approved", "rejected", "returned"}:
+            raise ValidationError("decision must be 'approved', 'rejected', or 'returned'.")
         event = self.get_event(event_id)
         if event.status != "pending_approval":
             raise ValidationError("Event is not pending approval.")
@@ -233,8 +254,18 @@ class EventService:
         return event
 
     # --- delete -----------------------------------------------------------
-    def delete_event(self, event_id: uuid.UUID, actor_id: uuid.UUID) -> None:
+    def delete_event(
+        self, event_id: uuid.UUID, actor_id: uuid.UUID, *, can_override: bool = False
+    ) -> None:
         event = self.get_event(event_id)
+        from app.common.ownership import enforce_owner_or_permission
+
+        enforce_owner_or_permission(
+            record_owner_id=event.organizer_id,
+            user_id=actor_id,
+            has_permission=can_override,
+            message="You can only delete events you organize.",
+        )
         event.soft_delete()
         event.updated_by = actor_id
         self.events.commit()

@@ -1,12 +1,15 @@
-/** Create event page. */
+/** Create event page with new design system layout. */
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 import { eventsApi } from "@/features/events/services/eventsApi";
 import { CreateEventForm } from "@/features/events/components/CreateEventForm";
 import type { EventFormValues } from "@/features/events/validators";
 import { useToast } from "@/providers/ToastProvider";
+import { Navbar } from "@/components/ui/Navbar";
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
@@ -45,12 +48,29 @@ export default function CreateEventPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-start justify-center bg-navy-50 px-4 py-10">
-      <CreateEventForm
-        categories={categories}
-        onSubmit={onSubmit}
-        isSubmitting={submitting}
+    <div className="min-h-screen bg-navy-50">
+      <Navbar
+        title="Create Event"
+        breadcrumbs={[
+          { label: "Events", href: "/events" },
+          { label: "New Event" },
+        ]}
+        actions={
+          <Link to="/events">
+            <span className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Events
+            </span>
+          </Link>
+        }
       />
-    </main>
+      <main className="mx-auto max-w-2xl px-6 py-8">
+        <CreateEventForm
+          categories={categories}
+          onSubmit={onSubmit}
+          isSubmitting={submitting}
+        />
+      </main>
+    </div>
   );
 }

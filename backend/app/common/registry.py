@@ -48,6 +48,8 @@ def _load_feature_blueprints() -> list[Blueprint]:
     blueprints.append(uploads_bp)
     from app.reports.routes import bp as reports_bp
     blueprints.append(reports_bp)
+    from app.dashboard.routes import bp as dashboard_bp
+    blueprints.append(dashboard_bp)
     return blueprints
 
 

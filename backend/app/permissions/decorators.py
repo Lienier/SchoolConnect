@@ -30,6 +30,12 @@ def _load_user_permissions(user_id: str) -> set[str]:
     return set(rows)
 
 
+def has_permission(user_id: str, permission: str) -> bool:
+    """Return whether a user holds ``permission`` (admin wildcard included)."""
+    perms = _load_user_permissions(user_id)
+    return "*" in perms or permission in perms
+
+
 def require_permission(permission: str) -> Callable:
     """Restrict a route to users holding ``permission``.
 

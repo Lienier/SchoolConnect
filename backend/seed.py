@@ -143,6 +143,33 @@ def seed_notification_templates() -> None:
     print("Notification templates seeded.")
 
 
+def seed_admin_user() -> None:
+    """Create default admin user if not exists."""
+    from app.auth.service import AuthService
+    from app.auth.model import User
+    from app.extensions import db
+
+    admin_email = "admin@example.com"
+    existing = db.session.scalar(db.select(User).where(User.email == admin_email))
+    if existing is None:
+        service = AuthService()
+        admin_user = service.register(
+            email=admin_email,
+            password="admin123",
+            full_name="Admin User",
+            username="admin",
+        )
+        # assign admin role explicitly
+        from app.permissions.model import Role, UserRole
+        admin_role = db.session.scalar(db.select(Role).where(Role.name == "admin"))
+        if admin_role:
+            db.session.add(UserRole(user_id=admin_user.id, role_id=admin_role.id))
+        db.session.commit()
+        print("Default admin user created (admin@example.com / admin123)")
+    else:
+        print("Default admin user already exists.")
+
+
 if __name__ == "__main__":
     app = create_app()
     with app.app_context():
@@ -150,3 +177,5 @@ if __name__ == "__main__":
         seed_categories()
         seed_event_categories()
         seed_notification_templates()
+        seed_admin_user()
+

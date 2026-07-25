@@ -42,3 +42,16 @@ class ProfileUpdateRequest(BaseModel):
     phone: str | None = Field(default=None, max_length=30)
     first_name: str | None = Field(default=None, max_length=80)
     last_name: str | None = Field(default=None, max_length=80)
+
+
+class AdminResetPasswordRequest(BaseModel):
+    """Admin-initiated password reset for another user."""
+
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class SetAvatarRequest(BaseModel):
+    """Set a user's profile picture URL (upload handled separately)."""
+
+    avatar_url: str = Field(min_length=1, max_length=2000)
+

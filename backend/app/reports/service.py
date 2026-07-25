@@ -36,6 +36,58 @@ class ReportService:
         ).all()
         return {"event_id": str(event_id), "by_status": {s: c for s, c in rows}}
 
+    def attendance_percentage(self, event_id: uuid.UUID) -> dict:
+        """Calculate attendance rate: (attended / approved) * 100."""
+        approved_count = db.session.scalar(
+            select(func.count(Registration.id)).where(
+                Registration.event_id == event_id,
+                Registration.deleted_at.is_(None),
+                Registration.status.in_(("approved", "attended", "absent")),
+            )
+        ) or 0
+        attended_count = db.session.scalar(
+            select(func.count(Registration.id)).where(
+                Registration.event_id == event_id,
+                Registration.deleted_at.is_(None),
+                Registration.status == "attended",
+            )
+        ) or 0
+        percentage = round((attended_count / approved_count * 100), 2) if approved_count > 0 else 0.0
+        return {
+            "event_id": str(event_id),
+            "approved_count": approved_count,
+            "attended_count": attended_count,
+            "attendance_percentage": percentage,
+        }
+
+    def department_attendance_summary(self) -> list[dict]:
+        """Aggregate attendance percentage per department."""
+        from app.users.model import StudentProfile, Department
+        rows = db.session.execute(
+            select(
+                Department.name,
+                func.count(Registration.id).filter(
+                    Registration.status == "attended"
+                ).label("attended"),
+                func.count(Registration.id).filter(
+                    Registration.status.in_(("approved", "attended", "absent"))
+                ).label("total"),
+            )
+            .join(StudentProfile, Registration.user_id == StudentProfile.id)
+            .join(Department, StudentProfile.department_id == Department.id)
+            .where(Registration.deleted_at.is_(None))
+            .group_by(Department.name)
+        ).all()
+        return [
+            {
+                "department": name,
+                "attended": attended,
+                "total": total,
+                "percentage": round((attended / total * 100), 2) if total > 0 else 0.0,
+            }
+            for name, attended, total in rows
+        ]
+
     def registration_statistics(self) -> dict:
         total = db.session.scalar(
             select(func.count(Registration.id)).where(Registration.deleted_at.is_(None))
@@ -90,6 +142,7 @@ class ReportService:
             "pending_approvals": pending,
             "registrations": self.registration_statistics(),
             "popular_categories": self.popular_categories(5),
+            "department_attendance": self.department_attendance_summary(),
         }
 
 

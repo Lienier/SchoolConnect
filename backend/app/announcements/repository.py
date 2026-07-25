@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, case
 
 from app.announcements.model import (
     Announcement,
@@ -35,8 +35,13 @@ class AnnouncementRepository:
             stmt = stmt.where(Announcement.priority == priority)
         stmt = stmt.where(Announcement.deleted_at.is_(None))
         if pinned_first:
+            priority_order = case(
+                (Announcement.priority == "urgent", 0),
+                (Announcement.priority == "important", 1),
+                else_=2,
+            )
             stmt = stmt.order_by(
-                Announcement.is_pinned.desc(), Announcement.created_at.desc()
+                priority_order.asc(), Announcement.is_pinned.desc(), Announcement.created_at.desc()
             )
         return stmt
 

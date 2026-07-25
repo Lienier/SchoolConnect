@@ -18,7 +18,7 @@ from app.events.validators import (
     EventStatusRequest,
     EventUpdateRequest,
 )
-from app.permissions.decorators import require_permission
+from app.permissions.decorators import has_permission, require_permission
 
 bp = Blueprint("events", __name__, url_prefix="/events")
 _service = EventService()
@@ -89,7 +89,10 @@ def update_event(event_id: str):
     payload = EventUpdateRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
     event = _service.update_event(
-        uuid.UUID(event_id), actor, **payload.model_dump(exclude_none=True)
+        uuid.UUID(event_id),
+        actor,
+        can_override=has_permission(str(actor), "events.approve"),
+        **payload.model_dump(exclude_none=True),
     )
     return success_response(data=event.to_dict(), message="Event updated.")
 
@@ -127,8 +130,18 @@ def change_status(event_id: str):
     """Transition an event to a new lifecycle status."""
     payload = EventStatusRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
-    event = _service.change_status(uuid.UUID(event_id), actor, payload.status)
-    return success_response(data=event.to_dict(), message="Event status updated.")
+    # Publishing/status changes are owner-only unless the actor can approve.
+    event = _service.get_event(uuid.UUID(event_id))
+    from app.common.ownership import enforce_owner_or_permission
+
+    enforce_owner_or_permission(
+        record_owner_id=event.organizer_id,
+        user_id=actor,
+        has_permission=has_permission(str(actor), "events.approve"),
+        message="You can only change the status of events you organize.",
+    )
+    updated = _service.change_status(uuid.UUID(event_id), actor, payload.status)
+    return success_response(data=updated.to_dict(), message="Event status updated.")
 
 
 @bp.delete("/<event_id>")
@@ -137,7 +150,11 @@ def change_status(event_id: str):
 def delete_event(event_id: str):
     """Soft-delete an event."""
     actor = uuid.UUID(get_jwt_identity())
-    _service.delete_event(uuid.UUID(event_id), actor)
+    _service.delete_event(
+        uuid.UUID(event_id),
+        actor,
+        can_override=has_permission(str(actor), "events.approve"),
+    )
     return success_response(message="Event deleted.")
 
 

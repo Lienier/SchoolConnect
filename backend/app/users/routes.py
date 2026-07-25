@@ -11,24 +11,40 @@ import uuid
 from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from app.auth.model import User
 from app.auth.schema import public_user
 from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
+from app.common.query import apply_filters, apply_search, apply_sort
 from app.common.responses import error_response, success_response
 from app.permissions.decorators import require_permission
+from app.permissions.model import Role
 from app.users.repository import RoleRepository
 from app.users.service import UserService
 from app.users.validators import (
+    AdminResetPasswordRequest,
     AssignRolesRequest,
     ProfileUpdateRequest,
+    SetAvatarRequest,
     UserCreateRequest,
     UserUpdateRequest,
 )
 from app.extensions import db
+from app.audit.service import AuditService
 
 bp = Blueprint("users", __name__, url_prefix="/users")
 _service = UserService()
 _roles = RoleRepository()
+_audit = AuditService()
+
+_SORTABLE = {
+    "name": User.full_name,
+    "email": User.email,
+    "status": User.status,
+    "created_at": User.created_at,
+    "updated_at": User.updated_at,
+    "last_login_at": User.last_login_at,
+}
 
 
 def _body() -> dict:
@@ -42,12 +58,22 @@ def _body() -> dict:
 @jwt_required()
 @require_permission("users.view")
 def list_users():
-    """List users with server-side pagination."""
+    """List users with pagination, search, filtering and sorting."""
+    from sqlalchemy import select
+
     params = PaginationParams.from_request()
-    query = _service.list_users(page=params.page, page_size=params.page_size)
-    items, meta = paginate(query, params)
+    stmt = _service.list_users_query()
+    stmt = apply_search(stmt, request.args.get("search"), [User.email, User.full_name, User.username])
+    if request.args.get("role"):
+        stmt = (
+            stmt.join(User.roles)
+            .where(Role.name == request.args.get("role"))
+        )
+    stmt = apply_filters(stmt, {"status": User.status}, request.args)
+    stmt = apply_sort(stmt, request.args.get("sort"), _SORTABLE, default=User.created_at)
+    items, meta = paginate(stmt, params)
     return success_response(
-        data=[public_user(u) for u in items], meta=meta
+        data=[public_user(u, include_roles=True) for u in items], meta=meta
     )
 
 
@@ -112,6 +138,76 @@ def delete_user(user_id: str):
     """Soft-delete a user."""
     _service.soft_delete_user(uuid.UUID(user_id))
     return success_response(message="User deleted.")
+
+
+@bp.post("/<user_id>/disable")
+@jwt_required()
+@require_permission("users.update")
+def disable_user(user_id: str):
+    """Disable a user (status -> inactive)."""
+    user = _service.disable_user(uuid.UUID(user_id))
+    return success_response(data=public_user(user), message="User disabled.")
+
+
+@bp.post("/<user_id>/suspend")
+@jwt_required()
+@require_permission("users.update")
+def suspend_user(user_id: str):
+    """Suspend a user (status -> suspended)."""
+    user = _service.suspend_user(uuid.UUID(user_id))
+    return success_response(data=public_user(user), message="User suspended.")
+
+
+@bp.post("/<user_id>/reactivate")
+@jwt_required()
+@require_permission("users.update")
+def reactivate_user(user_id: str):
+    """Reactivate a disabled/suspended user (status -> active)."""
+    user = _service.reactivate_user(uuid.UUID(user_id))
+    return success_response(data=public_user(user), message="User reactivated.")
+
+
+@bp.post("/<user_id>/reset-password")
+@jwt_required()
+@require_permission("users.update")
+def admin_reset_password(user_id: str):
+    """Admin-reset a user's password."""
+    payload = AdminResetPasswordRequest(**_body())
+    _service.admin_reset_password(uuid.UUID(user_id), new_password=payload.new_password)
+    return success_response(message="Password reset.")
+
+
+@bp.put("/<user_id>/avatar")
+@jwt_required()
+@require_permission("users.update")
+def set_avatar(user_id: str):
+    """Set a user's profile-picture URL."""
+    payload = SetAvatarRequest(**_body())
+    user = _service.set_avatar(uuid.UUID(user_id), payload.avatar_url)
+    return success_response(data=public_user(user), message="Avatar updated.")
+
+
+@bp.get("/<user_id>/activity")
+@jwt_required()
+@require_permission("users.view")
+def user_activity(user_id: str):
+    """Return a user's audit + login + activity history."""
+    params = PaginationParams.from_request()
+    actor = uuid.UUID(user_id)
+    audit_q = _audit.list_audit(actor_id=str(actor))
+    login_q = _audit.list_logins(user_id=str(actor))
+    activity_q = _audit.list_activity(user_id=str(actor))
+    audit_items, audit_meta = paginate(audit_q, params)
+    login_items, _ = paginate(login_q, params)
+    activity_items, _ = paginate(activity_q, params)
+    return success_response(
+        data={
+            "audit_logs": [a.to_dict() for a in audit_items],
+            "login_history": [a.to_dict() for a in login_items],
+            "activity_logs": [a.to_dict() for a in activity_items],
+        },
+        meta=audit_meta,
+    )
 
 
 @bp.put("/<user_id>/roles")

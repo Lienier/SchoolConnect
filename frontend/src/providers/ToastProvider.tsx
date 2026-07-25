@@ -1,57 +1,40 @@
-/** Minimal toast notifications (success/error) without external deps. */
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useState,
-  type ReactNode,
-} from "react";
+/** Toast notifications using the new design system Toast component. */
+import { ToastProvider as ToastUIProvider, ToastViewport, useToast as useToastUI } from "@/components/ui/Toast";
+import { createContext, useContext, useCallback, type ReactNode } from "react";
 
-type ToastType = "success" | "error" | "info";
-
-interface Toast {
-  id: number;
-  type: ToastType;
-  message: string;
-}
+type ToastType = "default" | "success" | "error" | "warning" | "info";
 
 interface ToastContextValue {
   toast: (message: string, type?: ToastType) => void;
+  dismiss: (id: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const { toast: toastUI, dismiss } = useToastUI();
 
   const toast = useCallback((message: string, type: ToastType = "info") => {
-    const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
-  }, []);
+    const variantMap: Record<ToastType, "default" | "success" | "error" | "warning" | "info"> = {
+      default: "default",
+      success: "success",
+      error: "error",
+      warning: "warning",
+      info: "info",
+    };
+    toastUI({
+      title: type === "success" ? "Success" : type === "error" ? "Error" : type === "warning" ? "Warning" : "Info",
+      description: message,
+      variant: variantMap[type],
+    });
+  }, [toastUI]);
 
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={{ toast, dismiss }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={
-              "rounded-xl px-4 py-3 text-sm shadow-soft " +
-              (t.type === "error"
-                ? "bg-red-600 text-white"
-                : t.type === "success"
-                  ? "bg-navy-800 text-white"
-                  : "bg-white text-navy-800 border border-navy-100")
-            }
-          >
-            {t.message}
-          </div>
-        ))}
-      </div>
+      <ToastUIProvider>
+        <ToastViewport />
+      </ToastUIProvider>
     </ToastContext.Provider>
   );
 }

@@ -56,6 +56,9 @@ class Team(db.Model):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(120), nullable=False)
+    team_code: Mapped[str] = mapped_column(
+        String(10), unique=True, nullable=False, index=True
+    )
     leader_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
@@ -72,6 +75,7 @@ class Team(db.Model):
             "id": str(self.id),
             "event_id": str(self.event_id),
             "name": self.name,
+            "team_code": self.team_code,
             "leader_id": str(self.leader_id),
             "members": [m.to_dict() for m in self.members],
         }

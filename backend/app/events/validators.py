@@ -47,8 +47,8 @@ class EventApprovalRequest(BaseModel):
     @field_validator("decision")
     @classmethod
     def _valid_decision(cls, value: str) -> str:
-        if value not in {"approved", "rejected"}:
-            raise ValueError("decision must be 'approved' or 'rejected'.")
+        if value not in {"approved", "rejected", "returned"}:
+            raise ValueError("decision must be 'approved', 'rejected', or 'returned'.")
         return value
 
 

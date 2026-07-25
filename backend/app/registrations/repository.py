@@ -62,6 +62,9 @@ class TeamRepository:
     def get_by_id(self, entity_id: uuid.UUID) -> Team | None:
         return db.session.scalar(select(Team).where(Team.id == entity_id))
 
+    def get_by_code(self, code: str) -> Team | None:
+        return db.session.scalar(select(Team).where(Team.team_code == code))
+
     def add(self, entity: Team) -> Team:
         db.session.add(entity)
         return entity

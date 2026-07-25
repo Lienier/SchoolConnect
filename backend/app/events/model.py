@@ -144,6 +144,7 @@ class Event(db.Model):
                 {
                     "id": str(a.id),
                     "reviewer_id": str(a.reviewer_id),
+                    "reviewer_name": a.reviewer.full_name if a.reviewer else None,
                     "decision": a.decision,
                     "comment": a.comment,
                     "decided_at": a.decided_at.isoformat() if a.decided_at else None,
@@ -221,6 +222,7 @@ class EventApproval(db.Model):
     )
 
     event: Mapped[Event] = relationship(back_populates="approvals")
+    reviewer: Mapped["User"] = relationship("User", foreign_keys=[reviewer_id], lazy="joined")
 
 
 class CalendarEvent(db.Model):

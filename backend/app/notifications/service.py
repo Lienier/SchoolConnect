@@ -8,6 +8,7 @@ delivery is logged but performed by the email worker (out of scope here).
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from app.common.exceptions import NotFoundError, ValidationError
 from app.notifications.model import (
@@ -130,6 +131,58 @@ class NotificationService:
         self.templates.add(template)
         self.templates.commit()
         return template
+
+    def schedule_event_reminders(self, event_id: uuid.UUID, event_title: str, event_start: datetime) -> list:
+        """Create reminder notifications for all approved registrants.
+        
+        Schedules 3-day, 1-day, and event-day reminders as in-app notifications.
+        Called by a background cron job that scans upcoming events.
+        """
+        from datetime import timedelta
+        from app.registrations.repository import RegistrationRepository
+        from app.extensions import db
+        
+        reg_repo = RegistrationRepository()
+        now = utcnow()
+        reminders = []
+        
+        # Define reminder intervals: (days_before, message_prefix)
+        intervals = [
+            (3, "Reminder: 3 days until"),
+            (1, "Reminder: Tomorrow is"),
+            (0, "Today's Event:"),
+        ]
+        
+        for days_before, prefix in intervals:
+            reminder_date = event_start - timedelta(days=days_before)
+            # Only send if the reminder date matches today (within the same calendar day)
+            if reminder_date.date() != now.date():
+                continue
+            
+            # Get all approved/attended registrants
+            from sqlalchemy import select
+            from app.registrations.model import Registration
+            
+            registrant_ids = list(db.session.scalars(
+                select(Registration.user_id).where(
+                    Registration.event_id == event_id,
+                    Registration.deleted_at.is_(None),
+                    Registration.status.in_(("approved", "attended")),
+                )
+            ).all())
+            
+            for uid in registrant_ids:
+                notification = self.notify(
+                    user_id=uid,
+                    title=f"{prefix} {event_title}",
+                    body=f"Your registered event '{event_title}' is {'today' if days_before == 0 else f'in {days_before} day(s)'}. Don't forget to attend!",
+                    category="event_reminder",
+                    entity_type="event",
+                    entity_id=event_id,
+                )
+                reminders.append(notification)
+        
+        return reminders
 
 
 __all__ = ["NotificationService"]

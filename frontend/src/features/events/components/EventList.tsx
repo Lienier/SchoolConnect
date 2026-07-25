@@ -13,7 +13,18 @@ export function EventList({ items }: { items: SchoolEvent[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {items.map((e) => (
-        <EventCard key={e.id} event={e} />
+        <EventCard
+          key={e.id}
+          title={e.title}
+          description={e.description || undefined}
+          startDate={e.start_time || ""}
+          endDate={e.end_time || undefined}
+          location={e.location || undefined}
+          capacity={e.capacity || undefined}
+          isTeamEvent={e.is_team_event}
+          maxTeamSize={e.max_team_size || undefined}
+          status={e.status as any}
+        />
       ))}
     </div>
   );
