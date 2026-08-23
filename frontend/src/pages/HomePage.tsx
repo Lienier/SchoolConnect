@@ -1,121 +1,272 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, LogIn, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, BookOpen, LogIn, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
-import { APP_NAME } from "@/constants";
-import { BulletinFeed } from "@/features/announcements/components/BulletinFeed";
+import { feedApi } from "@/features/announcements/services/feedApi";
+import type { FeedItem } from "@/features/announcements/types/feed";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { dashboardPathForRoles } from "@/features/dashboards/routeForRole";
+
+const heroImage =
+  "https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1800&q=80";
 
 export default function HomePage() {
   const { user, isAuthenticated } = useAuth();
   const dashboardPath = dashboardPathForRoles(user?.roles);
+  const [search, setSearch] = useState("");
+
+  const feed = useQuery({
+    queryKey: ["home-feed"],
+    queryFn: () => feedApi.list({ kind: "all", limit: 16 }),
+  });
+
+  const filteredItems = useMemo(() => {
+    const items = feed.data?.data ?? [];
+    const query = search.trim().toLowerCase();
+    if (!query) return items;
+    return items.filter((item) =>
+      [item.title, item.body, item.category, item.location]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [feed.data?.data, search]);
+
+  const announcements = filteredItems.filter((item) => item.type === "announcement").slice(0, 3);
+  const events = filteredItems.filter((item) => item.type === "event").slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.16),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(16,185,129,0.16),_transparent_28%),linear-gradient(180deg,#eef4fb_0%,#f8fbfe_55%,#eef4fb_100%)] text-navy-900">
-      <header className="sticky top-0 z-40 border-b border-white/60 bg-white/75 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-navy-900 to-sky-700 text-white shadow-lg shadow-sky-200/70">
-              <Sparkles className="h-5 w-5" />
+    <div className="min-h-screen bg-slate-50 text-[#102858]">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-3 sm:px-6 lg:px-8">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-700">
+              <BookOpen size={22} />
             </div>
-            <div>
-              <p className="text-lg font-semibold tracking-tight">{APP_NAME}</p>
-              <p className="text-xs text-navy-500">Bulletins, events, and updates in one living feed</p>
-            </div>
-          </div>
+            <span className="text-xl font-bold tracking-tight">
+              School<span className="text-blue-700">Connect</span>
+            </span>
+          </Link>
 
-          <div className="flex items-center gap-2">
-            <Link to="/announcements">
-              <Button variant="secondary" size="sm" className="hidden sm:inline-flex">
-                Explore feed
+          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
+            <a href="#home" className="text-blue-700">Home</a>
+            <a href="#announcements" className="transition hover:text-blue-700">Announcements</a>
+            <a href="#events" className="transition hover:text-blue-700">Events</a>
+            <a href="#features" className="transition hover:text-blue-700">Features</a>
+            <a href="#contact" className="transition hover:text-blue-700">Contact</a>
+          </nav>
+
+          {isAuthenticated ? (
+            <Link to={dashboardPath}>
+              <Button size="sm">Dashboard</Button>
+            </Link>
+          ) : (
+            <Link to="/login">
+              <Button size="sm">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
               </Button>
             </Link>
-            {isAuthenticated ? (
-              <Link to={dashboardPath}>
-                <Button size="sm">
-                  Dashboard
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            ) : (
-              <Link to="/login">
-                <Button size="sm">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign in
-                </Button>
-              </Link>
-            )}
-          </div>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-          <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/90 px-4 py-2 text-sm font-medium text-sky-800 shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Live bulletin stream for every user
-            </div>
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-navy-950 sm:text-5xl lg:text-6xl">
-                School updates should feel alive, familiar, and easy to scan.
-              </h1>
-              <p className="max-w-2xl text-base leading-7 text-navy-600 sm:text-lg">
-                {APP_NAME} now presents announcements and events like a modern social feed:
-                urgent posts at the top, rich cards in the middle, and quick actions on every
-                item for students, professors, student council, and admins.
+      <main>
+        <section id="home" className="relative overflow-hidden bg-white">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${heroImage})` }}
+            aria-hidden="true"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/15" aria-hidden="true" />
+          <div className="relative mx-auto flex min-h-[430px] max-w-7xl items-center px-4 py-14 sm:px-6 lg:px-8">
+            <div className="max-w-2xl">
+              <p className="mb-5 inline-flex rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 ring-1 ring-blue-100">
+                Welcome to SchoolConnect
               </p>
-            </div>
+              <h1 className="text-4xl font-bold leading-tight tracking-tight text-[#0c1f44] sm:text-5xl lg:text-6xl">
+                Stay informed. Get involved. Be connected.
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+                A focused platform for school announcements, upcoming events, registration,
+                attendance, and community updates.
+              </p>
 
-            <div className="flex flex-wrap gap-3">
-              <Link to="/announcements">
-                <Button size="lg" className="shadow-lg shadow-navy-900/10">
-                  Open bulletin
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/events">
-                <Button variant="secondary" size="lg">
-                  Browse events
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 -z-10 rounded-[2rem] bg-gradient-to-br from-sky-200/70 via-white to-emerald-200/70 blur-2xl" />
-            <div className="rounded-[2rem] border border-white/80 bg-white/85 p-5 shadow-2xl shadow-navy-900/10 backdrop-blur">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl bg-navy-950 p-4 text-white">
-                  <p className="text-xs uppercase tracking-wide text-white/60">Style</p>
-                  <p className="mt-2 text-lg font-semibold">Social feed</p>
+              <form
+                className="mt-7 flex max-w-xl flex-col gap-3 rounded-xl border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/70 sm:flex-row"
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search announcements or events..."
+                    className="h-12 w-full rounded-lg border-0 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                  />
                 </div>
-                <div className="rounded-2xl bg-sky-50 p-4">
-                  <p className="text-xs uppercase tracking-wide text-sky-700">Audience</p>
-                  <p className="mt-2 text-lg font-semibold text-navy-900">All users</p>
-                </div>
-                <div className="rounded-2xl bg-emerald-50 p-4">
-                  <p className="text-xs uppercase tracking-wide text-emerald-700">Actions</p>
-                  <p className="mt-2 text-lg font-semibold text-navy-900">Share + register</p>
-                </div>
-              </div>
-              <div className="mt-4 rounded-2xl border border-dashed border-navy-200 bg-navy-50 p-4 text-sm leading-6 text-navy-600">
-                The bulletin stream below is the same design language used in role dashboards,
-                with permission-aware actions layered on top instead of separate, disconnected
-                page styles.
-              </div>
+                <Button type="submit" className="h-12 rounded-lg px-6">Search</Button>
+              </form>
             </div>
           </div>
         </section>
 
-        <div className="mt-10">
-          <BulletinFeed
-            title="Live bulletin feed"
-            description="Urgent notices, pinned announcements, and upcoming events in a single social-style stream."
-          />
-        </div>
+        <section id="features" className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+          <FeatureCard title="Latest Announcements" text="Read official updates and notices from the school." to="#announcements" />
+          <FeatureCard title="Upcoming Events" text="Browse activities, deadlines, venues, and schedules." to="#events" />
+          <FeatureCard title="Easy Registration" text="Register for approved events with guided status updates." to="/events" />
+          <FeatureCard title="Connected Community" text="Keep students, professors, officers, and admins aligned." to="/announcements" />
+        </section>
+
+        <section className="mx-auto grid max-w-7xl gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[0.95fr_1.25fr] lg:px-8">
+          <div id="announcements" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <SectionHeader title="Latest Announcements" to="/announcements" />
+            <div className="mt-4 divide-y divide-slate-100">
+              {feed.isLoading && <p className="py-8 text-sm text-slate-500">Loading announcements...</p>}
+              {!feed.isLoading && announcements.length === 0 && (
+                <p className="py-8 text-sm text-slate-500">No announcements found.</p>
+              )}
+              {announcements.map((item) => (
+                <AnnouncementRow key={item.id} item={item} />
+              ))}
+            </div>
+            <Link to="/announcements" className="mt-5 inline-flex items-center text-sm font-semibold text-blue-700 hover:text-blue-800">
+              View all announcements
+              <ArrowRight size={15} className="ml-2" />
+            </Link>
+          </div>
+
+          <div id="events" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <SectionHeader title="Upcoming Events" to="/events" />
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {feed.isLoading && <p className="col-span-full py-8 text-sm text-slate-500">Loading events...</p>}
+              {!feed.isLoading && events.length === 0 && (
+                <p className="col-span-full py-8 text-sm text-slate-500">No upcoming events found.</p>
+              )}
+              {events.map((item, index) => (
+                <EventCard key={item.id} item={item} index={index} />
+              ))}
+            </div>
+            <Link to="/events" className="mt-5 inline-flex items-center text-sm font-semibold text-blue-700 hover:text-blue-800">
+              View all events
+              <ArrowRight size={15} className="ml-2" />
+            </Link>
+          </div>
+        </section>
       </main>
+
+      <footer id="contact" className="bg-[#082554] text-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-9 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 bg-white/10">
+                <BookOpen size={21} />
+              </div>
+              <p className="text-lg font-bold">School<span className="text-blue-200">Connect</span></p>
+            </div>
+            <p className="mt-4 max-w-md text-sm leading-6 text-blue-50/80">
+              A centralized school bulletin and event registration platform for students,
+              professors, student leaders, and administrators.
+            </p>
+          </div>
+          <FooterLinks title="Quick Links" links={[["Home", "#home"], ["Announcements", "/announcements"], ["Events", "/events"], ["Login", "/login"]]} />
+          <FooterLinks title="Support" links={[["Help Center", "/support"], ["Notifications", "/notifications"], ["Calendar", "/calendar"], ["My Registrations", "/registrations/mine"]]} />
+        </div>
+        <div className="border-t border-white/10 px-4 py-4 text-center text-xs text-blue-50/70">
+          © 2026 SchoolConnect. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
+}
+
+function FeatureCard({ title, text, to }: { title: string; text: string; to: string }) {
+  return (
+    <a href={to} className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <p className="text-base font-bold text-[#102858]">{title}</p>
+      <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{text}</p>
+      <span className="mt-4 inline-flex items-center text-sm font-semibold text-blue-700">
+        Open
+        <ArrowRight size={15} className="ml-2 transition group-hover:translate-x-0.5" />
+      </span>
+    </a>
+  );
+}
+
+function SectionHeader({ title, to }: { title: string; to: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <h2 className="text-lg font-bold text-[#102858]">{title}</h2>
+      <Link to={to} className="text-sm font-semibold text-blue-700 hover:text-blue-800">
+        View all
+      </Link>
+    </div>
+  );
+}
+
+function AnnouncementRow({ item }: { item: FeedItem }) {
+  return (
+    <article className="grid gap-3 py-4 sm:grid-cols-[1fr_auto]">
+      <div>
+        <p className="text-sm font-bold text-[#102858]">{item.title}</p>
+        <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{item.body}</p>
+      </div>
+      <time className="text-xs font-medium text-slate-500">{formatDate(item.created_at)}</time>
+    </article>
+  );
+}
+
+function EventCard({ item, index }: { item: FeedItem; index: number }) {
+  const eventImages = [
+    "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=700&q=80",
+    "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=700&q=80",
+  ];
+
+  return (
+    <Link to={`/events/${item.id}`} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div
+        className="h-28 bg-cover bg-center"
+        style={{ backgroundImage: `url(${eventImages[index % eventImages.length]})` }}
+      />
+      <div className="p-4">
+        <div className="mb-3 inline-flex rounded-md bg-blue-700 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white">
+          {formatDate(item.start_time ?? item.created_at, { month: "short", day: "2-digit" })}
+        </div>
+        <p className="line-clamp-2 min-h-10 text-sm font-bold text-[#102858]">{item.title}</p>
+        <p className="mt-3 text-xs text-slate-500">{formatTimeRange(item.start_time, item.end_time)}</p>
+        <p className="mt-2 line-clamp-1 text-xs text-slate-500">{item.location ?? "Campus venue"}</p>
+      </div>
+    </Link>
+  );
+}
+
+function FooterLinks({ title, links }: { title: string; links: Array<[string, string]> }) {
+  return (
+    <div>
+      <p className="text-sm font-bold">{title}</p>
+      <div className="mt-3 grid gap-2 text-sm text-blue-50/80">
+        {links.map(([label, href]) => (
+          <a key={label} href={href} className="hover:text-white">
+            {label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatDate(value?: string | null, options?: Intl.DateTimeFormatOptions) {
+  if (!value) return "TBA";
+  return new Intl.DateTimeFormat("en", options ?? { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
+}
+
+function formatTimeRange(start?: string | null, end?: string | null) {
+  if (!start) return "Time to be announced";
+  const time = new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" });
+  return end ? `${time.format(new Date(start))} - ${time.format(new Date(end))}` : time.format(new Date(start));
 }
