@@ -65,6 +65,7 @@ class AuditService:
         ip_address=None,
         user_agent=None,
         reason=None,
+        commit: bool = True,
     ) -> None:
         try:
             self.logins.add(
@@ -78,7 +79,8 @@ class AuditService:
                     reason=reason,
                 )
             )
-            self.logins.commit()
+            if commit:
+                self.logins.commit()
         except Exception:  # pragma: no cover
             logger.exception("Failed to write login history")
 

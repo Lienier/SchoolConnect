@@ -72,13 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    const accessToken = localStorage.getItem(TOKEN_STORAGE_KEY);
     const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
-    try {
-      await authApi.logout(refreshToken ?? undefined);
-    } finally {
-      clearTokens();
-      setUser(null);
-    }
+    clearTokens();
+    setUser(null);
+    void authApi.logout(refreshToken ?? undefined, accessToken ?? undefined).catch(() => undefined);
   }, []);
 
   const value = useMemo<AuthContextValue>(

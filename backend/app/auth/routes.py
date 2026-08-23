@@ -90,17 +90,21 @@ def login():
         )
         raise
     access, raw_refresh = _service.issue_tokens(
-        user, ip_address=request.remote_addr, user_agent=request.user_agent.string
+        user,
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string,
+        commit=False,
     )
     user.last_login_at = datetime.now(timezone.utc)
-    db.session.commit()
     audit.record_login(
         success=True,
         user_id=user.id,
         email=str(payload.email),
         ip_address=request.remote_addr,
         user_agent=request.user_agent.string,
+        commit=False,
     )
+    db.session.commit()
     return success_response(
         data=auth_tokens(access, raw_refresh, user),
         message="Login successful.",

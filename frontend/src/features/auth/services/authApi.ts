@@ -35,8 +35,12 @@ export const authApi = {
     return data.data;
   },
 
-  async logout(refreshToken?: string): Promise<void> {
-    await apiClient.post("/auth/logout", { refresh_token: refreshToken });
+  async logout(refreshToken?: string, accessToken?: string): Promise<void> {
+    await apiClient.post(
+      "/auth/logout",
+      { refresh_token: refreshToken },
+      accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined,
+    );
   },
 
   async changePassword(current_password: string, new_password: string): Promise<void> {

@@ -12,7 +12,7 @@ import hashlib
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
-from flask_jwt_extended import create_access_token, create_refresh_token
+from flask_jwt_extended import create_access_token
 
 from app.auth.constants import OAUTH_PROVIDERS
 from app.auth.model import OAuthAccount, RefreshToken, User
@@ -117,11 +117,12 @@ class AuthService:
         return user
 
     # --- token issuance ---------------------------------------------------
-    def issue_tokens(self, user: User, *, user_agent=None, ip_address=None) -> tuple[str, str]:
+    def issue_tokens(
+        self, user: User, *, user_agent=None, ip_address=None, commit: bool = True
+    ) -> tuple[str, str]:
         """Create access + refresh tokens and persist the refresh hash."""
         access = create_access_token(identity=str(user.id))
         raw_refresh = generate_random_token(REFRESH_TOKEN_BYTES)
-        refresh = create_refresh_token(identity=str(user.id))
 
         from app.extensions import db
         from datetime import timedelta as _td
@@ -139,7 +140,10 @@ class AuthService:
             revoked_at=None,
         )
         db.session.add(token_row)
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
         # Return the *raw* refresh token to the client (only stored as hash).
         return access, raw_refresh
 
