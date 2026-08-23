@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import os
 import uuid
 
-from flask import Blueprint, current_app, request, send_from_directory
+from flask import Blueprint, current_app, redirect, request, send_from_directory
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.common.exceptions import NotFoundError, ValidationError
@@ -45,7 +44,11 @@ def upload():
 @jwt_required()
 def serve(filename: str):
     """Serve a stored file only to authenticated users."""
+    record = _service.get_by_filename(filename)
+    if record and record.storage_backend == "cloudinary" and record.storage_path:
+        return redirect(record.storage_path)
+
     folder = current_app.config.get("UPLOAD_FOLDER", "uploads")
-    if not os.path.exists(os.path.join(folder, filename)):
+    if record is None:
         raise NotFoundError("File not found.")
     return send_from_directory(folder, filename)

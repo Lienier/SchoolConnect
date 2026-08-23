@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: schoolconnect-backend
+    runtime: docker
+    rootDir: backend
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: APP_NAME
+        value: SchoolConnect
+      - key: API_PREFIX
+        value: /api
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: STORAGE_BACKEND
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: SEED_ADMIN_EMAIL
+        value: admin.demo@example.com
+      - key: SEED_ADMIN_PASSWORD
+        value: Admin123!
+      - key: RATELIMIT_STORAGE_URI
+        value: memory://
+      - key: CACHE_TYPE
+        value: SimpleCache
