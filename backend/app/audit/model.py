@@ -20,10 +20,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import db
 from app.utils.datetime import utcnow
+
+JSONB_TYPE = JSONB().with_variant(db.JSON(), "sqlite")
 
 
 class AuditLog(db.Model):
@@ -43,17 +45,19 @@ class AuditLog(db.Model):
     action: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
     entity_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
-    changes: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    changes: Mapped[dict | None] = mapped_column(JSONB_TYPE, nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), nullable=False, index=True
     )
+    actor = relationship("User", foreign_keys=[actor_id], lazy="joined")
 
     def to_dict(self) -> dict:
         return {
             "id": str(self.id),
             "actor_id": str(self.actor_id) if self.actor_id else None,
+            "actor_name": getattr(self.actor, "full_name", None),
             "action": self.action,
             "entity_type": self.entity_type,
             "entity_id": str(self.entity_id) if self.entity_id else None,

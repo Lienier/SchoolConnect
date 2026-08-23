@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from flask import Blueprint, request
+from flask import Blueprint, current_app, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -135,8 +135,11 @@ def forgot_password():
     payload = ForgotPasswordRequest(**_body())
     token = _service.create_password_reset(str(payload.email))
     # In production the token is emailed; returned here for local testing.
+    reset_data = {"reset_token": token} if token and current_app.config.get(
+        "RETURN_RESET_TOKENS", False
+    ) else None
     return success_response(
-        data={"reset_token": token} if token else None,
+        data=reset_data,
         message="If the email exists, a reset link has been sent.",
     )
 
@@ -177,11 +180,14 @@ def oauth_google():
     from google.auth.transport import requests as google_requests
 
     payload = OAuthLoginRequest(**_body())
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+    if not client_id:
+        raise ValidationError("Google OAuth is not configured.")
     try:
         claim = id_token.verify_oauth2_token(
             payload.id_token,
             google_requests.Request(),
-            audience=None,
+            audience=client_id,
         )
     except Exception as exc:  # noqa: BLE001 - surface as client error
         raise ValidationError("Invalid Google token.") from exc

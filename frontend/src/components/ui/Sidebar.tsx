@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/utils/cn";
-import { X, ChevronDown, Settings, LogOut, User, Bell } from "lucide-react";
+import { X, ChevronDown, Settings, LogOut } from "lucide-react";
 
 import { Button } from "./Button";
 import { Avatar, AvatarImage, AvatarFallback } from "./Avatar";

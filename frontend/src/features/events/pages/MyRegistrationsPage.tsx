@@ -1,14 +1,18 @@
-/** Current user's registrations with cancel action. */
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+/** Current user's registrations with mobile-first status cards. */
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, X } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Calendar, Copy, Users, X } from "lucide-react";
 
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { PageHeader } from "@/components/ui/AdminPrimitives";
 import { registrationsApi } from "@/features/events/services/eventsApi";
+import type { Registration } from "@/features/events/types";
 import { useToast } from "@/providers/ToastProvider";
-import { Navbar } from "@/components/ui/Navbar";
+import { cn } from "@/utils/cn";
 
 const statusTones: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {
   pending: "warning",
@@ -20,82 +24,175 @@ const statusTones: Record<string, "neutral" | "success" | "warning" | "danger" |
   absent: "danger",
 };
 
+const filters = [
+  { key: "active", label: "Active" },
+  { key: "pending", label: "Pending" },
+  { key: "waitlisted", label: "Waitlisted" },
+  { key: "cancelled", label: "Cancelled" },
+  { key: "past", label: "Past" },
+] as const;
+
+type FilterKey = (typeof filters)[number]["key"];
+
 export default function MyRegistrationsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("active");
+  const [cancelTarget, setCancelTarget] = useState<{ id: string; title: string } | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["my-registrations"],
     queryFn: () => registrationsApi.mine(1),
   });
+
+  const filtered = useMemo(() => {
+    const items = data?.data ?? [];
+    return items.filter((registration) => {
+      if (activeFilter === "active") return ["approved"].includes(registration.status);
+      if (activeFilter === "past") return ["attended", "absent", "rejected"].includes(registration.status);
+      return registration.status === activeFilter;
+    });
+  }, [activeFilter, data?.data]);
 
   const handleCancel = async (id: string) => {
     try {
       await registrationsApi.cancel(id);
       toast("Registration cancelled.", "success");
       queryClient.invalidateQueries({ queryKey: ["my-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     } catch {
       toast("Could not cancel registration.", "error");
     }
   };
 
-  const items = data?.data ?? [];
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="My Registrations"
+        subtitle="Track your event sign-ups, team codes, waitlists, and cancellations."
+        actions={
+          <Link to="/events">
+            <Button>
+              <Calendar className="mr-2 h-4 w-4" />
+              Browse Events
+            </Button>
+          </Link>
+        }
+      />
+
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {filters.map((filter) => (
+          <button
+            key={filter.key}
+            type="button"
+            onClick={() => setActiveFilter(filter.key)}
+            className={cn(
+              "shrink-0 rounded-full px-4 py-2 text-sm font-bold transition",
+              activeFilter === filter.key
+                ? "bg-[#0d5ee8] text-white shadow-sm"
+                : "bg-white text-[#102858] shadow-sm ring-1 ring-slate-200 hover:bg-slate-50",
+            )}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
+      {isLoading && <Card className="border-slate-200 p-8 text-center text-slate-500 shadow-sm">Loading registrations...</Card>}
+      {isError && <Card className="border-red-200 bg-red-50 p-8 text-center text-red-700">Could not load your registrations.</Card>}
+      {!isLoading && !isError && filtered.length === 0 && (
+        <Card className="border-dashed border-slate-200 bg-white p-10 text-center shadow-sm">
+          <Calendar className="mx-auto h-12 w-12 text-navy-200" />
+          <h3 className="mt-4 text-lg font-bold text-[#102858]">No registrations here</h3>
+          <p className="mt-2 text-sm text-slate-500">Try another filter or browse open events.</p>
+        </Card>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {filtered.map((registration) => (
+          <RegistrationCard
+            key={registration.id}
+            registration={registration}
+            onCancel={() => setCancelTarget({ id: registration.id, title: registration.event_title ?? "this event" })}
+          />
+        ))}
+      </div>
+
+      <Modal
+        open={Boolean(cancelTarget)}
+        title="Cancel registration"
+        onClose={() => setCancelTarget(null)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setCancelTarget(null)}>Keep registration</Button>
+            <Button
+              variant="danger"
+              onClick={async () => {
+                if (cancelTarget) await handleCancel(cancelTarget.id);
+                setCancelTarget(null);
+              }}
+            >
+              Cancel registration
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-navy-600">Are you sure you want to cancel your registration for {cancelTarget?.title}?</p>
+      </Modal>
+    </div>
+  );
+}
+
+function RegistrationCard({ registration, onCancel }: { registration: Registration; onCancel: () => void }) {
+  const canCancel = ["pending", "approved", "waitlisted"].includes(registration.status);
+  const copyCode = async () => {
+    if (registration.team_code) await navigator.clipboard?.writeText(registration.team_code);
+  };
 
   return (
-    <div className="min-h-screen bg-navy-50">
-      <Navbar
-        title="My Registrations"
-        breadcrumbs={[
-          { label: "Events", href: "/events" },
-          { label: "My Registrations" },
-        ]}
-      />
-      <main className="mx-auto max-w-3xl px-6 py-8">
-        {isLoading && <div className="text-center text-navy-500 py-8">Loading…</div>}
-
-        {!isLoading && items.length === 0 && (
-          <div className="rounded-2xl border-2 border-dashed border-navy-200 p-10 text-center">
-            <Calendar className="mx-auto h-12 w-12 text-navy-200" />
-            <h3 className="mt-4 text-lg font-medium text-navy-800">No registrations yet</h3>
-            <p className="mt-2 text-navy-500">You haven't registered for any events.</p>
-            <Link to="/events" className="mt-6 inline-block">
-              <Button>
-                <Calendar className="mr-2 h-4 w-4" />
-                Browse Events
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        <div className="space-y-3">
-          {items.map((r) => (
-            <Card key={r.id} className="flex items-center justify-between gap-3 p-4">
-              <div>
-                <Link
-                  to={`/events/${r.event_id}`}
-                  className="text-sm font-medium text-navy-800 hover:underline"
-                >
-                  Event {r.event_id.slice(0, 8)}…
-                </Link>
-                <p className="mt-1 text-xs text-navy-500">
-                  Registered {new Date(r.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <Badge tone={statusTones[r.status] ?? "neutral"} className="text-xs">
-                  {r.status}
-                </Badge>
-                {["pending", "approved", "waitlisted"].includes(r.status) && (
-                  <Button size="sm" variant="danger" onClick={() => handleCancel(r.id)}>
-                    <X className="mr-1.5 h-3.5 w-3.5" />
-                    Cancel
-                  </Button>
-                )}
-              </div>
-            </Card>
-          ))}
+    <Card className="flex h-full flex-col border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Link to={`/events/${registration.event_id}`} className="text-lg font-bold text-[#102858] hover:underline">
+            {registration.event_title ?? `Event ${registration.event_id.slice(0, 8)}`}
+          </Link>
+          <p className="mt-1 text-xs text-slate-500">Registered {new Date(registration.created_at).toLocaleString()}</p>
         </div>
-      </main>
-    </div>
+        <Badge tone={statusTones[registration.status] ?? "neutral"} className="shrink-0 text-xs">
+          {registration.status}
+        </Badge>
+      </div>
+
+      {registration.team_name && (
+        <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+          <div className="flex items-center gap-2 font-bold">
+            <Users className="h-4 w-4" />
+            {registration.team_name}
+            {registration.team_role && <span className="text-xs font-semibold uppercase tracking-wide text-blue-600">{registration.team_role}</span>}
+          </div>
+          {registration.team_code && (
+            <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 font-mono font-black">
+              {registration.team_code}
+              <Button size="sm" variant="secondary" onClick={copyCode}>
+                <Copy className="mr-1.5 h-3.5 w-3.5" />
+                Copy
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="mt-auto flex flex-wrap justify-end gap-2 pt-4">
+        <Link to={`/events/${registration.event_id}`}>
+          <Button size="sm" variant="secondary">Details</Button>
+        </Link>
+        {canCancel && (
+          <Button size="sm" variant="danger" onClick={onCancel}>
+            <X className="mr-1.5 h-3.5 w-3.5" />
+            Cancel
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 }

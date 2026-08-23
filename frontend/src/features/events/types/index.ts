@@ -8,7 +8,8 @@ export type EventStatus =
   | "ongoing"
   | "completed"
   | "cancelled"
-  | "archived";
+  | "archived"
+  | "returned";
 
 export interface EventCategory {
   id: string;
@@ -20,6 +21,7 @@ export interface EventCategory {
 export interface EventApproval {
   id: string;
   reviewer_id: string;
+  reviewer_name: string | null;
   decision: string;
   comment: string | null;
   decided_at: string | null;
@@ -45,21 +47,65 @@ export interface SchoolEvent {
   view_count: number;
   created_at: string;
   updated_at: string;
+  organizer_name?: string | null;
+  organizer_avatar?: string | null;
+  organizer_role?: string | null;
   approvals?: EventApproval[];
+}
+
+export interface EventResult {
+  id: string;
+  event_id: string;
+  placement: number | null;
+  title: string;
+  winner_user_id: string | null;
+  team_id: string | null;
+  remarks: string | null;
+  attachment_file_id: string | null;
+  created_by: string;
+  created_at: string;
+  event_title?: string | null;
+  participant_name?: string | null;
+  participant_email?: string | null;
+  reviewer_name?: string | null;
+  team_name?: string | null;
+}
+
+export interface TeamMember {
+  id: string;
+  user_id: string;
+  role: "leader" | "member" | string;
+  joined_at: string | null;
+}
+
+export interface TeamRegistration {
+  id: string;
+  event_id: string;
+  name: string;
+  team_code: string;
+  leader_id: string;
+  members: TeamMember[];
 }
 
 export interface EventListResponse extends ApiResponse<SchoolEvent[]> {
   meta?: PaginationMeta;
 }
 
-export interface EventCategoryListResponse
-  extends ApiResponse<EventCategory[]> {}
+export type EventCategoryListResponse = ApiResponse<EventCategory[]>;
 
 export interface Registration {
   id: string;
   event_id: string;
   user_id: string;
+  event_title?: string | null;
+  participant_name?: string | null;
+  participant_email?: string | null;
+  reviewer_name?: string | null;
+  team_name?: string | null;
   team_id: string | null;
+  team_code?: string | null;
+  team_role?: "leader" | "member" | string | null;
+  team_leader_id?: string | null;
   status:
     | "pending"
     | "approved"

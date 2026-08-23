@@ -9,12 +9,17 @@ from __future__ import annotations
 
 from functools import wraps
 from typing import Callable
+import uuid
 
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 
 from app.common.exceptions import AuthorizationError
 from app.extensions import db
 from app.permissions.model import Permission, Role, RolePermission, UserRole
+
+
+def _coerce_user_id(user_id: str | uuid.UUID) -> uuid.UUID:
+    return user_id if isinstance(user_id, uuid.UUID) else uuid.UUID(str(user_id))
 
 
 def _load_user_permissions(user_id: str) -> set[str]:
@@ -24,7 +29,7 @@ def _load_user_permissions(user_id: str) -> set[str]:
         .join(RolePermission, RolePermission.permission_id == Permission.id)
         .join(Role, Role.id == RolePermission.role_id)
         .join(UserRole, UserRole.role_id == Role.id)
-        .where(UserRole.user_id == user_id)
+        .where(UserRole.user_id == _coerce_user_id(user_id))
     )
     rows = db.session.execute(stmt).scalars().all()
     return set(rows)
@@ -34,6 +39,20 @@ def has_permission(user_id: str, permission: str) -> bool:
     """Return whether a user holds ``permission`` (admin wildcard included)."""
     perms = _load_user_permissions(user_id)
     return "*" in perms or permission in perms
+
+
+def user_roles(user_id: str) -> set[str]:
+    """Return role names assigned to a user for resource-level filtering."""
+    stmt = (
+        db.select(Role.name)
+        .join(UserRole, UserRole.role_id == Role.id)
+        .where(UserRole.user_id == _coerce_user_id(user_id))
+    )
+    return set(db.session.execute(stmt).scalars().all())
+
+
+def has_role(user_id: str, role: str) -> bool:
+    return role in user_roles(user_id)
 
 
 def require_permission(permission: str) -> Callable:
@@ -93,7 +112,7 @@ def require_roles(*allowed_roles: str) -> Callable:
             stmt = (
                 db.select(Role.name)
                 .join(UserRole, UserRole.role_id == Role.id)
-                .where(UserRole.user_id == user_id)
+                .where(UserRole.user_id == _coerce_user_id(user_id))
             )
             roles = set(db.session.execute(stmt).scalars().all())
             if not set(allowed_roles).intersection(roles):

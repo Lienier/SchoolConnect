@@ -60,6 +60,7 @@ PERMISSIONS: dict[str, list[str]] = {
         "attendance.view",
         "attendance.manage",
         "attendance.scan",
+        "attendance.checkin",
     ],
     "notifications": [
         "notifications.view",
@@ -82,18 +83,16 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         for perm in perms
     ],
     "teacher": [
-        # Announcements: create/update/delete own + approve (includes others' drafts)
+        # Announcements: create/update/delete own and submit for admin approval
         "announcements.view",
         "announcements.create",
         "announcements.update",
         "announcements.delete",
-        "announcements.approve",
-        # Events: full management of assigned + approve proposed
+        # Events: full management of own proposals, admin approves publishing
         "events.view",
         "events.create",
         "events.update",
         "events.delete",
-        "events.approve",
         # Registrations: approve/manage/view
         "registrations.view",
         "registrations.approve",
@@ -102,6 +101,7 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         "attendance.view",
         "attendance.manage",
         "attendance.scan",
+        "attendance.checkin",
         # Reports: view + generate
         "reports.view",
         "reports.generate",
@@ -142,10 +142,10 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "student": [
         "announcements.view",
         "events.view",
-        "events.create",
         "registrations.view",
         "registrations.create",
         "attendance.view",
+        "attendance.checkin",
         "notifications.view",
         "users.update",
         "departments.view",

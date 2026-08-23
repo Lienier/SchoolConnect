@@ -12,8 +12,13 @@ import { Table, TD, TH, THead, TR, TBody } from "@/components/ui/Table";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/providers/ToastProvider";
 import { schoolApi } from "@/features/school/services/schoolApi";
-import { Navbar } from "@/components/ui/Navbar";
+import { PageHeader } from "@/components/ui/AdminPrimitives";
 import type { EntityKey } from "@/features/school/types";
+
+type SchoolRecord = Record<string, unknown> & { id?: string };
+type SchoolApiMethod = (first?: unknown, second?: unknown) => Promise<unknown>;
+type DynamicSchoolApi = Record<string, SchoolApiMethod>;
+type ApiError = { response?: { data?: { message?: string } } };
 
 const TABS: { key: EntityKey; label: string; managePerm: string }[] = [
   { key: "departments", label: "Departments", managePerm: "departments.manage" },
@@ -31,12 +36,8 @@ export default function SchoolPage() {
   const canManage = can(active.managePerm);
 
   return (
-    <div className="min-h-screen bg-navy-50">
-      <Navbar
-        title="School Structure"
-        breadcrumbs={[{ label: "School Structure" }]}
-      />
-      <main className="mx-auto max-w-7xl px-6 py-8">
+    <div className="space-y-6">
+      <PageHeader title="School Structure" subtitle="Manage departments, courses, sections, organizations, academic years, and semesters." />
         <div className="mb-6 inline-flex flex-wrap rounded-xl border border-navy-200 bg-white p-1">
           {TABS.map((t) => (
             <button
@@ -52,7 +53,6 @@ export default function SchoolPage() {
           ))}
         </div>
         <EntityTab key={tab} entity={tab} canManage={canManage} />
-      </main>
     </div>
   );
 }
@@ -62,19 +62,19 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
   const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [editor, setEditor] = useState<{ open: boolean; item: any | null }>({ open: false, item: null });
+  const [editor, setEditor] = useState<{ open: boolean; item: SchoolRecord | null }>({ open: false, item: null });
 
   const query = useQuery({
     queryKey: [entity, page, search],
     queryFn: () =>
-      (schoolApi as any)[`list${capitalize(entity)}`]({ page, search: search || undefined }),
+      (schoolApi as unknown as DynamicSchoolApi)[`list${capitalize(entity)}`]({ page, search: search || undefined }),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: [entity] });
 
   const saveMut = useMutation({
-    mutationFn: (payload: any) => {
-      const api = schoolApi as any;
+    mutationFn: (payload: SchoolRecord) => {
+      const api = schoolApi as unknown as DynamicSchoolApi;
       const name = capitalize(singular(entity));
       if (payload.id) return api[`update${name}`](payload.id, payload);
       return api[`create${name}`](payload);
@@ -84,21 +84,22 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
       setEditor({ open: false, item: null });
       invalidate();
     },
-    onError: (e: any) => toast(e?.response?.data?.message ?? "Failed to save.", "error"),
+    onError: (e: unknown) => toast((e as ApiError)?.response?.data?.message ?? "Failed to save.", "error"),
   });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) =>
-      (schoolApi as any)[`delete${capitalize(singular(entity))}`](id),
+      (schoolApi as unknown as DynamicSchoolApi)[`delete${capitalize(singular(entity))}`](id),
     onSuccess: () => {
       toast("Deleted.", "success");
       invalidate();
     },
-    onError: (e: any) => toast(e?.response?.data?.message ?? "Failed to delete.", "error"),
+    onError: (e: unknown) => toast((e as ApiError)?.response?.data?.message ?? "Failed to delete.", "error"),
   });
 
-  const items: any[] = query.data?.data ?? [];
-  const meta = query.data?.meta;
+  const result = query.data as { data?: SchoolRecord[]; meta?: { page: number; total_pages: number } } | undefined;
+  const items = result?.data ?? [];
+  const meta = result?.meta;
 
   return (
     <Card className="p-4">
@@ -186,7 +187,7 @@ function columnsFor(entity: EntityKey): string[] {
   }
 }
 
-function cellsFor(entity: EntityKey, item: any): ReactNode[] {
+function cellsFor(entity: EntityKey, item: SchoolRecord): ReactNode[] {
   switch (entity) {
     case "departments": return [item.code, item.name, item.description ?? "—"];
     case "courses": return [item.code, item.name, item.department_id];
@@ -204,12 +205,12 @@ function EntityForm({
   submitting,
 }: {
   entity: EntityKey;
-  item: any | null;
-  onSubmit: (payload: any) => void;
+  item: SchoolRecord | null;
+  onSubmit: (payload: SchoolRecord) => void;
   submitting: boolean;
 }) {
-  const [form, setForm] = useState<any>(item ?? {});
-  const set = (key: string, value: any) => setForm((f: any) => ({ ...f, [key]: value }));
+  const [form, setForm] = useState<SchoolRecord>(item ?? {});
+  const set = (key: string, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
   const fields = useMemo(() => fieldConfig(entity), [entity]);
 
   return (

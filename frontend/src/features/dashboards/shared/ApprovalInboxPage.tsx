@@ -1,154 +1,204 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/Button';
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, FileCheck2, Megaphone, X } from "lucide-react";
+
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Modal } from "@/components/ui/Modal";
+import { announcementsApi } from "@/features/announcements/services/announcementsApi";
+import { eventsApi } from "@/features/events/services/eventsApi";
+import { useToast } from "@/providers/ToastProvider";
+
+type ApprovalType = "announcement" | "event";
+type ApprovalDecision = "approved" | "rejected" | "returned";
 
 interface ApprovalItem {
   id: string;
-  type: 'event' | 'announcement';
+  type: ApprovalType;
   title: string;
-  organizer: string;
-  submitted_date: string;
-  status: 'pending';
+  description: string | null;
+  submittedBy: string | null;
+  submittedAt: string;
+  status: string;
 }
 
-const MOCK_APPROVALS: ApprovalItem[] = [
-  {
-    id: 'app1',
-    type: 'event',
-    title: 'Science Fair 2026',
-    organizer: 'Alice Johnson',
-    submitted_date: new Date(Date.now() - 86400000).toISOString(),
-    status: 'pending'
-  },
-  {
-    id: 'app2',
-    type: 'announcement',
-    title: 'New Cafeteria Menu',
-    organizer: 'Food Services',
-    submitted_date: new Date(Date.now() - 172800000).toISOString(),
-    status: 'pending'
-  }
-];
-
 export function ApprovalInboxPage() {
-  const [items, setItems] = useState<ApprovalItem[]>(MOCK_APPROVALS);
-  const [selectedItem, setSelectedItem] = useState<ApprovalItem | null>(null);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | 'revise' | null>(null);
-  const [comment, setComment] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [confirm, setConfirm] = useState<{
+    item: ApprovalItem;
+    decision: ApprovalDecision;
+  } | null>(null);
+  const [comment, setComment] = useState("");
 
-  const handleAction = (item: ApprovalItem, type: 'approve' | 'reject' | 'revise') => {
-    setSelectedItem(item);
-    setActionType(type);
-    setIsModalOpen(true);
-  };
+  const announcements = useQuery({
+    queryKey: ["approvals", "announcements", "pending"],
+    queryFn: () => announcementsApi.list({ status: "pending_approval" }),
+  });
+  const events = useQuery({
+    queryKey: ["approvals", "events", "pending"],
+    queryFn: () => eventsApi.list({ status: "pending_approval" }),
+  });
 
-  const confirmAction = () => {
-    if (selectedItem) {
-      setItems(items.filter(i => i.id !== selectedItem.id));
-    }
-    setIsModalOpen(false);
-    setSelectedItem(null);
-    setComment('');
-    setActionType(null);
-  };
+  const items = useMemo<ApprovalItem[]>(() => {
+    const announcementItems = (announcements.data?.data ?? []).map((item) => ({
+      id: item.id,
+      type: "announcement" as const,
+      title: item.title,
+      description: item.summary ?? item.body,
+      submittedBy: item.author_name ?? null,
+      submittedAt: item.created_at,
+      status: item.status,
+    }));
+    const eventItems = (events.data?.data ?? []).map((item) => ({
+      id: item.id,
+      type: "event" as const,
+      title: item.title,
+      description: item.description,
+      submittedBy: item.organizer_name ?? null,
+      submittedAt: item.created_at,
+      status: item.status,
+    }));
+    return [...announcementItems, ...eventItems].sort(
+      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+    );
+  }, [announcements.data?.data, events.data?.data]);
+
+  const action = useMutation({
+    mutationFn: async ({
+      item,
+      decision,
+      comment,
+    }: {
+      item: ApprovalItem;
+      decision: ApprovalDecision;
+      comment?: string;
+    }) =>
+      item.type === "announcement"
+        ? announcementsApi.approve(item.id, decision, comment)
+        : eventsApi.approve(item.id, decision, comment),
+    onSuccess: () => {
+      toast("Approval updated.", "success");
+      queryClient.invalidateQueries({ queryKey: ["approvals"] });
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: () => toast("Approval action failed.", "error"),
+    onSettled: () => {
+      setConfirm(null);
+      setComment("");
+    },
+  });
+
+  const isLoading = announcements.isLoading || events.isLoading;
+  const isError = announcements.isError || events.isError;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Approval Inbox</h1>
-      
-      {items.length === 0 ? (
-        <div className="bg-white p-12 text-center rounded-xl border border-gray-200">
-          <div className="text-4xl mb-4">✅</div>
-          <h2 className="text-xl font-medium text-gray-900 mb-2">All caught up!</h2>
-          <p className="text-gray-500">There are no pending items requiring your approval.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {items.map(item => (
-            <div key={item.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
-                    PENDING
-                  </span>
-                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {item.type}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900">{item.title}</h3>
-                <p className="text-sm text-gray-500">
-                  Submitted by {item.organizer} on {new Date(item.submitted_date).toLocaleDateString()}
-                </p>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => handleAction(item, 'approve')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  ✅ Approve
-                </Button>
-                <Button 
-                  onClick={() => handleAction(item, 'revise')}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white"
-                >
-                  🔄 Revise
-                </Button>
-                <Button 
-                  onClick={() => handleAction(item, 'reject')}
-                  className="bg-red-600 hover:bg-red-700 text-white"
-                >
-                  ❌ Reject
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+          Workflow
+        </p>
+        <h1 className="mt-2 text-3xl font-bold tracking-tight text-[#102858]">
+          Approval Inbox
+        </h1>
+        <p className="mt-2 text-sm text-slate-500">
+          Review pending announcements and event proposals from one queue.
+        </p>
+      </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">
-                {actionType === 'approve' && 'Confirm Approval'}
-                {actionType === 'reject' && 'Confirm Rejection'}
-                {actionType === 'revise' && 'Return for Revision'}
-              </h3>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-4">
-                You are about to {actionType} "{selectedItem?.title}". Would you like to add a comment?
-              </p>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Add your review comments here..."
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none h-24 resize-none"
-              />
-            </div>
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={confirmAction}
-                className={`px-4 py-2 text-sm font-medium text-white rounded-lg ${
-                  actionType === 'approve' ? 'bg-green-600 hover:bg-green-700' : 
-                  actionType === 'reject' ? 'bg-red-600 hover:bg-red-700' : 
-                  'bg-yellow-500 hover:bg-yellow-600'
-                }`}
-              >
-                Confirm
-              </button>
-            </div>
+      <Card className="overflow-hidden border-slate-200 p-0 shadow-sm">
+        {isLoading && <div className="p-8 text-center text-sm text-slate-500">Loading approvals...</div>}
+        {isError && (
+          <div className="p-8 text-center text-sm text-red-600">
+            Could not load approvals.
           </div>
+        )}
+        {!isLoading && !isError && items.length === 0 && (
+          <div className="p-12 text-center text-sm text-slate-500">
+            <FileCheck2 className="mx-auto mb-3 h-8 w-8 text-slate-400" />
+            All caught up. There are no pending submissions.
+          </div>
+        )}
+        {items.length > 0 && (
+          <div className="divide-y divide-slate-100">
+            {items.map((item) => (
+              <div key={`${item.type}-${item.id}`} className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Badge tone="warning">{item.status.replaceAll("_", " ")}</Badge>
+                    <Badge tone="info">{item.type}</Badge>
+                  </div>
+                  <h2 className="text-lg font-bold text-[#102858]">{item.title}</h2>
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+                    {item.description ?? "No description provided."}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Submitted by {item.submittedBy ?? "Unknown"} on{" "}
+                    {new Date(item.submittedAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" disabled={action.isPending} onClick={() => setConfirm({ item, decision: "approved" })}>
+                    <Check size={14} className="mr-1" />
+                    Approve
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={action.isPending} onClick={() => setConfirm({ item, decision: "returned" })}>
+                    <Megaphone size={14} className="mr-1" />
+                    Return
+                  </Button>
+                  <Button size="sm" variant="danger" disabled={action.isPending} onClick={() => setConfirm({ item, decision: "rejected" })}>
+                    <X size={14} className="mr-1" />
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Modal
+        open={Boolean(confirm)}
+        title="Confirm approval action"
+        onClose={() => setConfirm(null)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirm(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant={confirm?.decision === "rejected" ? "danger" : "primary"}
+              disabled={action.isPending}
+              onClick={() =>
+                confirm &&
+                action.mutate({
+                  item: confirm.item,
+                  decision: confirm.decision,
+                  comment: comment.trim() || undefined,
+                })
+              }
+            >
+              {action.isPending ? "Saving..." : "Confirm"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">
+            This will mark "{confirm?.item.title}" as {confirm?.decision}.
+          </p>
+          <textarea
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Optional review comment"
+            className="h-24 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
+
+export default ApprovalInboxPage;

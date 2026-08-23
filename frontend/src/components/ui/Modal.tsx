@@ -1,5 +1,6 @@
 /** Accessible modal dialog (shadcn/ui new-york style). */
 import { type ReactNode } from "react";
+import { X } from "lucide-react";
 
 import { cn } from "@/utils/cn";
 
@@ -32,11 +33,12 @@ export function Modal({ open, title, onClose, children, footer, className }: Mod
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-navy-800">{title}</h2>
           <button
+            type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-1 text-accent hover:bg-navy-50"
+            className="rounded-lg p-1.5 text-navy-500 transition-colors hover:bg-navy-50 hover:text-navy-800"
           >
-            Close
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
         <div className="max-h-[70vh] overflow-y-auto">{children}</div>

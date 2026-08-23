@@ -26,6 +26,6 @@ export interface AuthTokens {
   user: AuthUser;
 }
 
-export interface LoginResponse extends ApiResponse<AuthTokens> {}
-export interface RegisterResponse extends ApiResponse<AuthTokens> {}
-export interface MeResponse extends ApiResponse<AuthUser> {}
+export type LoginResponse = ApiResponse<AuthTokens>;
+export type RegisterResponse = ApiResponse<AuthTokens>;
+export type MeResponse = ApiResponse<AuthUser>;

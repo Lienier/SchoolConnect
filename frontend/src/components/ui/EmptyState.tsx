@@ -12,7 +12,6 @@ import {
   Bell,
   School,
   Search,
-  FileText,
   UserPlus,
   Plus,
 } from "lucide-react";

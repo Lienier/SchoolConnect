@@ -8,14 +8,16 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Table, TD, TH, THead, TR, TBody } from "@/components/ui/Table";
-import { Navbar } from "@/components/ui/Navbar";
+import { PageHeader } from "@/components/ui/AdminPrimitives";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/providers/ToastProvider";
 import { rolesApi } from "@/features/roles/services/rolesApi";
 import type { Permission, Role } from "@/features/roles/types";
 import { Plus, Shield, Copy, Settings, Trash2 } from "lucide-react";
 
-const EMPTY_FORM = { name: "", display_name: "", description: "" };
+type RoleFormValues = { name: string; display_name: string; description: string };
+type ApiError = { response?: { data?: { message?: string } } };
+const apiError = (error: unknown, fallback: string) => (error as ApiError)?.response?.data?.message ?? fallback;
 
 export default function RolesPage() {
   const { can } = usePermissions();
@@ -44,14 +46,14 @@ export default function RolesPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["roles"] });
 
   const createMut = useMutation({
-    mutationFn: (payload: typeof EMPTY_FORM & { permissions: string[] }) =>
+    mutationFn: (payload: RoleFormValues & { permissions: string[] }) =>
       rolesApi.create(payload),
     onSuccess: () => {
       toast("Role created.", "success");
       setEditor({ open: false, role: null });
       invalidate();
     },
-    onError: (e: any) => toast(e?.response?.data?.message ?? "Failed to create role.", "error"),
+    onError: (e: unknown) => toast(apiError(e, "Failed to create role."), "error"),
   });
 
   const updateMut = useMutation({
@@ -62,7 +64,7 @@ export default function RolesPage() {
       setEditor({ open: false, role: null });
       invalidate();
     },
-    onError: (e: any) => toast(e?.response?.data?.message ?? "Failed to update role.", "error"),
+    onError: (e: unknown) => toast(apiError(e, "Failed to update role."), "error"),
   });
 
   const deleteMut = useMutation({
@@ -71,7 +73,7 @@ export default function RolesPage() {
       toast("Role deleted.", "success");
       invalidate();
     },
-    onError: (e: any) => toast(e?.response?.data?.message ?? "Failed to delete role.", "error"),
+    onError: (e: unknown) => toast(apiError(e, "Failed to delete role."), "error"),
   });
 
   const cloneMut = useMutation({
@@ -85,7 +87,7 @@ export default function RolesPage() {
       setCloner(null);
       invalidate();
     },
-    onError: (e: any) => toast(e?.response?.data?.message ?? "Failed to clone role.", "error"),
+    onError: (e: unknown) => toast(apiError(e, "Failed to clone role."), "error"),
   });
 
   const assignMut = useMutation({
@@ -96,8 +98,8 @@ export default function RolesPage() {
       setPermissionEditor(null);
       invalidate();
     },
-    onError: (e: any) =>
-      toast(e?.response?.data?.message ?? "Failed to update permissions.", "error"),
+    onError: (e: unknown) =>
+      toast(apiError(e, "Failed to update permissions."), "error"),
   });
 
   const roles = rolesQuery.data?.data ?? [];
@@ -105,10 +107,10 @@ export default function RolesPage() {
   const perms: Permission[] = permsQuery.data ?? [];
 
   return (
-    <div className="min-h-screen bg-navy-50">
-      <Navbar
+    <div className="space-y-6">
+      <PageHeader
         title="Roles & Permissions"
-        breadcrumbs={[{ label: "Roles" }]}
+        subtitle="Create roles and manage permission assignments."
         actions={
           can("roles.create") && (
             <Button onClick={() => setEditor({ open: true, role: null })}>
@@ -118,7 +120,6 @@ export default function RolesPage() {
           )
         }
       />
-      <main className="mx-auto max-w-7xl px-6 py-8">
         <Card className="p-4">
           <Input
             placeholder="Search roles..."
@@ -227,7 +228,6 @@ export default function RolesPage() {
             />
           )}
         </Modal>
-      </main>
     </div>
   );
 }

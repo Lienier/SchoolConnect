@@ -23,4 +23,3 @@ from app.notifications import model as _notifications_models  # noqa: F401
 from app.audit import model as _audit_models  # noqa: F401
 
 __all__ = ["AuditMixin", "BaseModel", "SoftDeleteMixin", "TimestampMixin", "UUIDMixin"]
-

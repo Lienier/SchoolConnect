@@ -11,7 +11,7 @@ from flask import Flask
 
 from app.common.registry import register_blueprints
 from app.common.responses import success_response
-from app.config import get_config
+from app.config import get_config, validate_security_config
 from app.extensions import cache, cors, db, jwt, limiter, mail, migrate
 from app.middleware import (
     configure_logging,
@@ -30,7 +30,9 @@ def create_app(config_name: str | None = None) -> Flask:
         A fully configured Flask application.
     """
     app = Flask(__name__)
-    app.config.from_object(get_config(config_name))
+    config = get_config(config_name)
+    validate_security_config(config)
+    app.config.from_object(config)
 
     configure_logging(app)
     _init_extensions(app)

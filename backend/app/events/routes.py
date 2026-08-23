@@ -16,9 +16,10 @@ from app.events.validators import (
     EventCategoryCreateRequest,
     EventCreateRequest,
     EventStatusRequest,
+    EventResultRequest,
     EventUpdateRequest,
 )
-from app.permissions.decorators import has_permission, require_permission
+from app.permissions.decorators import has_permission, has_role, require_permission
 
 bp = Blueprint("events", __name__, url_prefix="/events")
 _service = EventService()
@@ -37,8 +38,16 @@ def _body() -> dict:
 def list_events():
     """List events (paginated) with optional status/category/organizer filters."""
     params = PaginationParams.from_request()
+    actor = get_jwt_identity()
+    requested_status = request.args.get("status")
+    # Students receive only public, actionable events. Workflow records remain
+    # available to staff who have the matching management permissions.
+    if has_role(actor, "student"):
+        requested_status = requested_status or "approved"
+        if requested_status not in {"approved", "ongoing"}:
+            requested_status = "approved"
     query = _service.list_events(
-        status=request.args.get("status"),
+        status=requested_status,
         category_id=request.args.get("category_id"),
         organizer_id=request.args.get("organizer_id"),
     )
@@ -52,7 +61,46 @@ def list_events():
 def get_event(event_id: str):
     """Get a single event with approval history."""
     event = _service.get_event(uuid.UUID(event_id))
-    return success_response(data=event.to_dict(include_approvals=True))
+    if has_role(get_jwt_identity(), "student") and event.status not in {"approved", "ongoing"}:
+        from app.common.exceptions import NotFoundError
+        raise NotFoundError("Event not found.")
+    return success_response(data=event.to_dict(include_approvals=not has_role(get_jwt_identity(), "student")))
+
+
+@bp.get("/<event_id>/results")
+@jwt_required()
+@require_permission("events.view")
+def list_results(event_id: str):
+    return success_response(data=[r.to_dict() for r in _service.list_results(uuid.UUID(event_id))])
+
+
+@bp.post("/<event_id>/results")
+@jwt_required()
+@require_permission("events.update")
+def create_result(event_id: str):
+    payload = EventResultRequest(**_body())
+    actor = uuid.UUID(get_jwt_identity())
+    result = _service.create_result(uuid.UUID(event_id), actor, **payload.model_dump(exclude_none=True))
+    return success_response(data=result.to_dict(), message="Event result added.", status_code=201)
+
+
+@bp.delete("/results/<result_id>")
+@jwt_required()
+@require_permission("events.update")
+def delete_result(result_id: str):
+    actor = uuid.UUID(get_jwt_identity())
+    _service.delete_result(uuid.UUID(result_id), actor, can_override=has_permission(str(actor), "events.approve"))
+    return success_response(message="Event result removed.")
+
+
+@bp.patch("/results/<result_id>")
+@jwt_required()
+@require_permission("events.update")
+def update_result(result_id: str):
+    payload = EventResultRequest(**_body())
+    actor = uuid.UUID(get_jwt_identity())
+    result = _service.update_result(uuid.UUID(result_id), actor, can_override=has_permission(str(actor), "events.approve"), **payload.model_dump(exclude_none=True))
+    return success_response(data=result.to_dict(), message="Event result updated.")
 
 
 @bp.post("")

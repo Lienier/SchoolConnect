@@ -47,7 +47,7 @@ class Event(db.Model):
     __tablename__ = "events"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('draft','pending_approval','approved','ongoing','completed','cancelled','archived')",
+            "status IN ('draft','pending_approval','approved','ongoing','completed','cancelled','archived','returned')",
             name="ck_events_status",
         ),
         CheckConstraint("capacity IS NULL OR capacity >= 0", name="ck_events_capacity"),
@@ -104,7 +104,13 @@ class Event(db.Model):
     )
 
     category: Mapped["EventCategory | None"] = relationship("EventCategory", lazy="joined")
+    organizer: Mapped["User"] = relationship(
+        "User", foreign_keys=[organizer_id], lazy="joined"
+    )
     approvals: Mapped[list["EventApproval"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
+    results: Mapped[list["EventResult"]] = relationship(
         back_populates="event", cascade="all, delete-orphan"
     )
 
@@ -138,6 +144,11 @@ class Event(db.Model):
             "view_count": self.view_count,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "organizer_name": self.organizer.full_name if self.organizer else None,
+            "organizer_avatar": self.organizer.avatar_url if self.organizer else None,
+            "organizer_role": (
+                self.organizer.roles[0].name if self.organizer and self.organizer.roles else None
+            ),
         }
         if include_approvals:
             data["approvals"] = [
@@ -151,6 +162,7 @@ class Event(db.Model):
                 }
                 for a in self.approvals
             ]
+            data["results"] = [r.to_dict() for r in self.results]
         return data
 
 
@@ -193,6 +205,7 @@ class EventRequirement(db.Model):
         index=True,
     )
     requirement_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    requirement_value: Mapped[str | None] = mapped_column(String(100), nullable=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     is_mandatory: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
@@ -250,6 +263,35 @@ class CalendarEvent(db.Model):
     is_public: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
+class EventResult(db.Model):
+    """Structured result or award published for a completed event."""
+
+    __tablename__ = "event_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_id: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True)
+    placement: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    title: Mapped[str] = mapped_column(String(160), nullable=False)
+    winner_user_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    team_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("teams.id"), nullable=True)
+    remarks: Mapped[str | None] = mapped_column(Text, nullable=True)
+    attachment_file_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("uploaded_files.id"), nullable=True)
+    created_by: Mapped[uuid.UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, server_default=func.now(), nullable=False)
+
+    event: Mapped[Event] = relationship(back_populates="results")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": str(self.id), "event_id": str(self.event_id), "placement": self.placement,
+            "title": self.title, "winner_user_id": str(self.winner_user_id) if self.winner_user_id else None,
+            "team_id": str(self.team_id) if self.team_id else None, "remarks": self.remarks,
+            "attachment_file_id": str(self.attachment_file_id) if self.attachment_file_id else None,
+            "created_by": str(self.created_by), "created_at": self.created_at.isoformat(),
+        }
+
+
 __all__ = [
     "EventCategory",
     "Event",
@@ -257,4 +299,5 @@ __all__ = [
     "EventRequirement",
     "EventApproval",
     "CalendarEvent",
+    "EventResult",
 ]

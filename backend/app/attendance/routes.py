@@ -16,7 +16,7 @@ from app.attendance.validators import (
 from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
-from app.permissions.decorators import require_permission
+from app.permissions.decorators import has_permission, require_any_permission, require_permission
 
 bp = Blueprint("attendance", __name__, url_prefix="/attendance")
 _service = AttendanceService()
@@ -29,15 +29,31 @@ def _body() -> dict:
     return data
 
 
+@bp.get("/mine")
+@jwt_required()
+def list_mine():
+    """Return only the signed-in user's attendance records."""
+    actor = uuid.UUID(get_jwt_identity())
+    params = PaginationParams.from_request()
+    items, meta = paginate(_service.list_for_user(actor), params)
+    return success_response(data=[a.to_dict() for a in items], meta=meta)
+
+
 @bp.get("/event/<event_id>")
 @jwt_required()
 @require_permission("attendance.view")
 def list_for_event(event_id: str):
-    """List attendance records for an event (paginated)."""
-    params = PaginationParams.from_request()
-    query = _service.list_for_event(uuid.UUID(event_id))
-    items, meta = paginate(query, params)
-    return success_response(data=[a.to_dict() for a in items], meta=meta)
+    """List the attendance sheet for an event."""
+    items = _service.sheet_for_event(uuid.UUID(event_id))
+    return success_response(
+        data=items,
+        meta={
+            "page": 1,
+            "per_page": len(items),
+            "total_items": len(items),
+            "total_pages": 1,
+        },
+    )
 
 
 @bp.get("/event/<event_id>/summary")
@@ -55,6 +71,9 @@ def mark():
     """Manually mark a participant's attendance."""
     payload = MarkAttendanceRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
+    event = _service._get_event(uuid.UUID(payload.event_id))
+    if event.organizer_id != actor and not has_permission(str(actor), "events.approve"):
+        raise ValidationError("You can only record attendance for events you manage.")
     record = _service.mark(
         event_id=uuid.UUID(payload.event_id),
         user_id=uuid.UUID(payload.user_id),
@@ -70,6 +89,10 @@ def mark():
 def generate_qr():
     """Generate a single-use QR token for check-in."""
     payload = GenerateQrRequest(**_body())
+    actor = uuid.UUID(get_jwt_identity())
+    event = _service._get_event(uuid.UUID(payload.event_id))
+    if event.organizer_id != actor and not has_permission(str(actor), "events.approve"):
+        raise ValidationError("You can only generate attendance codes for events you manage.")
     token = _service.generate_qr(
         event_id=uuid.UUID(payload.event_id),
         user_id=uuid.UUID(payload.user_id) if payload.user_id else None,
@@ -80,7 +103,7 @@ def generate_qr():
 
 @bp.post("/qr/check-in")
 @jwt_required()
-@require_permission("attendance.scan")
+@require_any_permission("attendance.scan", "attendance.checkin")
 def qr_check_in():
     """Check in a participant using a QR token."""
     payload = QrCheckInRequest(**_body())

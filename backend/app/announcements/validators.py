@@ -50,10 +50,17 @@ class AnnouncementUpdateRequest(BaseModel):
 
 
 class AnnouncementApprovalRequest(BaseModel):
-    """Payload to approve or reject an announcement."""
+    """Payload to approve, reject, or return an announcement."""
 
-    decision: str  # approved | rejected
+    decision: str  # approved | rejected | returned
     comment: Optional[str] = None
+
+    @field_validator("decision")
+    @classmethod
+    def _valid_decision(cls, value: str) -> str:
+        if value not in {"approved", "rejected", "returned"}:
+            raise ValueError("decision must be approved, rejected, or returned.")
+        return value
 
 
 class CategoryCreateRequest(BaseModel):

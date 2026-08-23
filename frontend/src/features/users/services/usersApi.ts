@@ -1,6 +1,8 @@
 /** Users API calls (admin management surface). */
 import { apiClient } from "@/api/client";
-import type { UserListResponse, UserStatus } from "@/features/users/types";
+import type { ApiResponse } from "@/types/api";
+import type { AuthUser } from "@/features/auth/types";
+import type { UserListItem, UserListResponse, UserStatus } from "@/features/users/types";
 
 export const usersApi = {
   async list(
@@ -27,5 +29,39 @@ export const usersApi = {
   },
   async resetPassword(id: string, new_password: string): Promise<void> {
     await apiClient.post(`/users/${id}/reset-password`, { new_password });
+  },
+  async create(payload: {
+    email: string;
+    full_name: string;
+    password: string;
+    username?: string;
+    roles: string[];
+    status: UserStatus;
+  }): Promise<UserListItem> {
+    const { data } = await apiClient.post<ApiResponse<UserListItem>>("/users", payload);
+    return data.data;
+  },
+  async update(id: string, payload: { full_name?: string; username?: string | null; status?: UserStatus }): Promise<UserListItem> {
+    const { data } = await apiClient.patch<ApiResponse<UserListItem>>(`/users/${id}`, payload);
+    return data.data;
+  },
+  async delete(id: string): Promise<void> {
+    await apiClient.delete(`/users/${id}`);
+  },
+  async assignRoles(id: string, roles: string[]): Promise<UserListItem> {
+    const { data } = await apiClient.put<ApiResponse<UserListItem>>(`/users/${id}/roles`, { roles });
+    return data.data;
+  },
+  async roles(): Promise<{ name: string; display_name: string; is_system: boolean }[]> {
+    const { data } = await apiClient.get<ApiResponse<{ name: string; display_name: string; is_system: boolean }[]>>("/users/roles/all");
+    return data.data;
+  },
+  async getMyProfile(): Promise<AuthUser> {
+    const { data } = await apiClient.get<ApiResponse<AuthUser>>("/users/me/profile");
+    return data.data;
+  },
+  async updateMyProfile(payload: { first_name?: string | null; last_name?: string | null; phone?: string | null }): Promise<AuthUser> {
+    const { data } = await apiClient.patch<ApiResponse<AuthUser>>("/users/me/profile", payload);
+    return data.data;
   },
 };

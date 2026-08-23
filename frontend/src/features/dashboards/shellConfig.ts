@@ -12,7 +12,7 @@ export interface DashboardShellConfig {
 
 const SHELL_BY_ROLE: Record<string, DashboardShellConfig> = {
   admin: { title: "Administrator", nav: adminNav },
-  teacher: { title: "Teacher", nav: teacherNav },
+  teacher: { title: "Professor", nav: teacherNav },
   student_council: { title: "Student Council", nav: officerNav },
   student: { title: "Student", nav: studentNav },
 };

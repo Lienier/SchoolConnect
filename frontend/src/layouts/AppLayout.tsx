@@ -14,7 +14,8 @@ export function AppLayout() {
 
   // Close sidebar on route change for mobile
   useEffect(() => {
-    setSidebarOpen(false);
+    const timer = window.setTimeout(() => setSidebarOpen(false), 0);
+    return () => window.clearTimeout(timer);
   }, [location.pathname]);
 
   const hasSidebar = role === "admin" || role === "teacher";

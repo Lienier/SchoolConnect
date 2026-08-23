@@ -58,6 +58,15 @@ class EventStatusRequest(BaseModel):
     status: str
 
 
+class EventResultRequest(BaseModel):
+    placement: Optional[int] = Field(default=None, ge=1)
+    title: str = Field(min_length=1, max_length=160)
+    winner_user_id: Optional[str] = None
+    team_id: Optional[str] = None
+    remarks: Optional[str] = None
+    attachment_file_id: Optional[str] = None
+
+
 class EventCategoryCreateRequest(BaseModel):
     """Payload to create an event category."""
 

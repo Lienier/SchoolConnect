@@ -43,15 +43,12 @@ function clearTokens() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_STORAGE_KEY)));
 
   // On mount: if a token exists, fetch the current user.
   useEffect(() => {
     const token = localStorage.getItem(TOKEN_STORAGE_KEY);
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
+    if (!token) return;
     authApi
       .me()
       .then(setUser)

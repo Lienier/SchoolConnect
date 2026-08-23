@@ -83,6 +83,7 @@ class Announcement(db.Model):
         db.JSON, nullable=True  # stored as JSON array of role names or ["all"]
     )
     is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_emergency: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     view_count: Mapped[int] = mapped_column(default=0, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(
@@ -101,8 +102,12 @@ class Announcement(db.Model):
     category: Mapped["AnnouncementCategory | None"] = relationship(
         "AnnouncementCategory", lazy="joined"
     )
+    author: Mapped["User"] = relationship("User", foreign_keys=[author_id], lazy="joined")
     approvals: Mapped[list["AnnouncementApproval"]] = relationship(
         back_populates="announcement", cascade="all, delete-orphan"
+    )
+    attachments: Mapped[list["AnnouncementAttachment"]] = relationship(
+        back_populates="announcement", cascade="all, delete-orphan", lazy="selectin"
     )
 
     @property
@@ -128,9 +133,17 @@ class Announcement(db.Model):
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "target_audience": self.target_audience,
             "is_pinned": self.is_pinned,
+            "is_emergency": self.is_emergency,
             "view_count": self.view_count,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "author_name": self.author.full_name if self.author else None,
+            "author_avatar": self.author.avatar_url if self.author else None,
+            "author_role": (
+                self.author.roles[0].name if self.author and self.author.roles else None
+            ),
+            "attachments": [attachment.to_dict() for attachment in self.attachments],
+            "banner_url": self.banner_url,
         }
         if include_approvals:
             data["approvals"] = [
@@ -144,6 +157,15 @@ class Announcement(db.Model):
                 for a in self.approvals
             ]
         return data
+
+    @property
+    def banner_url(self) -> str | None:
+        """Return the first image attachment URL for feed/card previews."""
+        for attachment in self.attachments:
+            file = attachment.file
+            if file and file.content_type.startswith("image/"):
+                return file.url
+        return None
 
 
 class AnnouncementApproval(db.Model):
@@ -226,6 +248,19 @@ class AnnouncementAttachment(db.Model):
         ForeignKey("uploaded_files.id", ondelete="CASCADE"),
         nullable=False,
     )
+    announcement: Mapped[Announcement] = relationship(back_populates="attachments")
+    file: Mapped[UploadedFile] = relationship("UploadedFile", lazy="joined")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": str(self.id),
+            "file_id": str(self.file_id),
+            "filename": self.file.filename if self.file else None,
+            "original_name": self.file.original_name if self.file else None,
+            "content_type": self.file.content_type if self.file else None,
+            "size_bytes": self.file.size_bytes if self.file else None,
+            "url": self.file.url if self.file else None,
+        }
 
 
 __all__ = [

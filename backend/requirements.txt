@@ -30,3 +30,6 @@ cloudinary>=1.39
 # WSGI server (production)
 gunicorn>=21.2; platform_system != "Windows"
 waitress>=3.0; platform_system == "Windows"
+
+# Test tooling
+pytest>=8.0

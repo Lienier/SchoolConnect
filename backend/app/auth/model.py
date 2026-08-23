@@ -26,6 +26,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.extensions import db
 from app.utils.datetime import utcnow as _utcnow
 
+EMAIL_TYPE = CITEXT().with_variant(String(255), "sqlite")
+IP_ADDRESS_TYPE = INET().with_variant(String(64), "sqlite")
+
 
 class User(db.Model):
     """A system user (student, teacher, officer or administrator)."""
@@ -35,7 +38,7 @@ class User(db.Model):
     id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    email: Mapped[str] = mapped_column(CITEXT, unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(EMAIL_TYPE, unique=True, nullable=False)
     username: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True)
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
@@ -137,7 +140,7 @@ class RefreshToken(db.Model):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
-    ip_address: Mapped[str | None] = mapped_column(INET, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(IP_ADDRESS_TYPE, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, server_default=func.now(), nullable=False
     )

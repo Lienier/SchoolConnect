@@ -6,6 +6,7 @@ import type {
   AnnouncementCategory,
   CategoryListResponse,
 } from "@/features/announcements/types";
+import type { PaginationMeta } from "@/types/api";
 
 export const announcementsApi = {
   async list(params: { page?: number; status?: string } = {}): Promise<{
@@ -19,7 +20,7 @@ export const announcementsApi = {
     return { data: data.data, meta: data.meta };
   },
 
-  async feed(page = 1): Promise<{ data: Announcement[]; meta?: any }> {
+  async feed(page = 1): Promise<{ data: Announcement[]; meta?: PaginationMeta }> {
     const { data } = await apiClient.get<AnnouncementListResponse>(
       "/announcements/feed",
       { params: { page } },
@@ -44,7 +45,12 @@ export const announcementsApi = {
     return data.data;
   },
 
-  async approve(id: string, decision: "approved" | "rejected", comment?: string) {
+  async update(id: string, payload: Partial<Pick<Announcement, "title" | "body" | "summary" | "priority" | "status" | "is_pinned" | "is_emergency" | "target_audience">> & { category_id?: string | null }): Promise<Announcement> {
+    const { data } = await apiClient.patch(`/announcements/${id}`, payload);
+    return data.data;
+  },
+
+  async approve(id: string, decision: "approved" | "rejected" | "returned", comment?: string) {
     const { data } = await apiClient.post(`/announcements/${id}/approve`, {
       decision,
       comment,

@@ -143,7 +143,17 @@ class ReportService:
             "registrations": self.registration_statistics(),
             "popular_categories": self.popular_categories(5),
             "department_attendance": self.department_attendance_summary(),
+            "attendance": self._attendance_totals(),
+            "completed_events": self._event_status_count("completed"),
+            "cancelled_events": self._event_status_count("cancelled"),
         }
+
+    def _event_status_count(self, status: str) -> int:
+        return db.session.scalar(select(func.count(Event.id)).where(Event.deleted_at.is_(None), Event.status == status)) or 0
+
+    def _attendance_totals(self) -> dict[str, int]:
+        rows = db.session.execute(select(Attendance.status, func.count(Attendance.id)).group_by(Attendance.status)).all()
+        return {status: count for status, count in rows}
 
 
 __all__ = ["ReportService"]

@@ -41,7 +41,10 @@ class AnnouncementRepository:
                 else_=2,
             )
             stmt = stmt.order_by(
-                priority_order.asc(), Announcement.is_pinned.desc(), Announcement.created_at.desc()
+                priority_order.asc(),
+                Announcement.is_emergency.desc(),
+                Announcement.is_pinned.desc(),
+                Announcement.created_at.desc()
             )
         return stmt
 

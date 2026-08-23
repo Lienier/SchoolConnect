@@ -10,7 +10,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
-from app.permissions.decorators import require_permission
+from app.permissions.decorators import has_permission, has_role, require_permission
 from app.registrations.service import RegistrationService
 from app.registrations.validators import (
     RegistrationCreateRequest,
@@ -38,9 +38,13 @@ def list_registrations():
     Full participant details (email, phone) should only be visible to organizers/admins.
     """
     params = PaginationParams.from_request()
+    actor = get_jwt_identity()
+    user_id = request.args.get("user_id")
+    if has_role(actor, "student"):
+        user_id = actor
     query = _service.list_registrations(
         event_id=request.args.get("event_id"),
-        user_id=request.args.get("user_id"),
+        user_id=user_id,
         status=request.args.get("status"),
     )
     items, meta = paginate(query, params)
@@ -52,6 +56,15 @@ def list_registrations():
         if redact:
             r_dict.pop("notes", None)
             r_dict.pop("reviewed_by", None)
+            r_dict.pop("participant_email", None)
+        # Always redact participant contact details unless explicitly requested
+        if "team" in r_dict:
+            if "members" in r_dict["team"]:
+                for member in r_dict["team"]["members"]:
+                    if "email" in member:
+                        member.pop("email", None)
+                    if "phone" in member:
+                        member.pop("phone", None)
         results.append(r_dict)
         
     return success_response(data=results, meta=meta)
@@ -129,6 +142,23 @@ def decide(registration_id: str):
         notes=payload.notes,
     )
     return success_response(data=reg.to_dict(), message=f"Registration {reg.status}.")
+
+
+@bp.post("/<registration_id>/promote")
+@jwt_required()
+@require_permission("registrations.manage")
+def promote(registration_id: str):
+    actor = uuid.UUID(get_jwt_identity())
+    reg = _service.promote(registration_id=uuid.UUID(registration_id), actor_id=actor)
+    return success_response(data=reg.to_dict(), message=f"Registration {reg.status}.")
+
+
+@bp.delete("/<registration_id>")
+@jwt_required()
+@require_permission("registrations.manage")
+def remove(registration_id: str):
+    _service.remove(registration_id=uuid.UUID(registration_id), actor_id=uuid.UUID(get_jwt_identity()))
+    return success_response(message="Registration removed.")
 
 
 @bp.post("/<registration_id>/cancel")

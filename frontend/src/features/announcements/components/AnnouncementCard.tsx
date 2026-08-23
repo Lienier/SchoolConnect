@@ -1,7 +1,6 @@
 /** Single announcement card shown in lists/feed. */
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { cn } from "@/utils/cn";
 import type { Announcement } from "@/features/announcements/types";
 
 const priorityTones: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {

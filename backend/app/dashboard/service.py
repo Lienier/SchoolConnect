@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Callable
+import uuid
 
 from flask_jwt_extended import get_jwt_identity
 from sqlalchemy import func, select, and_, or_
@@ -58,7 +59,7 @@ def _count_active_events() -> int:
     return int(
         db.session.scalar(
             select(func.count(Event.id)).where(
-                Event.deleted_at.is_(None), Event.status == "published"
+                Event.deleted_at.is_(None), Event.status.in_(("approved", "ongoing"))
             )
         )
         or 0
@@ -68,7 +69,9 @@ def _count_active_events() -> int:
 def _count_pending_event_approvals() -> int:
     return int(
         db.session.scalar(
-            select(func.count(Event.id)).where(Event.status == "pending")
+            select(func.count(Event.id)).where(
+                Event.deleted_at.is_(None), Event.status == "pending_approval"
+            )
         )
         or 0
     )
@@ -77,7 +80,10 @@ def _count_pending_event_approvals() -> int:
 def _count_pending_announcement_approvals() -> int:
     return int(
         db.session.scalar(
-            select(func.count(Announcement.id)).where(Announcement.status == "pending")
+            select(func.count(Announcement.id)).where(
+                Announcement.deleted_at.is_(None),
+                Announcement.status == "pending_approval",
+            )
         )
         or 0
     )
@@ -87,7 +93,7 @@ def _count_open_registrations() -> int:
     return int(
         db.session.scalar(
             select(func.count(Registration.id)).where(
-                Registration.status.in_(["registered", "waitlisted"]),
+                Registration.status.in_(("pending", "approved", "waitlisted")),
                 Registration.deleted_at.is_(None),
             )
         )
@@ -96,13 +102,13 @@ def _count_open_registrations() -> int:
 
 
 def _count_upcoming_events() -> int:
-    """Count upcoming (published) events that haven't started yet."""
+    """Count upcoming approved/ongoing events that have not started yet."""
     now = datetime.now(timezone.utc)
     return int(
         db.session.scalar(
             select(func.count(Event.id)).where(
                 Event.deleted_at.is_(None),
-                Event.status == "published",
+                Event.status.in_(("approved", "ongoing")),
                 or_(Event.start_time.is_(None), Event.start_time > now),
             )
         )
@@ -115,12 +121,13 @@ def _count_my_registrations() -> int:
     user_id = get_jwt_identity()
     if not user_id:
         return 0
+    user_uuid = uuid.UUID(user_id)
     return int(
         db.session.scalar(
             select(func.count(Registration.id)).where(
-                Registration.user_id == user_id,
+                Registration.user_id == user_uuid,
                 Registration.deleted_at.is_(None),
-                Registration.status.in_(["registered", "waitlisted", "approved"]),
+                Registration.status.in_(("pending", "approved", "waitlisted")),
             )
         )
         or 0
@@ -132,12 +139,13 @@ def _count_my_notifications() -> int:
     user_id = get_jwt_identity()
     if not user_id:
         return 0
+    user_uuid = uuid.UUID(user_id)
     from app.notifications.model import Notification
     return int(
         db.session.scalar(
             select(func.count(Notification.id)).where(
-                Notification.user_id == user_id,
-                Notification.read_at.is_(None),
+                Notification.user_id == user_uuid,
+                Notification.status == "unread",
             )
         )
         or 0
@@ -149,10 +157,11 @@ def _count_officer_proposals() -> int:
     user_id = get_jwt_identity()
     if not user_id:
         return 0
+    user_uuid = uuid.UUID(user_id)
     return int(
         db.session.scalar(
             select(func.count(Event.id)).where(
-                Event.created_by == user_id,
+                Event.created_by == user_uuid,
                 Event.deleted_at.is_(None),
             )
         )
@@ -164,13 +173,18 @@ def _count_pending_approvals() -> int:
     """Count events/announcements pending approval (for approvers)."""
     event_pending = int(
         db.session.scalar(
-            select(func.count(Event.id)).where(Event.status == "pending")
+            select(func.count(Event.id)).where(
+                Event.deleted_at.is_(None), Event.status == "pending_approval"
+            )
         )
         or 0
     )
     announcement_pending = int(
         db.session.scalar(
-            select(func.count(Announcement.id)).where(Announcement.status == "pending")
+            select(func.count(Announcement.id)).where(
+                Announcement.deleted_at.is_(None),
+                Announcement.status == "pending_approval",
+            )
         )
         or 0
     )
@@ -182,10 +196,11 @@ def _count_draft_announcements() -> int:
     user_id = get_jwt_identity()
     if not user_id:
         return 0
+    user_uuid = uuid.UUID(user_id)
     return int(
         db.session.scalar(
             select(func.count(Announcement.id)).where(
-                Announcement.created_by == user_id,
+                Announcement.created_by == user_uuid,
                 Announcement.deleted_at.is_(None),
                 Announcement.status == "draft",
             )

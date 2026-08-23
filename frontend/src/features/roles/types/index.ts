@@ -24,4 +24,4 @@ export interface RoleListResponse extends ApiResponse<Role[]> {
   meta?: PaginationMeta;
 }
 
-export interface PermissionListResponse extends ApiResponse<Permission[]> {}
+export type PermissionListResponse = ApiResponse<Permission[]>;

@@ -16,6 +16,9 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   admin: ["*"],
   teacher: [
     "announcements.view",
+    "announcements.create",
+    "announcements.update",
+    "announcements.delete",
     "events.view",
     "events.create",
     "events.update",
@@ -57,7 +60,6 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   student: [
     "announcements.view",
     "events.view",
-    "events.create",
     "registrations.view",
     "registrations.create",
     "attendance.view",
@@ -74,7 +76,7 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 export function usePermissions() {
   const { user } = useAuth();
-  const roles = user?.roles ?? [];
+  const roles = useMemo(() => user?.roles ?? [], [user?.roles]);
 
   // Fetch role catalog (including custom roles) to resolve non-system roles.
   const { data: roleCatalog } = useQuery({

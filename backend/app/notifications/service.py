@@ -160,7 +160,7 @@ class NotificationService:
                 continue
             
             # Get all approved/attended registrants
-            from sqlalchemy import select
+            from sqlalchemy import select, exists
             from app.registrations.model import Registration
             
             registrant_ids = list(db.session.scalars(
@@ -172,6 +172,15 @@ class NotificationService:
             ).all())
             
             for uid in registrant_ids:
+                already_sent = db.session.scalar(select(exists().where(
+                    Notification.user_id == uid,
+                    Notification.entity_type == "event_reminder",
+                    Notification.entity_id == event_id,
+                    Notification.category == "event_reminder",
+                    Notification.title == f"{prefix} {event_title}",
+                )))
+                if already_sent:
+                    continue
                 notification = self.notify(
                     user_id=uid,
                     title=f"{prefix} {event_title}",

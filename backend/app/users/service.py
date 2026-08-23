@@ -118,10 +118,13 @@ class UserService:
     # --- admin password reset --------------------------------------------
     def admin_reset_password(self, user_id: uuid.UUID, *, new_password: str) -> None:
         """Forcefully set a new password for a user (admin action)."""
+        from app.auth.repository import RefreshTokenRepository
+
         user = self.get_user(user_id)
         if len(new_password) < 8:
             raise ValidationError("Password must be at least 8 characters.")
         user.password_hash = self._hash_password(new_password)
+        RefreshTokenRepository().revoke_all_for_user(user.id)
         self.users.commit()
 
     def set_avatar(self, user_id: uuid.UUID, url: str) -> User:

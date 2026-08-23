@@ -7,6 +7,8 @@ log for audit, and single-use QR tokens for check-in.
 from __future__ import annotations
 
 import uuid
+import base64
+from io import BytesIO
 from datetime import datetime
 
 from sqlalchemy import (
@@ -20,10 +22,23 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.extensions import db
 from app.utils.datetime import utcnow
+
+
+def _qr_data_url(value: str) -> str | None:
+    try:
+        import qrcode
+
+        image = qrcode.make(value)
+        buffer = BytesIO()
+        image.save(buffer, format="PNG")
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+        return f"data:image/png;base64,{encoded}"
+    except Exception:
+        return None
 
 
 class Attendance(db.Model):
@@ -71,6 +86,9 @@ class Attendance(db.Model):
         DateTime(timezone=True), default=utcnow, onupdate=utcnow,
         server_default=func.now(), nullable=False
     )
+    event = relationship("Event", foreign_keys=[event_id], lazy="joined")
+    user = relationship("User", foreign_keys=[user_id], lazy="joined")
+    recorder = relationship("User", foreign_keys=[recorded_by], lazy="joined")
 
     def to_dict(self) -> dict:
         return {
@@ -83,6 +101,9 @@ class Attendance(db.Model):
             "check_out_at": self.check_out_at.isoformat() if self.check_out_at else None,
             "method": self.method,
             "recorded_by": str(self.recorded_by) if self.recorded_by else None,
+            "event_title": getattr(self.event, "title", None),
+            "participant_name": getattr(self.user, "full_name", None),
+            "recorded_by_name": getattr(self.recorder, "full_name", None),
         }
 
 
@@ -150,6 +171,7 @@ class QrToken(db.Model):
             "token": self.token,
             "expires_at": self.expires_at.isoformat() if self.expires_at else None,
             "used": self.used,
+            "qr_data_url": _qr_data_url(self.token),
         }
 
 

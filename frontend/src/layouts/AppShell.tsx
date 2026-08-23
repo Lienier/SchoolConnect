@@ -1,16 +1,16 @@
 /**
- * AppShell — authenticated layout with a role-aware sidebar or topnav.
- *
- * Implements a hybrid navigation layout based on the user role.
+ * AppShell: authenticated layout using the administrator visual system.
  */
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Bell, Circle, GraduationCap, Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { notificationsApi } from "@/features/notifications/services/notificationsApi";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/utils/cn";
 
@@ -18,6 +18,7 @@ export interface NavItem {
   label: string;
   to: string;
   perm?: string;
+  icon?: ComponentType<{ size?: number; className?: string }>;
 }
 
 export interface NavSection {
@@ -31,24 +32,44 @@ interface AppShellProps {
   children: ReactNode;
 }
 
+function NotificationBell() {
+  const navigate = useNavigate();
+  const unread = useQuery({ queryKey: ["notifications-unread"], queryFn: notificationsApi.unreadCount });
+  const count = unread.data ?? 0;
+
+  return (
+    <button
+      type="button"
+      onClick={() => navigate("/notifications")}
+      className="relative rounded-full p-2 text-[#102858] transition hover:bg-slate-100"
+      aria-label={`Notifications${count ? `, ${count} unread` : ""}`}
+    >
+      <Bell size={21} />
+      {count > 0 && (
+        <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function AppShell({ title, nav, children }: AppShellProps) {
   const { user, logout } = useAuth();
   const { can } = usePermissions();
+  const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-
-  // Student uses a top nav, everyone else uses sidebar
   const isStudent = title === "Student";
 
   useEffect(() => {
-    if (isStudent) return; // No sidebar for student
     const mediaQuery = window.matchMedia("(min-width: 768px)");
     const syncSidebar = () => setIsSidebarOpen(mediaQuery.matches);
     syncSidebar();
     mediaQuery.addEventListener("change", syncSidebar);
     return () => mediaQuery.removeEventListener("change", syncSidebar);
-  }, [isStudent]);
+  }, []);
 
   const visibleNav = useMemo(
     () =>
@@ -61,144 +82,185 @@ export function AppShell({ title, nav, children }: AppShellProps) {
     [nav, can],
   );
 
+  const navEntries = useMemo(
+    () =>
+      visibleNav.flatMap((section, sectionIndex) =>
+        section.items.map((item, itemIndex) => ({
+          item,
+          key: `${section.title}:${item.label}:${item.to}`,
+          order: sectionIndex * 100 + itemIndex,
+        })),
+      ),
+    [visibleNav],
+  );
+  const activeNavKey = useMemo(() => {
+    const candidates = navEntries.filter(
+      ({ item }) => location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(`${item.to}/`)),
+    );
+
+    candidates.sort((a, b) => b.item.to.length - a.item.to.length || a.order - b.order);
+    return candidates[0]?.key ?? null;
+  }, [location.pathname, navEntries]);
+
   const handleLogout = async () => {
     await logout();
     navigate("/login", { replace: true });
   };
 
-  const navLinks = visibleNav.flatMap(section => section.items);
-
   return (
-    <div className="flex min-h-screen bg-navy-50 dark:bg-navy-950 text-navy-900 dark:text-navy-50 transition-colors">
-      
-      {/* Sidebar Overlay (Mobile) */}
-      {!isStudent && isSidebarOpen && (
+    <div className="flex min-h-screen bg-[#f6f9fe] text-[#102858]">
+      {isSidebarOpen && (
         <button
           type="button"
           aria-label="Close sidebar"
-          className="fixed inset-0 z-40 bg-navy-900/40 dark:bg-navy-950/80 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-[#071e4d]/45 backdrop-blur-sm md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar (For Admin/Teacher/Officer) */}
-      {!isStudent && (
-        <aside
-          className={cn(
-            "fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-navy-100 dark:border-navy-800 bg-white dark:bg-navy-900 transition-transform duration-200 md:sticky md:top-0 md:z-auto md:transition-[width]",
-            isSidebarOpen
-              ? "translate-x-0 md:w-64"
-              : "-translate-x-full md:w-0 md:overflow-hidden md:border-r-0",
-          )}
-        >
-          <div className="border-b border-navy-100 dark:border-navy-800 px-5 py-4 flex justify-between items-center">
-            <div>
-              <p className="text-lg font-bold text-navy-800 dark:text-white">SchoolConnect</p>
-              <p className="text-xs uppercase tracking-wide text-accent dark:text-navy-400">{title}</p>
-            </div>
-            <button className="md:hidden text-navy-500" onClick={() => setIsSidebarOpen(false)}>
-              <X size={20} />
-            </button>
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-[276px] flex-col overflow-hidden bg-gradient-to-b from-[#06245c] via-[#062b70] to-[#041d4e] text-white shadow-2xl transition-transform md:sticky md:top-0 md:translate-x-0",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <div className="flex items-center gap-3 border-b border-white/10 px-6 py-6">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/60 bg-white/10 shadow-lg">
+            <GraduationCap size={27} />
           </div>
-          <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-            {visibleNav.map((section) => (
-              <div key={section.title}>
-                <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-navy-400 dark:text-navy-500">
-                  {section.title}
-                </p>
-                <div className="space-y-1">
-                  {section.items.map((item) => (
+          <div className="min-w-0">
+            <p className="text-xl font-bold tracking-tight">
+              School<span className="text-sky-300">Connect</span>
+            </p>
+          </div>
+          <button className="ml-auto md:hidden" onClick={() => setIsSidebarOpen(false)} aria-label="Close menu">
+            <X size={20} />
+          </button>
+        </div>
+
+        <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-7">
+          {visibleNav.map((section) => (
+            <div key={section.title}>
+              <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-200/70">
+                {section.title}
+              </p>
+              <div className="space-y-1.5">
+                {section.items.map((item) => {
+                  const Icon = item.icon ?? Circle;
+                  const navKey = `${section.title}:${item.label}:${item.to}`;
+                  const isSelected = activeNavKey === navKey;
+                  return (
                     <NavLink
-                      key={item.to}
+                      key={navKey}
                       to={item.to}
-                      className={({ isActive }) =>
-                        "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors " +
-                        (isActive
-                          ? "bg-primary text-white shadow-md dark:bg-navy-800"
-                          : "text-navy-700 dark:text-navy-300 hover:bg-navy-50 dark:hover:bg-navy-800/50")
-                      }
                       onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
+                      className={() =>
+                        cn(
+                          "group flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-all",
+                          isSelected
+                            ? "bg-[#0d5ee8] text-white shadow-lg shadow-blue-950/30"
+                            : "text-blue-100 hover:bg-white/10 hover:text-white",
+                        )
+                      }
                     >
-                      {item.label}
+                      <Icon size={19} className="shrink-0 opacity-90" />
+                      <span>{item.label}</span>
                     </NavLink>
-                  ))}
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="border-t border-white/10 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 font-bold">
+              {user?.full_name?.charAt(0).toUpperCase() ?? "U"}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{user?.full_name ?? "User"}</p>
+              <p className="truncate text-xs text-blue-200">{user?.email ?? ""}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsLogoutConfirmOpen(true)}
+            className="mt-3 w-full rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
+          >
+            Log out
+          </button>
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur md:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 md:hidden"
+              onClick={() => setIsSidebarOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <Menu size={22} />
+            </button>
+            {isStudent && (
+              <div className="flex min-w-0 items-center gap-3 md:hidden">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#102858]/20 bg-[#102858] text-white shadow-sm">
+                  <GraduationCap size={22} />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-base font-black tracking-tight text-[#102858]">
+                    School<span className="text-[#0d5ee8]">Connect</span>
+                  </p>
                 </div>
               </div>
-            ))}
-          </nav>
-        </aside>
-      )}
+            )}
+            <p className="hidden text-sm font-bold uppercase tracking-[0.18em] text-slate-400 md:block">{title}</p>
+          </div>
 
-      {/* Main Column */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-navy-100 dark:border-navy-800 bg-white/95 dark:bg-navy-900/95 backdrop-blur-sm px-4 md:px-6 shadow-sm dark:shadow-none">
-          <div className="flex items-center gap-4">
-            {!isStudent && (
-              <button 
-                className="p-2 -ml-2 rounded-md text-navy-600 dark:text-navy-300 hover:bg-navy-100 dark:hover:bg-navy-800 transition-colors"
-                onClick={() => setIsSidebarOpen((v) => !v)}
+          <div className="ml-auto flex items-center gap-3 sm:gap-4">
+            <NotificationBell />
+            <ThemeToggle />
+            {isStudent && (
+              <button
+                type="button"
+                onClick={() => setIsLogoutConfirmOpen(true)}
+                className="hidden rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-[#102858] transition hover:bg-slate-100 sm:inline-flex"
               >
-                <Menu size={20} />
+                Log out
               </button>
             )}
-            
-            {/* Student Top Navigation Links */}
-            {isStudent && (
-              <div className="flex items-center gap-6">
-                <div>
-                  <p className="text-lg font-bold text-navy-800 dark:text-white">SchoolConnect</p>
-                </div>
-                <nav className="hidden md:flex items-center gap-2 ml-4">
-                  {navLinks.map((item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      className={({ isActive }) =>
-                        "px-3 py-2 rounded-lg text-sm font-medium transition-colors " +
-                        (isActive
-                          ? "bg-primary text-white dark:bg-navy-800"
-                          : "text-navy-600 dark:text-navy-300 hover:bg-navy-50 dark:hover:bg-navy-800")
-                      }
-                    >
-                      {item.label}
-                    </NavLink>
-                  ))}
-                </nav>
-              </div>
-            )}
-          </div>
-
-          {/* Right Actions */}
-          <div className="flex items-center gap-3 md:gap-4">
-            <ThemeToggle />
-            
-            <div className="hidden sm:block text-right">
-              <p className="text-sm font-semibold text-navy-900 dark:text-white leading-tight">
-                {user?.full_name}
-              </p>
-              <p className="text-xs text-navy-500 dark:text-navy-400 capitalize">
-                {user?.roles?.[0]?.replace('_', ' ')}
-              </p>
-            </div>
-            
-            <div className="h-8 w-8 overflow-hidden rounded-full border border-navy-200 dark:border-navy-700 bg-primary/10 flex items-center justify-center">
-              <span className="text-sm font-bold text-primary dark:text-navy-300">
-                {user?.full_name?.charAt(0).toUpperCase() || "U"}
-              </span>
-            </div>
-
-            <Button size="sm" variant="secondary" onClick={() => setIsLogoutConfirmOpen(true)} className="hidden sm:inline-flex dark:border-navy-700 dark:bg-navy-800 dark:text-white dark:hover:bg-navy-700">
-              Log out
-            </Button>
           </div>
         </header>
 
-        {/* Page Content Outlet */}
-        <main className="min-w-0 flex-1 p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl">
-            {children}
+        {navEntries.length > 0 && (
+          <div className="border-b border-slate-200 bg-white/95 px-3 py-2 shadow-sm md:hidden">
+            <nav className="flex gap-2 overflow-x-auto pb-1">
+              {navEntries.slice(0, 6).map(({ item, key }) => {
+                const Icon = item.icon ?? Circle;
+                const isSelected = activeNavKey === key;
+                return (
+                  <NavLink
+                    key={key}
+                    to={item.to}
+                    className={() =>
+                      cn(
+                        "inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition",
+                        isSelected ? "bg-[#0d5ee8] text-white shadow-sm" : "bg-slate-50 text-[#102858] hover:bg-slate-100",
+                      )
+                    }
+                  >
+                    <Icon size={15} />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </nav>
           </div>
+        )}
+
+        <main className="min-w-0 flex-1 p-4 md:p-7 lg:p-9">
+          <div className="mx-auto max-w-[1480px]">{children}</div>
         </main>
       </div>
 
@@ -223,9 +285,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
           </>
         }
       >
-        <p className="text-sm text-navy-600 dark:text-navy-300">
-          You will need to sign in again to continue using SchoolConnect.
-        </p>
+        <p className="text-sm text-slate-600">You will need to sign in again to continue using SchoolConnect.</p>
       </Modal>
     </div>
   );

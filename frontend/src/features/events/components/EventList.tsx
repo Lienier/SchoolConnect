@@ -1,4 +1,7 @@
 /** Grid of event cards with an empty state. */
+import { Link } from "react-router-dom";
+
+import { Button } from "@/components/ui/Button";
 import { EventCard } from "@/features/events/components/EventCard";
 import type { SchoolEvent } from "@/features/events/types";
 
@@ -23,7 +26,15 @@ export function EventList({ items }: { items: SchoolEvent[] }) {
           capacity={e.capacity || undefined}
           isTeamEvent={e.is_team_event}
           maxTeamSize={e.max_team_size || undefined}
-          status={e.status as any}
+          registrationDeadline={e.registration_deadline}
+          approvalRequired={e.approval_required}
+          status={e.status}
+          category={e.category}
+          actions={
+            <Link to={`/events/${e.id}`}>
+              <Button size="sm" variant="secondary">View details</Button>
+            </Link>
+          }
         />
       ))}
     </div>

@@ -32,6 +32,8 @@ def _load_feature_blueprints() -> list[Blueprint]:
     blueprints.append(roles_bp)
     from app.school.routes import bp as school_bp
     blueprints.append(school_bp)
+    from app.feed.routes import bp as feed_bp
+    blueprints.append(feed_bp)
     from app.announcements.routes import bp as announcements_bp
     blueprints.append(announcements_bp)
     from app.events.routes import bp as events_bp

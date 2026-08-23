@@ -102,6 +102,9 @@ class Config:
     GOOGLE_CLIENT_ID: str | None = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET: str | None = os.getenv("GOOGLE_CLIENT_SECRET")
 
+    # Development-only conveniences must be explicitly enabled.
+    RETURN_RESET_TOKENS: bool = _get_bool("RETURN_RESET_TOKENS", False)
+
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
@@ -140,3 +143,14 @@ def get_config(name: str | None = None) -> type[Config]:
     """Return the config class matching ``name`` or the ``FLASK_ENV`` variable."""
     resolved = (name or os.getenv("FLASK_ENV", "development")).lower()
     return _CONFIG_MAP.get(resolved, DevelopmentConfig)
+
+
+def validate_security_config(config: type[Config]) -> None:
+    """Fail closed when production is configured with placeholder secrets."""
+    if not issubclass(config, ProductionConfig):
+        return
+    placeholders = {"", "change-me-in-env", "replace-with-a-long-random-string"}
+    if config.SECRET_KEY in placeholders or config.JWT_SECRET_KEY in placeholders:
+        raise RuntimeError(
+            "Production requires strong SECRET_KEY and JWT_SECRET_KEY values."
+        )

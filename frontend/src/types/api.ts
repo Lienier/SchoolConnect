@@ -15,3 +15,11 @@ export interface PaginationMeta {
   total_items: number;
   total_pages: number;
 }
+
+export interface ApiErrorShape {
+  message?: string;
+  error_code?: string;
+  errors?: Record<string, string[]>;
+}
+
+export type StatusTone = "neutral" | "success" | "warning" | "danger" | "info";

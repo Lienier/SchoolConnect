@@ -21,7 +21,7 @@ from app.announcements.repository import (
     AnnouncementCategoryRepository,
     AnnouncementRepository,
 )
-from app.common.exceptions import NotFoundError, ValidationError
+from app.common.exceptions import AuthorizationError, NotFoundError, ValidationError
 
 
 class AnnouncementService:
@@ -92,13 +92,15 @@ class AnnouncementService:
         return announcement
 
     # --- update -----------------------------------------------------------
-    def update_announcement(self, announcement_id: uuid.UUID, **fields) -> Announcement:
+    def update_announcement(self, announcement_id: uuid.UUID, *, actor_id: uuid.UUID | None = None, can_override: bool = False, **fields) -> Announcement:
         """Update a draft/modifiable announcement."""
         announcement = self.announcements.get_by_id(announcement_id)
         if announcement is None:
             raise NotFoundError("Announcement not found.")
         if announcement.status in ("published", "archived"):
             raise ValidationError("Published announcements cannot be edited.")
+        if actor_id is not None and not can_override and announcement.author_id != actor_id:
+            raise AuthorizationError("You can only edit your own announcements.")
         for key in ("title", "body", "summary", "category_id", "priority",
                     "target_audience", "expires_at"):
             if key in fields and fields[key] is not None:
@@ -134,8 +136,8 @@ class AnnouncementService:
         decision: str, comment=None,
     ) -> Announcement:
         """Record an approval decision and transition announcement status."""
-        if decision not in ("approved", "rejected"):
-            raise ValidationError("Decision must be 'approved' or 'rejected'.")
+        if decision not in ("approved", "rejected", "returned"):
+            raise ValidationError("Decision must be 'approved', 'rejected', or 'returned'.")
         announcement = self.get_announcement(announcement_id)
         if announcement.status != "pending_approval":
             raise ValidationError("Announcement is not pending approval.")
@@ -154,12 +156,19 @@ class AnnouncementService:
         else:
             announcement.status = "draft"
         self.announcements.commit()
+        try:
+            from app.notifications.service import NotificationService
+            NotificationService().notify(user_id=announcement.author_id, title=f"Announcement {announcement.status}", body=f"Your announcement '{announcement.title}' was {announcement.status}.", category="announcement_workflow", entity_type="announcement", entity_id=announcement.id)
+        except Exception:
+            pass
         return announcement
 
     # --- delete ------------------------------------------------------------
-    def delete_announcement(self, announcement_id: uuid.UUID) -> None:
+    def delete_announcement(self, announcement_id: uuid.UUID, *, actor_id: uuid.UUID | None = None, can_override: bool = False) -> None:
         """Soft-delete an announcement."""
         announcement = self.get_announcement(announcement_id)
+        if actor_id is not None and not can_override and announcement.author_id != actor_id:
+            raise AuthorizationError("You can only delete your own announcements.")
         announcement.soft_delete()
         self.announcements.commit()
 

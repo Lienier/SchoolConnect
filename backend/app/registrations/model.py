@@ -162,12 +162,31 @@ class Registration(db.Model):
     )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    event = relationship("Event", foreign_keys=[event_id], lazy="joined")
+    user = relationship("User", foreign_keys=[user_id], lazy="joined")
+    reviewer = relationship("User", foreign_keys=[reviewed_by], lazy="joined")
+    team = relationship("Team", foreign_keys=[team_id], lazy="joined")
+
     def to_dict(self) -> dict:
+        team_member = None
+        if self.team:
+            team_member = next(
+                (member for member in self.team.members if member.user_id == self.user_id),
+                None,
+            )
         return {
             "id": str(self.id),
             "event_id": str(self.event_id),
             "user_id": str(self.user_id),
+            "event_title": self.event.title if self.event else None,
+            "participant_name": self.user.full_name if self.user else None,
+            "participant_email": self.user.email if self.user else None,
+            "reviewer_name": self.reviewer.full_name if self.reviewer else None,
+            "team_name": self.team.name if self.team else None,
             "team_id": str(self.team_id) if self.team_id else None,
+            "team_code": self.team.team_code if self.team else None,
+            "team_role": team_member.role if team_member else None,
+            "team_leader_id": str(self.team.leader_id) if self.team else None,
             "status": self.status,
             "notes": self.notes,
             "reviewed_by": str(self.reviewed_by) if self.reviewed_by else None,

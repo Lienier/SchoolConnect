@@ -1,6 +1,6 @@
 /** Form to create a new event (draft or submit for approval). */
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -22,14 +22,14 @@ export function CreateEventForm({ categories, onSubmit, isSubmitting }: Props) {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: { is_team_event: false, submit_for_approval: false },
   });
 
-  const isTeamEvent = watch("is_team_event");
+  const isTeamEvent = useWatch({ control, name: "is_team_event" });
 
   return (
     <Card className="w-full max-w-2xl">

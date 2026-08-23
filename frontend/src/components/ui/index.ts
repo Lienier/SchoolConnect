@@ -35,7 +35,6 @@ export { Breadcrumb, BreadcrumbItem, BreadcrumbSeparator } from "./Breadcrumb";
 
 // Navigation components
 export { Sidebar } from "./Sidebar";
-export { Navbar } from "./Navbar";
 export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut } from "./DropdownMenu";
 
 // Overlay components

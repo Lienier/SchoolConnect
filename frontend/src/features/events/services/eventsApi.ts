@@ -4,14 +4,16 @@ import type {
   EventCategory,
   EventCategoryListResponse,
   EventListResponse,
+  EventResult,
   Registration,
   RegistrationListResponse,
   SchoolEvent,
+  TeamRegistration,
 } from "@/features/events/types";
 
 export const eventsApi = {
   async list(
-    params: { page?: number; status?: string; category_id?: string } = {},
+    params: { page?: number; status?: string; category_id?: string; organizer_id?: string } = {},
   ): Promise<{ data: SchoolEvent[]; meta?: EventListResponse["meta"] }> {
     const { data } = await apiClient.get<EventListResponse>("/events", {
       params,
@@ -45,13 +47,32 @@ export const eventsApi = {
     return data.data;
   },
 
-  async approve(id: string, decision: "approved" | "rejected", comment?: string) {
+  async approve(id: string, decision: "approved" | "rejected" | "returned", comment?: string) {
     const { data } = await apiClient.post(`/events/${id}/approve`, {
       decision,
       comment,
     });
     return data.data;
   },
+
+  async changeStatus(id: string, status: SchoolEvent["status"]): Promise<SchoolEvent> {
+    const { data } = await apiClient.post(`/events/${id}/status`, { status });
+    return data.data;
+  },
+
+  async listResults(id: string): Promise<EventResult[]> {
+    const { data } = await apiClient.get(`/events/${id}/results`);
+    return data.data;
+  },
+
+  async createResult(id: string, payload: Omit<EventResult, "id" | "event_id" | "created_by" | "created_at">): Promise<EventResult> {
+    const { data } = await apiClient.post(`/events/${id}/results`, payload);
+    return data.data;
+  },
+
+  async deleteResult(id: string): Promise<void> { await apiClient.delete(`/events/results/${id}`); },
+
+  async updateResult(id: string, payload: Partial<EventResult>): Promise<EventResult> { const { data } = await apiClient.patch(`/events/results/${id}`, payload); return data.data; },
 
   async remove(id: string): Promise<void> {
     await apiClient.delete(`/events/${id}`);
@@ -70,6 +91,26 @@ export const registrationsApi = {
     const { data } = await apiClient.post("/registrations", {
       event_id: eventId,
       notes,
+    });
+    return data.data;
+  },
+
+  async registerTeam(
+    eventId: string,
+    name: string,
+    memberIds: string[] = [],
+  ): Promise<TeamRegistration> {
+    const { data } = await apiClient.post("/registrations/team", {
+      event_id: eventId,
+      name,
+      member_ids: memberIds,
+    });
+    return data.data;
+  },
+
+  async joinTeam(teamCode: string): Promise<Registration> {
+    const { data } = await apiClient.post("/registrations/team/join", {
+      team_code: teamCode,
     });
     return data.data;
   },
@@ -111,4 +152,6 @@ export const registrationsApi = {
     const { data } = await apiClient.post(`/registrations/${id}/cancel`);
     return data.data;
   },
+  async promote(id: string): Promise<Registration> { const { data } = await apiClient.post(`/registrations/${id}/promote`); return data.data; },
+  async remove(id: string): Promise<void> { await apiClient.delete(`/registrations/${id}`); },
 };

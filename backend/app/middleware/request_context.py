@@ -17,7 +17,8 @@ def register_request_hooks(app: Flask) -> None:
     @app.before_request
     def assign_request_id() -> None:
         """Attach a unique request id to the request context."""
-        g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+        # Never trust a caller-supplied value as the canonical correlation id.
+        g.request_id = str(uuid.uuid4())
 
     @app.after_request
     def attach_request_id(response):
@@ -25,4 +26,11 @@ def register_request_hooks(app: Flask) -> None:
         request_id = getattr(g, "request_id", None)
         if request_id:
             response.headers["X-Request-ID"] = request_id
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        if request.is_secure:
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
         return response

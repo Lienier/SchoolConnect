@@ -1,10 +1,11 @@
 /** Administrator dashboard: system-wide stats, management shortcuts, audit. */
 import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 import { dashboardApi } from "@/features/dashboard/services/dashboardApi";
-import { usePermissions } from "@/hooks/usePermissions";
-import { QuickLink, SectionCard, StatCard } from "@/features/dashboards/shared/widgets";
+import { SectionCard, StatCard } from "@/features/dashboards/shared/widgets";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { CalendarDays, ClipboardList, FileCheck2, Megaphone, Users } from "lucide-react";
 
 const WIDGETS: { key: string; label: string }[] = [
   { key: "total_users", label: "Total Users" },
@@ -17,46 +18,38 @@ const WIDGETS: { key: string; label: string }[] = [
 ];
 
 export default function AdminDashboardPage() {
-  const { can } = usePermissions();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard", "stats"],
     queryFn: () => dashboardApi.stats(),
   });
 
   return (
-    <>
-      <h1 className="mb-6 text-2xl font-semibold text-navy-800">Administrator Dashboard</h1>
+    <div className="space-y-7">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">Overview</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-[#102858]">Good morning! <span aria-hidden>👋</span></h1><p className="mt-2 text-sm text-slate-500">Here&apos;s what&apos;s happening with your school community today.</p></div>
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm">Today&apos;s overview</div>
+      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {WIDGETS.map((w) => (
           <StatCard
             key={w.key}
             label={w.label}
             value={isLoading ? <Skeleton variant="rectangular" height={36} className="mt-1 w-2/3" /> : (stats?.[w.key] ?? 0)}
+            icon={w.key.includes("users") || w.key.includes("students") ? Users : w.key.includes("events") ? CalendarDays : w.key.includes("registrations") ? ClipboardList : FileCheck2}
+            tone={w.key.includes("pending") ? "amber" : w.key.includes("events") ? "green" : "blue"}
+            hint="Live from system"
           />
         ))}
       </div>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <SectionCard title="Administration" action={{ label: "Manage", to: "/users" }}>
-          <div className="flex flex-wrap gap-2">
-            {can("users.view") && <QuickLink label="Users" to="/users" variant="secondary" />}
-            {can("roles.view") && <QuickLink label="Roles" to="/roles" variant="secondary" />}
-            {can("departments.view") && (
-              <QuickLink label="School Structure" to="/school" variant="secondary" />
-            )}
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Content & Oversight">
-          <div className="flex flex-wrap gap-2">
-            <QuickLink label="Announcements" to="/announcements" variant="secondary" />
-            <QuickLink label="Events" to="/events" variant="secondary" />
-            {can("reports.view") && <QuickLink label="Reports" to="/reports" variant="secondary" />}
-            {can("audit.view") && <QuickLink label="Audit Logs" to="/audit/logs" variant="secondary" />}
-          </div>
+      <div className="grid gap-5 xl:grid-cols-3">
+        <SectionCard title="Pending approvals" action={{ label: "View all", to: "/approvals" }}>
+          <div className="space-y-3"><ApprovalRow icon={<Megaphone size={18} />} title="Announcements awaiting review" value={stats?.pending_announcement_approvals ?? 0} /><ApprovalRow icon={<CalendarDays size={18} />} title="Events awaiting review" value={stats?.pending_event_approvals ?? 0} /></div>
         </SectionCard>
       </div>
-    </>
+    </div>
   );
 }
+
+function ApprovalRow({ icon, title, value }: { icon: ReactNode; title: string; value: ReactNode }) { return <div className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-blue-700">{icon}</span><span className="flex-1 text-sm font-semibold text-slate-700">{title}</span><span className="text-lg font-bold text-[#102858]">{value}</span></div>; }

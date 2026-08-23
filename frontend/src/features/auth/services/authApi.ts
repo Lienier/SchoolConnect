@@ -39,6 +39,10 @@ export const authApi = {
     await apiClient.post("/auth/logout", { refresh_token: refreshToken });
   },
 
+  async changePassword(current_password: string, new_password: string): Promise<void> {
+    await apiClient.post("/auth/change-password", { current_password, new_password });
+  },
+
   async me(): Promise<MeResponse["data"]> {
     const { data } = await apiClient.get<MeResponse>("/auth/me");
     return data.data;

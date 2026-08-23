@@ -14,7 +14,7 @@ from flask import current_app
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-from app.announcements.model import UploadedFile
+from app.announcements.model import Announcement, AnnouncementAttachment, UploadedFile
 from app.common.exceptions import ValidationError
 from app.extensions import db
 
@@ -28,6 +28,11 @@ class UploadService:
         ext = filename.rsplit(".", 1)[1].lower()
         return ext in current_app.config.get("ALLOWED_UPLOAD_EXTENSIONS", set())
 
+    @staticmethod
+    def allowed_entity_type(entity_type: str | None) -> bool:
+        """Restrict polymorphic attachment targets to supported resources."""
+        return entity_type in {None, "announcement", "event"}
+
     def store(
         self,
         *,
@@ -40,6 +45,9 @@ class UploadService:
             raise ValidationError("No file provided.")
         if not self._allowed(file.filename):
             raise ValidationError("File type is not allowed.")
+        if entity_type == "announcement" and entity_id is not None:
+            if db.session.get(Announcement, entity_id) is None:
+                raise ValidationError("Announcement not found.")
 
         original = secure_filename(file.filename)
         ext = original.rsplit(".", 1)[1].lower() if "." in original else ""
@@ -67,6 +75,9 @@ class UploadService:
             entity_id=entity_id,
         )
         db.session.add(record)
+        if entity_type == "announcement" and entity_id is not None:
+            db.session.flush()
+            db.session.add(AnnouncementAttachment(announcement_id=entity_id, file_id=record.id))
         db.session.commit()
         return record
 

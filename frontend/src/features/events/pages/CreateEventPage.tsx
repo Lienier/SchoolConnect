@@ -9,12 +9,15 @@ import { eventsApi } from "@/features/events/services/eventsApi";
 import { CreateEventForm } from "@/features/events/components/CreateEventForm";
 import type { EventFormValues } from "@/features/events/validators";
 import { useToast } from "@/providers/ToastProvider";
-import { Navbar } from "@/components/ui/Navbar";
+import { PageHeader } from "@/components/ui/AdminPrimitives";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const isProfessor = Boolean(user?.roles?.includes("teacher"));
 
   const { data: categories = [] } = useQuery({
     queryKey: ["event-categories"],
@@ -36,9 +39,9 @@ export default function CreateEventPage() {
         max_team_size: values.max_team_size
           ? Number(values.max_team_size)
           : undefined,
-        submit_for_approval: values.submit_for_approval,
+        submit_for_approval: isProfessor ? true : values.submit_for_approval,
       });
-      toast("Event created.", "success");
+      toast(isProfessor ? "Event submitted for admin approval." : "Event created.", "success");
       navigate("/events");
     } catch {
       toast("Could not create event.", "error");
@@ -48,29 +51,24 @@ export default function CreateEventPage() {
   };
 
   return (
-    <div className="min-h-screen bg-navy-50">
-      <Navbar
-        title="Create Event"
-        breadcrumbs={[
-          { label: "Events", href: "/events" },
-          { label: "New Event" },
-        ]}
+    <div className="mx-auto max-w-2xl space-y-6">
+      <PageHeader
+        title={isProfessor ? "New Professor Event" : "New Event"}
+        subtitle={isProfessor ? "Professor events are submitted to admin for approval before students can register." : "Create a draft event or submit it for approval."}
         actions={
           <Link to="/events">
-            <span className="hidden sm:inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900">
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900">
               <ArrowLeft className="h-4 w-4" />
               Back to Events
             </span>
           </Link>
         }
       />
-      <main className="mx-auto max-w-2xl px-6 py-8">
-        <CreateEventForm
-          categories={categories}
-          onSubmit={onSubmit}
-          isSubmitting={submitting}
-        />
-      </main>
+      <CreateEventForm
+        categories={categories}
+        onSubmit={onSubmit}
+        isSubmitting={submitting}
+      />
     </div>
   );
 }

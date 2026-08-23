@@ -23,9 +23,9 @@ from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
 from app.permissions.decorators import (
+    has_role,
     require_any_permission,
     require_permission,
-    require_roles,
 )
 
 bp = Blueprint("announcements", __name__, url_prefix="/announcements")
@@ -47,6 +47,8 @@ def list_announcements():
     """List announcements (paginated). Staff see all; feed filter optional."""
     params = PaginationParams.from_request()
     status = request.args.get("status")
+    if has_role(get_jwt_identity(), "student"):
+        status = "published"
     category_id = request.args.get("category_id")
     priority = request.args.get("priority")
     query = _service.list_announcements(
@@ -54,7 +56,11 @@ def list_announcements():
     )
     items, meta = paginate(query, params)
     return success_response(
-        data=[a.to_dict() for a in items], meta=meta
+        data=[
+            a.to_dict(include_approvals=not has_role(get_jwt_identity(), "student"))
+            for a in items
+        ],
+        meta=meta,
     )
 
 
@@ -74,17 +80,19 @@ def public_feed():
 def get_announcement(announcement_id: str):
     """Get a single announcement with approval history."""
     announcement = _service.get_announcement(uuid.UUID(announcement_id))
-    return success_response(data=announcement.to_dict(include_approvals=True))
+    if has_role(get_jwt_identity(), "student") and announcement.status != "published":
+        from app.common.exceptions import NotFoundError
+        raise NotFoundError("Announcement not found.")
+    return success_response(data=announcement.to_dict(include_approvals=not has_role(get_jwt_identity(), "student")))
 
 
 @bp.post("")
 @jwt_required()
 @require_permission("announcements.create")
-@require_roles("admin")
 def create_announcement():
     """Create a draft announcement, optionally submitting for approval.
 
-    Restricted to administrators for now.
+    Staff may create announcements according to their assigned permission.
     """
     payload = AnnouncementCreateRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
@@ -112,8 +120,11 @@ def create_announcement():
 def update_announcement(announcement_id: str):
     """Update a draft announcement."""
     payload = AnnouncementUpdateRequest(**_body())
+    actor = uuid.UUID(get_jwt_identity())
     announcement = _service.update_announcement(
         uuid.UUID(announcement_id),
+        actor_id=actor,
+        can_override=has_role(str(actor), "admin") or has_role(str(actor), "teacher"),
         title=payload.title,
         body=payload.body,
         summary=payload.summary,
@@ -149,7 +160,12 @@ def approve_announcement(announcement_id: str):
 @require_permission("announcements.delete")
 def delete_announcement(announcement_id: str):
     """Soft-delete an announcement."""
-    _service.delete_announcement(uuid.UUID(announcement_id))
+    actor = uuid.UUID(get_jwt_identity())
+    _service.delete_announcement(
+        uuid.UUID(announcement_id),
+        actor_id=actor,
+        can_override=has_role(str(actor), "admin") or has_role(str(actor), "teacher"),
+    )
     return success_response(message="Announcement deleted.")
 
 

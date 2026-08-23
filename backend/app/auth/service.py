@@ -145,8 +145,17 @@ class AuthService:
 
     def rotate_refresh_token(self, raw_refresh: str) -> tuple[str, str, User]:
         """Validate a refresh token, revoke it, and issue a new pair."""
+        from sqlalchemy import select
+        from app.extensions import db
+
         token_hash = self._sha256(raw_refresh)
-        row = self.refresh_tokens.get_by_hash(token_hash)
+        # Serialize rotation so two concurrent requests cannot both consume
+        # the same refresh token.
+        row = db.session.scalar(
+            select(RefreshToken)
+            .where(RefreshToken.token_hash == token_hash)
+            .with_for_update()
+        )
         if row is None or row.revoked_at is not None:
             raise AuthenticationError("Invalid refresh token.")
         if row.expires_at < datetime.now(timezone.utc):
@@ -158,6 +167,11 @@ class AuthService:
         self.refresh_tokens.commit()
         access, new_raw = self.issue_tokens(user)
         return access, new_raw, user
+
+    def revoke_sessions(self, user_id: uuid.UUID) -> None:
+        """Revoke all refresh sessions for a user."""
+        self.refresh_tokens.revoke_all_for_user(user_id)
+        self.refresh_tokens.commit()
 
     def logout(self, raw_refresh: str | None = None, revoke_all: bool = False) -> None:
         """Revoke refresh token(s) for logout."""
@@ -208,6 +222,7 @@ class AuthService:
             raise NotFoundError("User not found.")
         user.password_hash = self._hash_password(new_password)
         row.consumed_at = datetime.now(timezone.utc)
+        self.refresh_tokens.revoke_all_for_user(user.id)
         self.users.commit()
 
     # --- email verification ----------------------------------------------
@@ -287,4 +302,5 @@ class AuthService:
         if not self._verify_password(current_password, user.password_hash):
             raise AuthenticationError("Current password is incorrect.")
         user.password_hash = self._hash_password(new_password)
+        self.refresh_tokens.revoke_all_for_user(user.id)
         self.users.commit()

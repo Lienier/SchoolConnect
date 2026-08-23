@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 
 from flask import Flask
+from pydantic import ValidationError as PydanticValidationError
 from werkzeug.exceptions import HTTPException
 
 from app.common.exceptions import AppError
@@ -29,6 +30,20 @@ def register_error_handlers(app: Flask) -> None:
             status_code=error.status_code,
             errors=error.errors,
             error_code=error.error_code,
+        )
+
+    @app.errorhandler(PydanticValidationError)
+    def handle_pydantic_validation_error(error: PydanticValidationError):
+        """Convert request-model validation failures into client errors."""
+        details = [
+            {key: value for key, value in item.items() if key != "input"}
+            for item in error.errors(include_url=False)
+        ]
+        return error_response(
+            message="Request validation failed.",
+            status_code=422,
+            errors=details,
+            error_code="validation_error",
         )
 
     @app.errorhandler(HTTPException)

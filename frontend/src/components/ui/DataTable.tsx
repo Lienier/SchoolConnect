@@ -1,11 +1,10 @@
 import { type ReactNode, useMemo, useState, useCallback } from "react";
 import { cn } from "@/utils/cn";
-import { ChevronUp, ChevronDown, ChevronUpDown, Search, Filter, Download, MoreHorizontal } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronUpDown, Search, Download } from "lucide-react";
 
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./Select";
-import { Badge } from "./Badge";
 import { Pagination } from "./Pagination";
 import { Table, THead, TBody, TR, TH, TD } from "./Table";
 

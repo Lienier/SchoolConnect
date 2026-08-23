@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { BulletinFeed } from "@/features/announcements/components/BulletinFeed";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { dashboardApi } from "@/features/dashboard/services/dashboardApi";
@@ -52,7 +53,7 @@ export default function DashboardPage() {
           <Card key={w.key} className="p-5">
             <p className="text-sm text-navy-500">{w.label}</p>
             <p className="mt-2 text-3xl font-semibold text-navy-800">
-              {isLoading ? "…" : (stats?.[w.key] ?? 0)}
+              {isLoading ? "â€¦" : (stats?.[w.key] ?? 0)}
             </p>
           </Card>
         ))}
@@ -86,6 +87,15 @@ export default function DashboardPage() {
             </div>
           </Card>
         )}
+      </div>
+
+      <div className="mt-8">
+        <BulletinFeed
+          title="School bulletin"
+          description="Recent announcements and approved events in the same social-style stream."
+          compact
+          showHero={false}
+        />
       </div>
     </main>
   );

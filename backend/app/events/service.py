@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from sqlalchemy import or_
 
 from app.common.exceptions import NotFoundError, ValidationError
 from app.events.model import (
@@ -16,12 +17,14 @@ from app.events.model import (
     Event,
     EventApproval,
     EventCategory,
+    EventResult,
 )
 from app.events.repository import (
     CalendarEventRepository,
     EventApprovalRepository,
     EventCategoryRepository,
     EventRepository,
+    EventResultRepository,
 )
 from app.utils.datetime import utcnow
 
@@ -53,6 +56,7 @@ class EventService:
         self.categories = EventCategoryRepository()
         self.approvals = EventApprovalRepository()
         self.calendar = CalendarEventRepository()
+        self.results = EventResultRepository()
 
     # --- categories -------------------------------------------------------
     def list_categories(self) -> list[EventCategory]:
@@ -69,11 +73,11 @@ class EventService:
         return category
 
     # --- read -------------------------------------------------------------
-    def list_events(self, *, status=None, category_id=None, organizer_id=None):
+    def list_events(self, *, status=None, category_id=None, organizer_id=None, search=None):
         cat = uuid.UUID(category_id) if category_id else None
         org = uuid.UUID(organizer_id) if organizer_id else None
         return self.events.list_query(
-            status=status, category_id=cat, organizer_id=org
+            status=status, category_id=cat, organizer_id=org, search=search
         )
 
     def get_event(self, event_id: uuid.UUID) -> Event:
@@ -146,8 +150,8 @@ class EventService:
         **fields,
     ) -> Event:
         event = self.get_event(event_id)
-        if event.status not in {"draft", "pending_approval", "approved"}:
-            raise ValidationError("Only draft, pending, or approved events can be edited.")
+        if event.status not in {"draft", "pending_approval", "approved", "returned"}:
+            raise ValidationError("Only draft, pending, approved, or returned events can be edited.")
         # Security guardrail: if an approved event is edited by a non-admin,
         # automatically reset to pending_approval to require re-verification.
         if event.status == "approved" and not can_override:
@@ -239,10 +243,50 @@ class EventService:
                 )
             )
         else:
-            event.status = "draft"
+            event.status = "returned" if decision == "returned" else "draft"
         event.updated_by = reviewer_id
         self.events.commit()
+        try:
+            from app.notifications.service import NotificationService
+            NotificationService().notify(user_id=event.organizer_id, title=f"Event {event.status}", body=f"Your event '{event.title}' was {event.status}.", category="event_workflow", entity_type="event", entity_id=event.id)
+        except Exception:
+            pass
         return event
+
+    def list_results(self, event_id: uuid.UUID) -> list[EventResult]:
+        self.get_event(event_id)
+        return self.results.list_for_event(event_id)
+
+    def create_result(self, event_id: uuid.UUID, actor_id: uuid.UUID, **fields) -> EventResult:
+        event = self.get_event(event_id)
+        if event.status not in {"completed", "ongoing"}:
+            raise ValidationError("Results can only be added to ongoing or completed events.")
+        result = EventResult(event_id=event_id, created_by=actor_id, **fields)
+        self.results.add(result)
+        self.results.commit()
+        return result
+
+    def delete_result(self, result_id: uuid.UUID, actor_id: uuid.UUID, can_override: bool = False) -> None:
+        result = self.results.get_by_id(result_id)
+        if result is None:
+            raise NotFoundError("Event result not found.")
+        event = self.get_event(result.event_id)
+        if not can_override and event.organizer_id != actor_id:
+            raise ValidationError("You can only manage results for your own events.")
+        self.results.delete(result)
+        self.results.commit()
+
+    def update_result(self, result_id: uuid.UUID, actor_id: uuid.UUID, can_override: bool = False, **fields) -> EventResult:
+        result = self.results.get_by_id(result_id)
+        if result is None:
+            raise NotFoundError("Event result not found.")
+        event = self.get_event(result.event_id)
+        if not can_override and event.organizer_id != actor_id:
+            raise ValidationError("You can only manage results for your own events.")
+        for key, value in fields.items():
+            setattr(result, key, value)
+        self.results.commit()
+        return result
 
     def change_status(self, event_id: uuid.UUID, actor_id: uuid.UUID, status: str) -> Event:
         if status not in _VALID_STATUSES:

@@ -7,11 +7,12 @@ automatic waitlisting, team formation, approval workflow and cancellation.
 from __future__ import annotations
 
 import uuid
+from datetime import timezone
 
-from app.common.exceptions import NotFoundError, ValidationError
+from app.common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.events.repository import EventRepository
 from app.events.model import Event, EventRequirement
-from app.users.model import StudentProfile
+from app.users.model import Section, StudentProfile
 from app.registrations.model import Registration, Team, TeamMember, Waitlist
 from app.registrations.repository import (
     RegistrationRepository,
@@ -20,6 +21,7 @@ from app.registrations.repository import (
 )
 from app.utils.datetime import utcnow
 from app.extensions import db
+from app.permissions.decorators import has_permission
 from sqlalchemy import select, and_
 import random
 import string
@@ -40,7 +42,7 @@ class RegistrationService:
             raise NotFoundError("Event not found.")
         if event.status not in {"approved", "ongoing"}:
             raise ValidationError("Registration is not open for this event.")
-        if event.registration_deadline and utcnow() > event.registration_deadline:
+        if event.registration_deadline and utcnow() > _as_aware_utc(event.registration_deadline):
             raise ValidationError("The registration deadline has passed.")
         return event
 
@@ -52,8 +54,8 @@ class RegistrationService:
         stmt = select(Registration).join(Event).where(
             Registration.user_id == user_id,
             Registration.status.notin_({"cancelled", "rejected"}),
-            Event.start_time < event.end_time,
-            Event.end_time > event.start_time,
+            Event.start_time < _as_aware_utc(event.end_time),
+            Event.end_time > _as_aware_utc(event.start_time),
         )
         conflict = db.session.scalar(stmt)
         if conflict:
@@ -65,7 +67,7 @@ class RegistrationService:
         if not requirements:
             return
             
-        profile = db.session.scalar(select(StudentProfile).where(StudentProfile.user_id == user_id))
+        profile = db.session.get(StudentProfile, user_id)
         if not profile:
             raise ValidationError("You do not meet the eligibility requirements for this event.")
             
@@ -74,6 +76,14 @@ class RegistrationService:
                 raise ValidationError("You do not meet the eligibility requirements for this event.")
             if req.requirement_type == "department" and str(profile.department_id) != req.requirement_value:
                 raise ValidationError("You do not meet the eligibility requirements for this event.")
+            if req.requirement_type == "course_section":
+                section = db.session.get(Section, profile.section_id) if profile.section_id else None
+                allowed_values = {
+                    str(profile.section_id) if profile.section_id else "",
+                    f"{section.course_id}:{profile.section_id}" if section else "",
+                }
+                if str(req.requirement_value) not in allowed_values:
+                    raise ValidationError("You do not meet the eligibility requirements for this event.")
 
     def register(
         self, *, event_id: uuid.UUID, user_id: uuid.UUID, notes=None, team_id=None
@@ -103,7 +113,16 @@ class RegistrationService:
         )
         self.registrations.add(registration)
         self.registrations.commit()
+        self._notify(user_id, f"Registration {registration.status}", f"Your registration for '{event.title}' is {registration.status}.", event.id)
         return registration
+
+    @staticmethod
+    def _notify(user_id: uuid.UUID, title: str, body: str, event_id: uuid.UUID) -> None:
+        try:
+            from app.notifications.service import NotificationService
+            NotificationService().notify(user_id=user_id, title=title, body=body, category="registration_workflow", entity_type="event", entity_id=event_id)
+        except Exception:
+            pass
 
     def _add_to_waitlist(self, event_id, user_id, notes) -> Registration:
         registration = Registration(
@@ -217,13 +236,26 @@ class RegistrationService:
         if notes:
             reg.notes = notes
         self.registrations.commit()
+        event = self.events.get_by_id(reg.event_id)
+        if event:
+            self._notify(reg.user_id, f"Registration {decision}", f"Your registration for '{event.title}' was {decision}.", event.id)
         return reg
 
     def cancel(self, *, registration_id: uuid.UUID, actor_id: uuid.UUID) -> Registration:
         reg = self.get_registration(registration_id)
+
+        # A registration may only be cancelled by its owner, its team leader,
+        # or a staff member with the explicit registrations.manage permission.
+        is_owner = reg.user_id == actor_id
+        is_team_leader = False
+        if reg.team_id is not None:
+            team = db.session.get(Team, reg.team_id)
+            is_team_leader = team is not None and team.leader_id == actor_id
+        if not (is_owner or is_team_leader or has_permission(actor_id, "registrations.manage")):
+            raise AuthorizationError("You can only cancel your own registration.")
         
         event = self.events.get_by_id(reg.event_id)
-        if event and event.registration_deadline and utcnow() > event.registration_deadline:
+        if event and event.registration_deadline and utcnow() > _as_aware_utc(event.registration_deadline):
             raise ValidationError("Cancellations are locked after the registration deadline.")
             
         if reg.status in {"cancelled", "attended", "absent"}:
@@ -233,7 +265,31 @@ class RegistrationService:
         reg.reviewed_at = utcnow()
         self.registrations.commit()
         self._promote_waitlist(reg.event_id)
+        event = self.events.get_by_id(reg.event_id)
+        if event:
+            self._notify(reg.user_id, "Registration cancelled", f"Your registration for '{event.title}' was cancelled.", event.id)
         return reg
+
+    def promote(self, *, registration_id: uuid.UUID, actor_id: uuid.UUID) -> Registration:
+        reg = self.get_registration(registration_id)
+        if reg.status != "waitlisted":
+            raise ValidationError("Only waitlisted registrations can be promoted.")
+        event = self.events.get_by_id(reg.event_id)
+        if event is None or (event.capacity is not None and self.registrations.count_active(event.id) >= event.capacity):
+            raise ValidationError("No capacity is currently available.")
+        reg.status = "pending" if event.approval_required else "approved"
+        reg.reviewed_by = actor_id
+        reg.reviewed_at = utcnow()
+        self.registrations.commit()
+        self._notify(reg.user_id, f"Registration {reg.status}", f"You were moved from the waitlist for '{event.title}'.", event.id)
+        return reg
+
+    def remove(self, *, registration_id: uuid.UUID, actor_id: uuid.UUID) -> None:
+        reg = self.get_registration(registration_id)
+        if not has_permission(str(actor_id), "registrations.manage"):
+            raise AuthorizationError("You do not have permission to remove registrations.")
+        reg.deleted_at = utcnow()
+        self.registrations.commit()
 
     def _promote_waitlist(self, event_id: uuid.UUID) -> None:
         event = self.events.get_by_id(event_id)
@@ -252,3 +308,9 @@ class RegistrationService:
 
 
 __all__ = ["RegistrationService"]
+
+
+def _as_aware_utc(value):
+    if value is None or value.tzinfo is not None:
+        return value
+    return value.replace(tzinfo=timezone.utc)

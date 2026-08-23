@@ -3,7 +3,7 @@
  *
  * Feature pages are registered here as they are implemented. Each authenticated
  * area is wrapped with <ProtectedRoute>. Role-specific dashboards live under
- * /admin, /teacher, /officer and /student; the legacy /dashboard now redirects
+ * /admin, /professor, /officer and /student; the legacy /dashboard now redirects
  * to the caller's role dashboard.
  */
 import { Suspense, lazy } from "react";
@@ -13,8 +13,10 @@ import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { dashboardPathForRoles } from "@/features/dashboards/routeForRole";
 import { AuthenticatedLayout } from "@/layouts/AuthenticatedLayout";
+import { ForbiddenPage } from "@/components/ui/ErrorPages";
 
 const HomePage = lazy(() => import("@/pages/HomePage"));
+const SupportPage = lazy(() => import("@/pages/SupportPage"));
 const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"));
 const RegisterPage = lazy(() => import("@/features/auth/pages/RegisterPage"));
 const AnnouncementsPage = lazy(
@@ -36,6 +38,16 @@ const MyRegistrationsPage = lazy(
 const RolesPage = lazy(() => import("@/features/roles/pages/RolesPage"));
 const SchoolPage = lazy(() => import("@/features/school/pages/SchoolPage"));
 const UsersPage = lazy(() => import("@/features/users/pages/UsersPage"));
+const StudentProfilePage = lazy(() => import("@/features/users/pages/StudentProfilePage"));
+const ApprovalsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.ApprovalsPage })));
+const ReportsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.ReportsPage })));
+const ActivityLogsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.ActivityLogsPage })));
+const AdminRegistrationsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.AdminRegistrationsPage })));
+const SettingsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.SettingsPage })));
+const AttendancePage = lazy(() => import("@/features/attendance/pages/AttendancePage"));
+const StudentAttendancePage = lazy(() => import("@/features/attendance/pages/StudentAttendancePage"));
+const NotificationsPage = lazy(() => import("@/features/notifications/pages/NotificationsPage"));
+const CalendarPage = lazy(() => import("@/features/calendar/pages/CalendarPage"));
 
 // Role-specific dashboards (each in its own folder for isolated editing).
 const AdminDashboardPage = lazy(
@@ -68,21 +80,34 @@ export function AppRoutes() {
         >
           {/* Role dashboards */}
           <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/teacher" element={<TeacherDashboardPage />} />
+          <Route path="/professor" element={<TeacherDashboardPage />} />
+          <Route path="/teacher" element={<Navigate to="/professor" replace />} />
           <Route path="/officer" element={<OfficerDashboardPage />} />
           <Route path="/student" element={<StudentDashboardPage />} />
           {/* Legacy catch-all: send users to their role dashboard */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
+          <Route path="/forbidden" element={<ForbiddenPage />} />
 
           <Route path="/announcements" element={<AnnouncementsPage />} />
-          <Route path="/announcements/new" element={<CreateAnnouncementPage />} />
+          <Route path="/announcements/new" element={<ProtectedRoute requiredPermission="announcements.create"><CreateAnnouncementPage /></ProtectedRoute>} />
           <Route path="/events" element={<EventsPage />} />
-          <Route path="/events/new" element={<CreateEventPage />} />
+          <Route path="/events/new" element={<ProtectedRoute requiredPermission="events.create"><CreateEventPage /></ProtectedRoute>} />
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/registrations/mine" element={<MyRegistrationsPage />} />
-          <Route path="/users" element={<UsersPage />} />
-          <Route path="/roles" element={<RolesPage />} />
-          <Route path="/school" element={<SchoolPage />} />
+          <Route path="/users" element={<ProtectedRoute requiredPermission="users.view"><UsersPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<StudentProfilePage />} />
+          <Route path="/roles" element={<ProtectedRoute requiredPermission="roles.view"><RolesPage /></ProtectedRoute>} />
+          <Route path="/school" element={<ProtectedRoute requiredPermission="departments.view"><SchoolPage /></ProtectedRoute>} />
+          <Route path="/approvals" element={<ProtectedRoute requiredPermission="announcements.approve"><ApprovalsPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute requiredPermission="reports.view"><ReportsPage /></ProtectedRoute>} />
+          <Route path="/audit/logs" element={<ProtectedRoute requiredPermission="audit.view"><ActivityLogsPage /></ProtectedRoute>} />
+          <Route path="/registrations" element={<ProtectedRoute allowedRoles={["admin", "teacher", "student_council"]}><AdminRegistrationsPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute allowedRoles={["admin"]}><SettingsPage /></ProtectedRoute>} />
+          <Route path="/attendance" element={<ProtectedRoute requiredPermission="attendance.view"><AttendancePage /></ProtectedRoute>} />
+          <Route path="/attendance/mine" element={<ProtectedRoute allowedRoles={["student"]}><StudentAttendancePage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/support" element={<SupportPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

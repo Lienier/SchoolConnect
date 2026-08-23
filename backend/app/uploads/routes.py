@@ -11,6 +11,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from app.common.exceptions import NotFoundError, ValidationError
 from app.common.responses import success_response
 from app.uploads.service import UploadService
+from app.permissions.decorators import has_permission
 
 bp = Blueprint("uploads", __name__, url_prefix="/uploads")
 _service = UploadService()
@@ -25,6 +26,10 @@ def upload():
     actor = uuid.UUID(get_jwt_identity())
     entity_type = request.form.get("entity_type")
     entity_id = request.form.get("entity_id")
+    if not _service.allowed_entity_type(entity_type):
+        raise ValidationError("Unsupported upload target.")
+    if entity_type and not has_permission(actor, f"{entity_type}s.update"):
+        raise ValidationError("You cannot attach files to this resource.")
     record = _service.store(
         file=request.files["file"],
         uploader_id=actor,
@@ -37,8 +42,9 @@ def upload():
 
 
 @bp.get("/<path:filename>")
+@jwt_required()
 def serve(filename: str):
-    """Serve a stored file from the local upload folder."""
+    """Serve a stored file only to authenticated users."""
     folder = current_app.config.get("UPLOAD_FOLDER", "uploads")
     if not os.path.exists(os.path.join(folder, filename)):
         raise NotFoundError("File not found.")

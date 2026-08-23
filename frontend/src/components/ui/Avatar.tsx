@@ -1,7 +1,7 @@
 import { forwardRef, type ImgHTMLAttributes, type HTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 
-export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {}
+export type AvatarProps = HTMLAttributes<HTMLDivElement>;
 
 export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
   ({ className, children, ...props }, ref) => (
@@ -16,7 +16,7 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
 );
 Avatar.displayName = "Avatar";
 
-export interface AvatarImageProps extends ImgHTMLAttributes<HTMLImageElement> {}
+export type AvatarImageProps = ImgHTMLAttributes<HTMLImageElement>;
 
 export const AvatarImage = forwardRef<HTMLImageElement, AvatarImageProps>(
   ({ className, ...props }, ref) => (
@@ -29,7 +29,7 @@ export const AvatarImage = forwardRef<HTMLImageElement, AvatarImageProps>(
 );
 AvatarImage.displayName = "AvatarImage";
 
-export interface AvatarFallbackProps extends HTMLAttributes<HTMLDivElement> {}
+export type AvatarFallbackProps = HTMLAttributes<HTMLDivElement>;
 
 export const AvatarFallback = forwardRef<HTMLDivElement, AvatarFallbackProps>(
   ({ className, ...props }, ref) => (
