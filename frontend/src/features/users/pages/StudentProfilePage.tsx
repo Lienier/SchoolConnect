@@ -29,13 +29,13 @@ export default function StudentProfilePage() {
 
       {user && (
         <>
-          <Card className="border-slate-200 bg-white p-5 shadow-sm">
+          <Card className="border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
                 <UserRound className="h-8 w-8" />
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-2xl font-black text-[#102858]">
+                <h1 className="truncate text-2xl font-semibold text-[#102858] dark:text-white">
                   {user.full_name}
                 </h1>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -55,7 +55,7 @@ export default function StudentProfilePage() {
             <ProfileField icon={ShieldCheck} label="Email Verified" value={user.email_verified ? "Verified" : "Not verified"} />
           </div>
 
-          <Card className="border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm">
+          <Card className="border-slate-200 bg-white p-5 text-sm text-slate-500 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:text-navy-300 dark:shadow-none">
             Profile changes are handled by school staff for this MVP.
           </Card>
         </>
@@ -74,13 +74,13 @@ function ProfileField({
   value: string;
 }) {
   return (
-    <Card className="flex items-center gap-3 border-slate-200 bg-white p-4 shadow-sm">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-[#102858]">
+    <Card className="flex items-center gap-3 border-slate-200 bg-white p-4 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-[#102858] dark:bg-navy-900 dark:text-navy-200">
         <Icon className="h-5 w-5" />
       </span>
       <span className="min-w-0">
-        <span className="block text-xs font-bold uppercase tracking-wide text-slate-400">{label}</span>
-        <span className="mt-1 block truncate text-sm font-semibold text-[#102858]">{value}</span>
+        <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-navy-500">{label}</span>
+        <span className="mt-1 block truncate text-sm font-semibold text-[#102858] dark:text-white">{value}</span>
       </span>
     </Card>
   );

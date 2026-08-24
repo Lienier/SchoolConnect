@@ -18,12 +18,16 @@ interface Props {
   categories: AnnouncementCategory[];
   onSubmit: (values: AnnouncementFormValues, files: File[]) => Promise<void>;
   isSubmitting: boolean;
+  showApprovalOption?: boolean;
+  submitLabel?: string;
 }
 
 export function CreateAnnouncementForm({
   categories,
   onSubmit,
   isSubmitting,
+  showApprovalOption = true,
+  submitLabel = "Create Announcement",
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const {
@@ -155,9 +159,9 @@ export function CreateAnnouncementForm({
             </div>
           )}
         </div>
-        <Checkbox {...register("submit_for_approval")} label="Submit for approval" />
+        {showApprovalOption && <Checkbox {...register("submit_for_approval")} label="Submit for approval" />}
         <Button type="submit" isLoading={isSubmitting} className="w-full">
-          Create Announcement
+          {submitLabel}
         </Button>
       </form>
     </Card>

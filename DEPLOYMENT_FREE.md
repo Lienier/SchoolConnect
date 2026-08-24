@@ -60,8 +60,14 @@ STORAGE_BACKEND=cloudinary
 CLOUDINARY_CLOUD_NAME=<cloudinary-cloud-name>
 CLOUDINARY_API_KEY=<cloudinary-api-key>
 CLOUDINARY_API_SECRET=<cloudinary-api-secret>
-SEED_ADMIN_EMAIL=admin.demo@example.com
-SEED_ADMIN_PASSWORD=Admin123!
+SEED_ADMIN_EMAIL=admin@schoolconnect.local
+SEED_ADMIN_PASSWORD=<strong-admin-password>
+SEED_PROFESSOR_EMAIL=professor@schoolconnect.local
+SEED_PROFESSOR_PASSWORD=<strong-professor-password>
+SEED_OFFICER_EMAIL=officer@schoolconnect.local
+SEED_OFFICER_PASSWORD=<strong-officer-password>
+SEED_STUDENT_EMAIL=student@schoolconnect.local
+SEED_STUDENT_PASSWORD=<strong-student-password>
 RATELIMIT_STORAGE_URI=memory://
 CACHE_TYPE=SimpleCache
 ```
@@ -88,15 +94,17 @@ VITE_API_BASE_URL=https://<render-service>.onrender.com/api
 
 The included `frontend/vercel.json` keeps React Router pages working on refresh.
 
-## 5. Demo Accounts
+## 5. Baseline Accounts
 
-The seed script creates these demo accounts:
+The seed script creates only one clean baseline account per role. It does not
+seed school structure, announcements, events, registrations, attendance,
+notifications, or audit records.
 
 ```txt
-Admin: admin.demo@example.com / Admin123!
-Professor: teacher.demo@example.com / Teacher123!
-Student Council: officer.demo@example.com / Officer123!
-Student: student.demo@example.com / Student123!
+Admin: value of SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD
+Professor: value of SEED_PROFESSOR_EMAIL / SEED_PROFESSOR_PASSWORD
+Student Council: value of SEED_OFFICER_EMAIL / SEED_OFFICER_PASSWORD
+Student: value of SEED_STUDENT_EMAIL / SEED_STUDENT_PASSWORD
 ```
 
 ## 6. Smoke Test

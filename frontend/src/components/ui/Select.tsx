@@ -14,8 +14,8 @@ export const SelectTrigger = forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-11 w-full items-center justify-between rounded-xl border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400",
+      "flex h-11 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-navy-900 dark:border-navy-700 dark:bg-navy-900 dark:text-navy-100",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400 dark:focus-visible:ring-blue-700",
       "disabled:cursor-not-allowed disabled:opacity-50",
       "data-[placeholder]:text-navy-400",
       "transition-colors duration-200",
@@ -40,7 +40,7 @@ export const SelectContent = forwardRef<
       ref={ref}
       position={position}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border border-navy-100 bg-white text-navy-900 shadow-soft",
+        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-slate-200 bg-white text-navy-900 shadow-lg dark:border-navy-800 dark:bg-navy-950 dark:text-navy-100",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -64,7 +64,7 @@ export const SelectLabel = forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn("py-1.5 pl-3 text-sm font-medium text-navy-500", className)}
+    className={cn("py-1.5 pl-3 text-sm font-medium text-slate-500 dark:text-navy-400", className)}
     {...props}
   />
 ));
@@ -78,7 +78,7 @@ export const SelectItem = forwardRef<
     ref={ref}
     className={cn(
       "relative flex w-full cursor-default select-none items-center rounded-lg py-1.5 pl-3 pr-8 text-sm outline-none",
-      "focus:bg-navy-100 focus:text-navy-900",
+      "focus:bg-slate-100 focus:text-navy-900 dark:focus:bg-navy-800 dark:focus:text-white",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
@@ -100,7 +100,7 @@ export const SelectSeparator = forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Separator
     ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-navy-100", className)}
+    className={cn("-mx-1 my-1 h-px bg-slate-100 dark:bg-navy-800", className)}
     {...props}
   />
 ));

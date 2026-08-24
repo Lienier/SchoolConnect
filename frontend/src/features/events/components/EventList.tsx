@@ -30,6 +30,7 @@ export function EventList({ items }: { items: SchoolEvent[] }) {
           approvalRequired={e.approval_required}
           status={e.status}
           category={e.category}
+          imageUrl={e.banner_url}
           actions={
             <Link to={`/events/${e.id}`}>
               <Button size="sm" variant="secondary">View details</Button>

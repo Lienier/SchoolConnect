@@ -17,6 +17,7 @@ export default function CreateAnnouncementPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
+  const isAdmin = Boolean(user?.roles?.includes("admin"));
 
   const { data: categories = [] } = useQuery({
     queryKey: ["announcement-categories"],
@@ -31,7 +32,7 @@ export default function CreateAnnouncementPage() {
         summary: values.summary || undefined,
         category_id: values.category_id || undefined,
         priority: values.priority as "normal" | "important" | "urgent",
-        submit_for_approval: isProfessor ? true : values.submit_for_approval,
+        submit_for_approval: isAdmin ? false : isProfessor ? true : values.submit_for_approval,
       });
       if (files.length > 0) {
         const results = await Promise.allSettled(
@@ -56,7 +57,13 @@ export default function CreateAnnouncementPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
         title={isProfessor ? "New Professor Announcement" : "New Announcement"}
-        subtitle={isProfessor ? "Professor announcements are submitted to admin for approval before publishing." : "Draft a school bulletin and submit it for approval when ready."}
+        subtitle={
+          isAdmin
+            ? "Create an official school bulletin directly."
+            : isProfessor
+              ? "Professor announcements are submitted to admin for approval before publishing."
+              : "Draft a school bulletin and submit it for approval when ready."
+        }
         actions={
           <Link to="/announcements">
             <span className="inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900">
@@ -70,6 +77,8 @@ export default function CreateAnnouncementPage() {
         categories={categories}
         onSubmit={onSubmit}
         isSubmitting={false}
+        showApprovalOption={!isAdmin}
+        submitLabel={isProfessor ? "Submit Announcement" : "Create Announcement"}
       />
     </div>
   );

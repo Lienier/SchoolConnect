@@ -43,7 +43,7 @@ function ScannerModal({ open, onClose, onScan }: { open: boolean; onClose: () =>
   return (
     <Modal open={open} title="Scan attendance QR" onClose={onClose}>
       <div className="space-y-3">
-        <div id={readerId} className="overflow-hidden rounded-xl border border-slate-200" />
+        <div id={readerId} className="overflow-hidden rounded-xl border border-slate-200 dark:border-navy-800" />
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
     </Modal>
@@ -153,15 +153,15 @@ export default function AttendancePage() {
         }
       />
 
-      <Card className="border-slate-200 p-4 shadow-sm">
+      <Card className="border-slate-200 p-4 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
         <div className="flex flex-col gap-3 md:flex-row">
-          <select value={selectedEventId} onChange={(event) => { setEventId(event.target.value); setQrToken(null); }} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm md:max-w-sm">
+          <select value={selectedEventId} onChange={(event) => { setEventId(event.target.value); setQrToken(null); }} className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 md:max-w-sm">
             <option value="">Select an event</option>
             {availableEvents.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
           </select>
           <div className="relative flex-1">
             <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search participant or status..." className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3 text-sm" />
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search participant or status..." className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-3 text-sm dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100" />
           </div>
         </div>
         {events.isError && <p className="mt-3 text-sm text-red-600">Could not load events. <button className="font-semibold underline" onClick={() => events.refetch()}>Try again</button></p>}
@@ -171,8 +171,8 @@ export default function AttendancePage() {
           </p>
         )}
         {selectedEvent && (
-          <p className="mt-3 text-sm text-slate-500">
-            QR will be generated for <span className="font-semibold text-[#102858]">{selectedEvent.title}</span>. Students scan it from My Attendance.
+          <p className="mt-3 text-sm text-slate-500 dark:text-navy-300">
+            QR will be generated for <span className="font-semibold text-[#102858] dark:text-white">{selectedEvent.title}</span>. Students scan it from My Attendance.
           </p>
         )}
       </Card>
@@ -184,14 +184,14 @@ export default function AttendancePage() {
               <IconStat key={key} label={key} value={summary.data?.[key] ?? 0} icon={key === "present" ? CheckCircle2 : ClipboardCheck} tone={tone(key)} />
             ))}
           </div>
-          <Card className="overflow-hidden border-slate-200 p-0 shadow-sm">
+          <Card className="overflow-hidden border-slate-200 p-0 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
             <div className="overflow-x-auto">
               <table className="admin-table">
                 <thead><tr><th>Participant</th><th>Registration</th><th>Attendance</th><th>Check-in</th><th>Method</th><th>Actions</th></tr></thead>
                 <tbody>
                   {items.map((item) => (
                     <tr key={item.id}>
-                      <td className="font-semibold text-[#102858]">{item.participant_name ?? "Participant"}</td>
+                      <td className="font-semibold text-[#102858] dark:text-white">{item.participant_name ?? "Participant"}</td>
                       <td><StatusBadge tone="info">{item.registration_status ?? "approved"}</StatusBadge></td>
                       <td><StatusBadge tone={tone(item.status)}>{item.status}</StatusBadge></td>
                       <td>{item.check_in_at ? new Date(item.check_in_at).toLocaleString() : "-"}</td>
@@ -227,16 +227,16 @@ export default function AttendancePage() {
         }
       >
         <div className="space-y-3">
-          <p className="text-sm text-slate-600">Show this QR during the event. Students scan it from My Attendance to check themselves in.</p>
+          <p className="text-sm text-slate-600 dark:text-navy-300">Show this QR during the event. Students scan it from My Attendance to check themselves in.</p>
           {qrToken?.qr_data_url ? (
-            <img alt="Attendance QR code" className="mx-auto h-56 w-56 rounded-xl border border-slate-200 bg-white p-2" src={qrToken.qr_data_url} />
+            <img alt="Attendance QR code" className="mx-auto h-56 w-56 rounded-xl border border-slate-200 bg-white p-2 dark:border-navy-800" src={qrToken.qr_data_url} />
           ) : (
             <div className="mx-auto flex h-56 w-56 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
               QR image unavailable. Students can enter the code manually.
             </div>
           )}
-          <code className="block break-all rounded-xl bg-slate-100 p-3 text-sm text-[#102858]">{qrToken?.token}</code>
-          <p className="text-xs text-slate-500">Reusable for different students until {qrToken ? new Date(qrToken.expires_at).toLocaleString() : ""}</p>
+          <code className="block break-all rounded-lg bg-slate-100 p-3 text-sm text-[#102858] dark:bg-navy-900 dark:text-navy-100">{qrToken?.token}</code>
+          <p className="text-xs text-slate-500 dark:text-navy-400">Reusable for different students until {qrToken ? new Date(qrToken.expires_at).toLocaleString() : ""}</p>
         </div>
       </Modal>
       <ScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={(token) => scan.mutate(token)} />

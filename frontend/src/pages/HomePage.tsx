@@ -39,24 +39,24 @@ export default function HomePage() {
   const events = filteredItems.filter((item) => item.type === "event").slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#102858]">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div className="min-h-screen bg-slate-50 text-[#102858] dark:bg-navy-950 dark:text-navy-100">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-navy-800 dark:bg-navy-950/95">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-4 py-3 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-700">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-blue-100 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300">
               <BookOpen size={22} />
             </div>
             <span className="text-xl font-bold tracking-tight">
-              School<span className="text-blue-700">Connect</span>
+              School<span className="text-blue-700 dark:text-blue-300">Connect</span>
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
-            <a href="#home" className="text-blue-700">Home</a>
-            <a href="#announcements" className="transition hover:text-blue-700">Announcements</a>
-            <a href="#events" className="transition hover:text-blue-700">Events</a>
-            <a href="#features" className="transition hover:text-blue-700">Features</a>
-            <a href="#contact" className="transition hover:text-blue-700">Contact</a>
+          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 dark:text-navy-300 md:flex">
+            <a href="#home" className="text-blue-700 dark:text-blue-300">Home</a>
+            <a href="#announcements" className="transition hover:text-blue-700 dark:hover:text-blue-300">Announcements</a>
+            <a href="#events" className="transition hover:text-blue-700 dark:hover:text-blue-300">Events</a>
+            <a href="#features" className="transition hover:text-blue-700 dark:hover:text-blue-300">Features</a>
+            <a href="#contact" className="transition hover:text-blue-700 dark:hover:text-blue-300">Contact</a>
           </nav>
 
           {isAuthenticated ? (
@@ -75,28 +75,28 @@ export default function HomePage() {
       </header>
 
       <main>
-        <section id="home" className="relative overflow-hidden bg-white">
+        <section id="home" className="relative overflow-hidden bg-white dark:bg-navy-950">
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${heroImage})` }}
             aria-hidden="true"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/15" aria-hidden="true" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/15 dark:from-navy-950 dark:via-navy-950/92 dark:to-navy-950/35" aria-hidden="true" />
           <div className="relative mx-auto flex min-h-[430px] max-w-7xl items-center px-4 py-14 sm:px-6 lg:px-8">
             <div className="max-w-2xl">
-              <p className="mb-5 inline-flex rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 ring-1 ring-blue-100">
+              <p className="mb-5 inline-flex rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 ring-1 ring-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900">
                 Welcome to SchoolConnect
               </p>
-              <h1 className="text-4xl font-bold leading-tight tracking-tight text-[#0c1f44] sm:text-5xl lg:text-6xl">
+              <h1 className="text-4xl font-semibold leading-tight tracking-tight text-[#0c1f44] dark:text-white sm:text-5xl lg:text-6xl">
                 Stay informed. Get involved. Be connected.
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 dark:text-navy-300 sm:text-lg">
                 A focused platform for school announcements, upcoming events, registration,
                 attendance, and community updates.
               </p>
 
               <form
-                className="mt-7 flex max-w-xl flex-col gap-3 rounded-xl border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/70 sm:flex-row"
+                className="mt-7 flex max-w-xl flex-col gap-3 rounded-xl border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/70 dark:border-navy-800 dark:bg-navy-950 dark:shadow-none sm:flex-row"
                 onSubmit={(event) => event.preventDefault()}
               >
                 <div className="relative flex-1">
@@ -105,7 +105,7 @@ export default function HomePage() {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search announcements or events..."
-                    className="h-12 w-full rounded-lg border-0 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                    className="h-12 w-full rounded-lg border-0 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:bg-navy-950 dark:text-navy-100 dark:placeholder:text-navy-500"
                   />
                 </div>
                 <Button type="submit" className="h-12 rounded-lg px-6">Search</Button>
@@ -122,7 +122,7 @@ export default function HomePage() {
         </section>
 
         <section className="mx-auto grid max-w-7xl gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[0.95fr_1.25fr] lg:px-8">
-          <div id="announcements" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div id="announcements" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
             <SectionHeader title="Latest Announcements" to="/announcements" />
             <div className="mt-4 divide-y divide-slate-100">
               {feed.isLoading && <p className="py-8 text-sm text-slate-500">Loading announcements...</p>}
@@ -139,7 +139,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div id="events" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div id="events" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
             <SectionHeader title="Upcoming Events" to="/events" />
             <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {feed.isLoading && <p className="col-span-full py-8 text-sm text-slate-500">Loading events...</p>}
@@ -185,10 +185,10 @@ export default function HomePage() {
 
 function FeatureCard({ title, text, to }: { title: string; text: string; to: string }) {
   return (
-    <a href={to} className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <p className="text-base font-bold text-[#102858]">{title}</p>
-      <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{text}</p>
-      <span className="mt-4 inline-flex items-center text-sm font-semibold text-blue-700">
+    <a href={to} className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:bg-slate-50 dark:border-navy-800 dark:bg-navy-950 dark:shadow-none dark:hover:border-blue-900 dark:hover:bg-navy-900">
+      <p className="text-base font-semibold text-[#102858] dark:text-white">{title}</p>
+      <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600 dark:text-navy-300">{text}</p>
+      <span className="mt-4 inline-flex items-center text-sm font-semibold text-blue-700 dark:text-blue-300">
         Open
         <ArrowRight size={15} className="ml-2 transition group-hover:translate-x-0.5" />
       </span>
@@ -199,8 +199,8 @@ function FeatureCard({ title, text, to }: { title: string; text: string; to: str
 function SectionHeader({ title, to }: { title: string; to: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <h2 className="text-lg font-bold text-[#102858]">{title}</h2>
-      <Link to={to} className="text-sm font-semibold text-blue-700 hover:text-blue-800">
+      <h2 className="text-lg font-semibold text-[#102858] dark:text-white">{title}</h2>
+      <Link to={to} className="text-sm font-semibold text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200">
         View all
       </Link>
     </div>
@@ -211,10 +211,10 @@ function AnnouncementRow({ item }: { item: FeedItem }) {
   return (
     <article className="grid gap-3 py-4 sm:grid-cols-[1fr_auto]">
       <div>
-        <p className="text-sm font-bold text-[#102858]">{item.title}</p>
-        <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{item.body}</p>
+        <p className="text-sm font-semibold text-[#102858] dark:text-white">{item.title}</p>
+        <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600 dark:text-navy-300">{item.body}</p>
       </div>
-      <time className="text-xs font-medium text-slate-500">{formatDate(item.created_at)}</time>
+      <time className="text-xs font-medium text-slate-500 dark:text-navy-400">{formatDate(item.created_at)}</time>
     </article>
   );
 }
@@ -228,7 +228,7 @@ function EventCard({ item, index }: { item: FeedItem; index: number }) {
   ];
 
   return (
-    <Link to={`/events/${item.id}`} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <Link to={`/events/${item.id}`} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:border-blue-200 dark:border-navy-800 dark:bg-navy-950 dark:shadow-none dark:hover:border-blue-900">
       <div
         className="h-28 bg-cover bg-center"
         style={{ backgroundImage: `url(${eventImages[index % eventImages.length]})` }}
@@ -237,9 +237,9 @@ function EventCard({ item, index }: { item: FeedItem; index: number }) {
         <div className="mb-3 inline-flex rounded-md bg-blue-700 px-2 py-1 text-xs font-bold uppercase tracking-wide text-white">
           {formatDate(item.start_time ?? item.created_at, { month: "short", day: "2-digit" })}
         </div>
-        <p className="line-clamp-2 min-h-10 text-sm font-bold text-[#102858]">{item.title}</p>
-        <p className="mt-3 text-xs text-slate-500">{formatTimeRange(item.start_time, item.end_time)}</p>
-        <p className="mt-2 line-clamp-1 text-xs text-slate-500">{item.location ?? "Campus venue"}</p>
+        <p className="line-clamp-2 min-h-10 text-sm font-semibold text-[#102858] dark:text-white">{item.title}</p>
+        <p className="mt-3 text-xs text-slate-500 dark:text-navy-400">{formatTimeRange(item.start_time, item.end_time)}</p>
+        <p className="mt-2 line-clamp-1 text-xs text-slate-500 dark:text-navy-400">{item.location ?? "Campus venue"}</p>
       </div>
     </Link>
   );

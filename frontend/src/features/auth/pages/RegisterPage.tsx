@@ -47,11 +47,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-navy-50 px-4">
-      <Card className="w-full max-w-md">
+    <main className="flex min-h-screen items-center justify-center bg-navy-50 px-4 dark:bg-navy-950">
+      <Card className="w-full max-w-md border-navy-100 bg-white shadow-sm dark:border-navy-800 dark:bg-navy-900 dark:shadow-none">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-semibold text-navy-800">{APP_NAME}</h1>
-          <p className="mt-1 text-sm text-accent">Create your account</p>
+          <h1 className="text-2xl font-semibold text-navy-800 dark:text-white">{APP_NAME}</h1>
+          <p className="mt-1 text-sm text-accent dark:text-navy-300">Create your account</p>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div>
@@ -92,7 +92,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-sm text-accent hover:text-navy-700"
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-sm text-accent hover:text-navy-700 dark:text-navy-300 dark:hover:text-white"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "Hide" : "Show"}
@@ -116,7 +116,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 flex items-center px-3 text-sm text-accent hover:text-navy-700"
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-sm text-accent hover:text-navy-700 dark:text-navy-300 dark:hover:text-white"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "Hide" : "Show"}
@@ -132,9 +132,9 @@ export default function RegisterPage() {
             Create Account
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-accent">
+        <p className="mt-6 text-center text-sm text-accent dark:text-navy-300">
           Already have an account?{" "}
-          <Link to="/login" className="font-medium text-navy-700 hover:underline">
+          <Link to="/login" className="font-medium text-blue-700 hover:underline dark:text-blue-300">
             Sign In
           </Link>
         </p>

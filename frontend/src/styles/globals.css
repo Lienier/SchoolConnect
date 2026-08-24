@@ -6,6 +6,11 @@
   color-scheme: light;
 }
 
+:root.dark,
+.dark {
+  color-scheme: dark;
+}
+
 html,
 body,
 #root {
@@ -18,11 +23,213 @@ body {
     "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+.dark body {
+  background: #081224;
+  color: #eef2f9;
+}
+
 @layer components {
   .admin-table { @apply min-w-full text-left text-sm; }
-  .admin-table th { @apply whitespace-nowrap border-b border-slate-100 px-5 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-500; }
-  .admin-table td { @apply border-b border-slate-100 px-5 py-4 align-middle text-slate-600; }
-  .admin-table tbody tr { @apply transition-colors hover:bg-blue-50/40; }
+  .admin-table th { @apply whitespace-nowrap border-b border-slate-200 bg-slate-50 px-5 py-3.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-400; }
+  .admin-table td { @apply border-b border-slate-100 px-5 py-4 align-middle text-slate-600 dark:border-navy-800 dark:text-navy-300; }
+  .admin-table tbody tr { @apply transition-colors hover:bg-slate-50/70 dark:hover:bg-navy-900/70; }
+  .admin-table tbody tr:last-child td { @apply border-b-0; }
+
+  select,
+  input,
+  textarea {
+    @apply dark:border-navy-700 dark:bg-navy-900 dark:text-navy-100 dark:placeholder:text-navy-500;
+  }
+
+  option {
+    @apply dark:bg-navy-950 dark:text-navy-100;
+  }
+
+  .dark .text-\[\#102858\] {
+    color: #eef2f9;
+  }
+
+  .dark .bg-white {
+    background-color: #0d1526;
+  }
+
+  .dark .bg-slate-50 {
+    background-color: #152238;
+  }
+
+  .dark .bg-slate-100 {
+    background-color: #1b2d4f;
+  }
+
+  .dark .bg-gray-50,
+  .dark .bg-gray-100 {
+    background-color: #152238;
+  }
+
+  .dark .bg-navy-50 {
+    background-color: #0d1526;
+  }
+
+  .dark .bg-navy-100 {
+    background-color: #152238;
+  }
+
+  .dark .bg-navy-200 {
+    background-color: #1b2d4f;
+  }
+
+  .dark .border-slate-100,
+  .dark .border-slate-200,
+  .dark .border-gray-100,
+  .dark .border-gray-200 {
+    border-color: #1b2d4f;
+  }
+
+  .dark .border-navy-100,
+  .dark .border-navy-200,
+  .dark .ring-navy-100,
+  .dark .ring-navy-200 {
+    border-color: #1b2d4f;
+    --tw-ring-color: #1b2d4f;
+  }
+
+  .dark .text-navy-950,
+  .dark .text-navy-900,
+  .dark .text-navy-800,
+  .dark .text-navy-700,
+  .dark .text-primary {
+    color: #eef2f9;
+  }
+
+  .dark .text-navy-600,
+  .dark .text-navy-500,
+  .dark .text-accent {
+    color: #adc0e0;
+  }
+
+  .dark .text-navy-400 {
+    color: #7f9bcd;
+  }
+
+  .dark .text-\[\#0c1f44\] {
+    color: #ffffff;
+  }
+
+  .dark .hover\:text-navy-700:hover,
+  .dark .hover\:text-navy-800:hover,
+  .dark .hover\:text-navy-900:hover,
+  .dark .hover\:text-accent:hover {
+    color: #ffffff;
+  }
+
+  .dark .hover\:bg-navy-50:hover,
+  .dark .hover\:bg-navy-100:hover,
+  .dark .hover\:bg-gray-50:hover,
+  .dark .hover\:bg-gray-100:hover {
+    background-color: #1b2d4f;
+  }
+
+  .dark .text-slate-400 {
+    color: #7f9bcd;
+  }
+
+  .dark .text-slate-500,
+  .dark .text-slate-600,
+  .dark .text-slate-700,
+  .dark .text-gray-500,
+  .dark .text-gray-600,
+  .dark .text-gray-700 {
+    color: #adc0e0;
+  }
+
+  .dark .text-gray-800,
+  .dark .text-gray-900 {
+    color: #eef2f9;
+  }
+
+  .dark .bg-blue-50,
+  .dark .bg-blue-100,
+  .dark .bg-sky-50,
+  .dark .bg-sky-100 {
+    background-color: rgba(30, 64, 175, 0.32);
+  }
+
+  .dark .text-blue-600,
+  .dark .text-blue-700,
+  .dark .text-blue-800,
+  .dark .text-blue-900,
+  .dark .text-sky-600,
+  .dark .text-sky-700 {
+    color: #93c5fd;
+  }
+
+  .dark .border-blue-100,
+  .dark .border-blue-200,
+  .dark .border-sky-200,
+  .dark .ring-blue-100,
+  .dark .ring-slate-100,
+  .dark .ring-slate-200 {
+    border-color: #1e3a8a;
+    --tw-ring-color: #1e3a8a;
+  }
+
+  .dark .bg-emerald-50,
+  .dark .bg-emerald-100 {
+    background-color: rgba(6, 78, 59, 0.42);
+  }
+
+  .dark .text-emerald-700,
+  .dark .text-emerald-800 {
+    color: #6ee7b7;
+  }
+
+  .dark .border-emerald-200 {
+    border-color: #065f46;
+  }
+
+  .dark .bg-amber-50,
+  .dark .bg-amber-100 {
+    background-color: rgba(120, 53, 15, 0.42);
+  }
+
+  .dark .text-amber-700,
+  .dark .text-amber-800 {
+    color: #fcd34d;
+  }
+
+  .dark .border-amber-200 {
+    border-color: #92400e;
+  }
+
+  .dark .bg-red-50,
+  .dark .bg-red-100 {
+    background-color: rgba(127, 29, 29, 0.42);
+  }
+
+  .dark .text-red-600,
+  .dark .text-red-700,
+  .dark .text-red-800 {
+    color: #fca5a5;
+  }
+
+  .dark .border-red-200 {
+    border-color: #991b1b;
+  }
+
+  .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+  .dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #1b2d4f;
+  }
+
+  .dark .shadow-sm,
+  .dark .shadow-md,
+  .dark .shadow-lg,
+  .dark .shadow-xl,
+  .dark .shadow-2xl,
+  .dark .shadow-card,
+  .dark .shadow-soft {
+    box-shadow: none;
+  }
 
   .school-calendar .fc {
     --fc-border-color: #e2e8f0;
@@ -35,9 +242,30 @@ body {
     --fc-today-bg-color: #eff6ff;
     color: #102858;
   }
+  .dark .school-calendar .fc {
+    --fc-border-color: #1b2d4f;
+    --fc-button-bg-color: #1d4ed8;
+    --fc-button-border-color: #1d4ed8;
+    --fc-button-hover-bg-color: #2563eb;
+    --fc-button-hover-border-color: #2563eb;
+    --fc-button-active-bg-color: #1e40af;
+    --fc-button-active-border-color: #1e40af;
+    --fc-page-bg-color: #0d1526;
+    --fc-neutral-bg-color: #152238;
+    --fc-today-bg-color: rgba(37, 99, 235, 0.15);
+    color: #d6e0f0;
+  }
   .school-calendar .fc-toolbar { flex-wrap: wrap; gap: 0.75rem; }
   .school-calendar .fc-toolbar-title { font-size: 1.1rem; font-weight: 800; }
   .school-calendar .fc-button { border-radius: 0.6rem; font-size: 0.8rem; font-weight: 700; }
   .school-calendar .fc-event { cursor: pointer; border-radius: 0.35rem; padding: 0.1rem 0.25rem; }
   .school-calendar .fc-daygrid-day-number { color: #475569; font-size: 0.8rem; font-weight: 700; }
+  .dark .school-calendar .fc-daygrid-day-number { color: #adc0e0; }
+  .dark .school-calendar .fc-col-header-cell-cushion,
+  .dark .school-calendar .fc-toolbar-title { color: #eef2f9; }
+}
+
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 0.75rem;
 }

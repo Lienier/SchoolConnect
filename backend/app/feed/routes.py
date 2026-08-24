@@ -78,6 +78,7 @@ def _audience_allows(announcement: Announcement, role_names: set[str]) -> bool:
 
 
 def _event_item(event: Event, registered_count: int) -> dict:
+    attachments = [attachment.to_dict() for attachment in event.attachments]
     return {
         "id": str(event.id),
         "type": "event",
@@ -103,8 +104,8 @@ def _event_item(event: Event, registered_count: int) -> dict:
         "max_team_size": event.max_team_size,
         "approval_required": event.approval_required,
         "tags": [event.category.slug] if event.category else [],
-        "attachments": [],
-        "banner_url": None,
+        "attachments": attachments,
+        "banner_url": event.banner_url,
     }
 
 

@@ -46,16 +46,16 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
         <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="p-5 sm:p-7">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">
               Student Home
             </p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#102858]">
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#102858] dark:text-white">
               Welcome back, {user?.full_name?.split(" ")[0] ?? "there"}.
             </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-navy-300">
               Your school feed, registrations, check-ins, and event updates are ready from one place.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
@@ -73,7 +73,7 @@ export default function StudentDashboardPage() {
               </Link>
             </div>
           </div>
-          <div className="grid grid-cols-3 border-t border-slate-200 bg-slate-50 lg:border-l lg:border-t-0">
+          <div className="grid grid-cols-3 border-t border-slate-200 bg-slate-50 dark:border-navy-800 dark:bg-navy-900 lg:border-l lg:border-t-0">
             <Metric label="Upcoming" value={isLoading ? "..." : (stats?.upcoming_events ?? 0)} />
             <Metric label="Registered" value={isLoading ? "..." : (stats?.my_registrations ?? 0)} />
             <Metric label="Unread" value={isLoading ? "..." : (stats?.notifications ?? 0)} />
@@ -86,11 +86,11 @@ export default function StudentDashboardPage() {
           const Icon = item.icon;
           return (
             <Link key={item.to} to={item.to}>
-              <Card className="flex h-full items-center gap-3 border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+              <Card className="flex h-full items-center gap-3 border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:bg-slate-50 dark:border-navy-800 dark:bg-navy-950 dark:shadow-none dark:hover:border-blue-900 dark:hover:bg-navy-900">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
                   <Icon className="h-5 w-5" />
                 </span>
-                <span className="text-sm font-bold text-[#102858]">{item.label}</span>
+                <span className="text-sm font-semibold text-[#102858] dark:text-white">{item.label}</span>
               </Card>
             </Link>
           );
@@ -108,22 +108,22 @@ export default function StudentDashboardPage() {
           />
         </div>
         <div className="space-y-5">
-          <Card className="border-slate-200 bg-white p-5 shadow-sm">
+          <Card className="border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-[#102858]">Next events</h2>
-              <Link to="/events" className="text-xs font-bold text-blue-700 hover:underline">
+              <h2 className="font-semibold text-[#102858] dark:text-white">Next events</h2>
+              <Link to="/events" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
                 View all
               </Link>
             </div>
             <div className="mt-4 space-y-3">
-              {upcoming.isLoading && <p className="text-sm text-navy-500">Loading events...</p>}
+              {upcoming.isLoading && <p className="text-sm text-navy-500 dark:text-navy-400">Loading events...</p>}
               {!upcoming.isLoading && nextEvents.length === 0 && (
-                <p className="text-sm text-navy-500">No upcoming events are open right now.</p>
+                <p className="text-sm text-navy-500 dark:text-navy-400">No upcoming events are open right now.</p>
               )}
               {nextEvents.map((event) => (
-                <Link key={event.id} to={`/events/${event.id}`} className="block rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50">
-                  <span className="block text-sm font-bold text-[#102858]">{event.title}</span>
-                  <span className="mt-1 block text-xs text-slate-500">
+                <Link key={event.id} to={`/events/${event.id}`} className="block rounded-lg border border-slate-200 p-3 transition hover:bg-slate-50 dark:border-navy-800 dark:hover:bg-navy-900">
+                  <span className="block text-sm font-semibold text-[#102858] dark:text-white">{event.title}</span>
+                  <span className="mt-1 block text-xs text-slate-500 dark:text-navy-400">
                     {event.start_time ? new Date(event.start_time).toLocaleString() : "Schedule to be announced"}
                   </span>
                   <span className="mt-2 flex flex-wrap gap-2">
@@ -135,14 +135,14 @@ export default function StudentDashboardPage() {
             </div>
           </Card>
 
-          <Card className="border-slate-200 bg-white p-5 shadow-sm">
+          <Card className="border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                 <CheckCircle2 className="h-5 w-5" />
               </span>
               <div>
-                <h2 className="font-bold text-[#102858]">Attendance</h2>
-                <p className="text-sm text-slate-500">
+                <h2 className="font-semibold text-[#102858] dark:text-white">Attendance</h2>
+                <p className="text-sm text-slate-500 dark:text-navy-300">
                   {recentAttendance
                     ? `${recentAttendance.event_title ?? "Latest event"}: ${recentAttendance.status}`
                     : "No attendance records yet."}
@@ -164,9 +164,9 @@ export default function StudentDashboardPage() {
 
 function Metric({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="border-r border-slate-200 p-4 text-center last:border-r-0 sm:p-5 lg:flex lg:flex-col lg:justify-center">
-      <p className="text-2xl font-black text-[#102858]">{value}</p>
-      <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+    <div className="border-r border-slate-200 p-4 text-center last:border-r-0 dark:border-navy-800 sm:p-5 lg:flex lg:flex-col lg:justify-center">
+      <p className="text-2xl font-semibold text-[#102858] dark:text-white">{value}</p>
+      <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-navy-400">{label}</p>
     </div>
   );
 }

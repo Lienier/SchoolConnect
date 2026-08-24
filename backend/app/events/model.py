@@ -110,6 +110,9 @@ class Event(db.Model):
     approvals: Mapped[list["EventApproval"]] = relationship(
         back_populates="event", cascade="all, delete-orphan"
     )
+    attachments: Mapped[list["EventAttachment"]] = relationship(
+        back_populates="event", cascade="all, delete-orphan"
+    )
     results: Mapped[list["EventResult"]] = relationship(
         back_populates="event", cascade="all, delete-orphan"
     )
@@ -149,6 +152,8 @@ class Event(db.Model):
             "organizer_role": (
                 self.organizer.roles[0].name if self.organizer and self.organizer.roles else None
             ),
+            "attachments": [attachment.to_dict() for attachment in self.attachments],
+            "banner_url": self.banner_url,
         }
         if include_approvals:
             data["approvals"] = [
@@ -164,6 +169,13 @@ class Event(db.Model):
             ]
             data["results"] = [r.to_dict() for r in self.results]
         return data
+
+    @property
+    def banner_url(self) -> str | None:
+        for attachment in self.attachments:
+            if attachment.file and attachment.file.content_type.startswith("image/"):
+                return attachment.file.url
+        return None
 
 
 class EventAttachment(db.Model):
@@ -188,6 +200,19 @@ class EventAttachment(db.Model):
         ForeignKey("uploaded_files.id", ondelete="CASCADE"),
         nullable=False,
     )
+    event: Mapped[Event] = relationship(back_populates="attachments")
+    file: Mapped["UploadedFile"] = relationship("UploadedFile", lazy="joined")
+
+    def to_dict(self) -> dict:
+        return {
+            "id": str(self.id),
+            "file_id": str(self.file_id),
+            "filename": self.file.filename if self.file else None,
+            "original_name": self.file.original_name if self.file else None,
+            "content_type": self.file.content_type if self.file else None,
+            "size_bytes": self.file.size_bytes if self.file else None,
+            "url": self.file.url if self.file else None,
+        }
 
 
 class EventRequirement(db.Model):

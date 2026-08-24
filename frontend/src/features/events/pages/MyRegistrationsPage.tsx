@@ -87,10 +87,10 @@ export default function MyRegistrationsPage() {
             type="button"
             onClick={() => setActiveFilter(filter.key)}
             className={cn(
-              "shrink-0 rounded-full px-4 py-2 text-sm font-bold transition",
+              "shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition",
               activeFilter === filter.key
                 ? "bg-[#0d5ee8] text-white shadow-sm"
-                : "bg-white text-[#102858] shadow-sm ring-1 ring-slate-200 hover:bg-slate-50",
+                : "bg-white text-[#102858] shadow-sm ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-navy-950 dark:text-navy-100 dark:ring-navy-800 dark:hover:bg-navy-900",
             )}
           >
             {filter.label}
@@ -101,10 +101,10 @@ export default function MyRegistrationsPage() {
       {isLoading && <Card className="border-slate-200 p-8 text-center text-slate-500 shadow-sm">Loading registrations...</Card>}
       {isError && <Card className="border-red-200 bg-red-50 p-8 text-center text-red-700">Could not load your registrations.</Card>}
       {!isLoading && !isError && filtered.length === 0 && (
-        <Card className="border-dashed border-slate-200 bg-white p-10 text-center shadow-sm">
+        <Card className="border-dashed border-slate-200 bg-white p-10 text-center shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
           <Calendar className="mx-auto h-12 w-12 text-navy-200" />
-          <h3 className="mt-4 text-lg font-bold text-[#102858]">No registrations here</h3>
-          <p className="mt-2 text-sm text-slate-500">Try another filter or browse open events.</p>
+          <h3 className="mt-4 text-lg font-semibold text-[#102858] dark:text-white">No registrations here</h3>
+          <p className="mt-2 text-sm text-slate-500 dark:text-navy-400">Try another filter or browse open events.</p>
         </Card>
       )}
 
@@ -137,7 +137,7 @@ export default function MyRegistrationsPage() {
           </>
         }
       >
-        <p className="text-sm text-navy-600">Are you sure you want to cancel your registration for {cancelTarget?.title}?</p>
+        <p className="text-sm text-navy-600 dark:text-navy-300">Are you sure you want to cancel your registration for {cancelTarget?.title}?</p>
       </Modal>
     </div>
   );
@@ -150,13 +150,13 @@ function RegistrationCard({ registration, onCancel }: { registration: Registrati
   };
 
   return (
-    <Card className="flex h-full flex-col border-slate-200 bg-white p-5 shadow-sm">
+    <Card className="flex h-full flex-col border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link to={`/events/${registration.event_id}`} className="text-lg font-bold text-[#102858] hover:underline">
+          <Link to={`/events/${registration.event_id}`} className="text-lg font-semibold text-[#102858] hover:underline dark:text-white">
             {registration.event_title ?? `Event ${registration.event_id.slice(0, 8)}`}
           </Link>
-          <p className="mt-1 text-xs text-slate-500">Registered {new Date(registration.created_at).toLocaleString()}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-navy-400">Registered {new Date(registration.created_at).toLocaleString()}</p>
         </div>
         <Badge tone={statusTones[registration.status] ?? "neutral"} className="shrink-0 text-xs">
           {registration.status}
@@ -164,14 +164,14 @@ function RegistrationCard({ registration, onCancel }: { registration: Registrati
       </div>
 
       {registration.team_name && (
-        <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-          <div className="flex items-center gap-2 font-bold">
+        <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+          <div className="flex items-center gap-2 font-semibold">
             <Users className="h-4 w-4" />
             {registration.team_name}
             {registration.team_role && <span className="text-xs font-semibold uppercase tracking-wide text-blue-600">{registration.team_role}</span>}
           </div>
           {registration.team_code && (
-            <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 font-mono font-black">
+            <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 font-mono font-semibold dark:bg-navy-950 dark:text-white">
               {registration.team_code}
               <Button size="sm" variant="secondary" onClick={copyCode}>
                 <Copy className="mr-1.5 h-3.5 w-3.5" />

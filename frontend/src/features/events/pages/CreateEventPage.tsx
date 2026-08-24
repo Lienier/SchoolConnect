@@ -11,6 +11,7 @@ import type { EventFormValues } from "@/features/events/validators";
 import { useToast } from "@/providers/ToastProvider";
 import { PageHeader } from "@/components/ui/AdminPrimitives";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { uploadsApi } from "@/features/uploads/services/uploadsApi";
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
@@ -18,16 +19,17 @@ export default function CreateEventPage() {
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
+  const isAdmin = Boolean(user?.roles?.includes("admin"));
 
   const { data: categories = [] } = useQuery({
     queryKey: ["event-categories"],
     queryFn: () => eventsApi.listCategories(),
   });
 
-  const onSubmit = async (values: EventFormValues) => {
+  const onSubmit = async (values: EventFormValues, files: File[]) => {
     setSubmitting(true);
     try {
-      await eventsApi.create({
+      const event = await eventsApi.create({
         title: values.title,
         description: values.description || undefined,
         category_id: values.category_id || undefined,
@@ -39,9 +41,21 @@ export default function CreateEventPage() {
         max_team_size: values.max_team_size
           ? Number(values.max_team_size)
           : undefined,
-        submit_for_approval: isProfessor ? true : values.submit_for_approval,
+        submit_for_approval: isAdmin ? false : isProfessor ? true : values.submit_for_approval,
       });
-      toast(isProfessor ? "Event submitted for admin approval." : "Event created.", "success");
+      if (files.length > 0) {
+        const results = await Promise.allSettled(
+          files.map((file) => uploadsApi.upload(file, { entity_type: "event", entity_id: event.id })),
+        );
+        const failed = results.filter((result) => result.status === "rejected").length;
+        if (failed > 0) {
+          toast(`Event created, but ${failed} photo${failed === 1 ? "" : "s"} failed to upload.`, "warning");
+        } else {
+          toast(isProfessor ? "Event and photos submitted for admin approval." : "Event and photos created.", "success");
+        }
+      } else {
+        toast(isProfessor ? "Event submitted for admin approval." : "Event created.", "success");
+      }
       navigate("/events");
     } catch {
       toast("Could not create event.", "error");
@@ -54,7 +68,13 @@ export default function CreateEventPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
         title={isProfessor ? "New Professor Event" : "New Event"}
-        subtitle={isProfessor ? "Professor events are submitted to admin for approval before students can register." : "Create a draft event or submit it for approval."}
+        subtitle={
+          isAdmin
+            ? "Create an official school event directly."
+            : isProfessor
+              ? "Professor events are submitted to admin for approval before students can register."
+              : "Create a draft event or submit it for approval."
+        }
         actions={
           <Link to="/events">
             <span className="inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900">
@@ -68,6 +88,8 @@ export default function CreateEventPage() {
         categories={categories}
         onSubmit={onSubmit}
         isSubmitting={submitting}
+        showApprovalOption={!isAdmin}
+        submitLabel={isAdmin ? "Create Event" : isProfessor ? "Submit Event" : "Create Event"}
       />
     </div>
   );

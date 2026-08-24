@@ -9,7 +9,7 @@ export const Label = ({ className, required, children, ...props }: LabelProps) =
   return (
     <label
       className={cn(
-        "block text-sm font-medium text-navy-900",
+        "block text-sm font-medium text-navy-900 dark:text-navy-100",
         "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
         className
       )}

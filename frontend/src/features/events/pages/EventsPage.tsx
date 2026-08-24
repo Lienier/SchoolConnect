@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, Clock, Plus, Shield, Users } from "lucide-react";
+import { Clock, Plus, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -51,15 +51,15 @@ export default function EventsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <header className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
         <div className="p-5 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-300">
                 Event Discovery
               </p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-[#102858]">Events</h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#102858] dark:text-white">Events</h1>
+              <p className="mt-1 text-sm text-slate-500 dark:text-navy-300">
                 {isProfessor
                   ? "Manage your event proposals, approved rosters, and attendance-ready events."
                   : "Browse approved school events, join team activities, and track registration deadlines."}
@@ -91,10 +91,10 @@ export default function EventsPage() {
                   type="button"
                   onClick={() => setStatus(tab.key)}
                   className={cn(
-                    "rounded-full px-4 py-2 text-sm font-semibold transition",
+                    "rounded-lg px-4 py-2 text-sm font-semibold transition",
                     status === tab.key
                       ? "bg-[#0d5ee8] text-white shadow-sm"
-                      : "bg-slate-100 text-[#102858] hover:bg-slate-200",
+                      : "bg-slate-100 text-[#102858] hover:bg-slate-200 dark:bg-navy-900 dark:text-navy-200 dark:hover:bg-navy-800",
                   )}
                 >
                   {tab.label}
@@ -105,7 +105,7 @@ export default function EventsPage() {
               <select
                 value={categoryId}
                 onChange={(event) => setCategoryId(event.target.value)}
-                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-[#102858] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-[#102858] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
               >
                 <option value="">All categories</option>
                 {(categories.data ?? []).map((category) => (
@@ -116,10 +116,10 @@ export default function EventsPage() {
                 type="button"
                 onClick={() => setTeamOnly((value) => !value)}
                 className={cn(
-                  "inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition",
+                  "inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition",
                   teamOnly
-                    ? "border-blue-200 bg-blue-50 text-blue-700"
-                    : "border-slate-200 bg-white text-[#102858] hover:bg-slate-50",
+                    ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300"
+                    : "border-slate-200 bg-white text-[#102858] hover:bg-slate-50 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 dark:hover:bg-navy-800",
                 )}
               >
                 <Users className="h-4 w-4" />
@@ -127,11 +127,6 @@ export default function EventsPage() {
               </button>
             </div>
           </div>
-        </div>
-        <div className="grid grid-cols-3 border-t border-slate-200 bg-slate-50 text-center text-xs font-bold uppercase tracking-wide text-slate-500">
-          <span className="flex items-center justify-center gap-1 p-3"><CalendarDays className="h-4 w-4" />Schedule</span>
-          <span className="flex items-center justify-center gap-1 p-3"><Shield className="h-4 w-4" />Eligibility</span>
-          <span className="flex items-center justify-center gap-1 p-3"><Users className="h-4 w-4" />Teams</span>
         </div>
       </header>
 

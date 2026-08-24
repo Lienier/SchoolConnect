@@ -6,10 +6,8 @@ import {
   Download,
   ExternalLink,
   FileText,
-  Image as ImageIcon,
   MapPin,
   Megaphone,
-  Sparkles,
   Ticket,
   Users2,
   X,
@@ -44,11 +42,6 @@ const ROLE_BADGE: Record<string, "danger" | "info" | "warning" | "success"> = {
   teacher: "info",
   student_council: "warning",
   student: "success",
-};
-
-const HERO_TONES = {
-  announcement: "from-sky-600 via-navy-800 to-slate-900",
-  event: "from-emerald-600 via-teal-700 to-navy-900",
 };
 
 function getInitials(name: string | null | undefined) {
@@ -241,15 +234,13 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
     <Card
       id={`feed-${item.id}`}
       className={cn(
-        "group overflow-hidden border-0 bg-white p-0 shadow-card ring-1 ring-navy-100 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl dark:bg-navy-950 dark:ring-navy-800",
+        "group overflow-hidden border border-navy-100 bg-white p-0 shadow-sm transition-colors hover:border-blue-200 dark:border-navy-800 dark:bg-navy-950 dark:shadow-none dark:hover:border-blue-900",
         className,
       )}
     >
-      <div className={cn("h-1 bg-gradient-to-r", HERO_TONES[item.type])} />
-
-      <div className="border-b border-navy-100 bg-gradient-to-br from-white via-white to-navy-50/70 px-4 py-4 dark:border-navy-800 dark:from-navy-950 dark:via-navy-950 dark:to-navy-900/40 sm:px-6">
+      <div className="border-b border-navy-100 bg-white px-4 py-4 dark:border-navy-800 dark:bg-navy-950 sm:px-6">
         <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-navy-100 text-sm font-bold text-navy-700 ring-4 ring-white dark:bg-navy-800 dark:text-white dark:ring-navy-950">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-navy-100 text-sm font-semibold text-navy-700 dark:bg-navy-800 dark:text-white">
             {item.author_avatar ? (
               <img src={item.author_avatar} alt={item.author_name ?? "Author"} className="h-full w-full object-cover" />
             ) : (
@@ -262,6 +253,9 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
               <p className="truncate text-sm font-semibold text-navy-900 dark:text-white">
                 {item.author_name ?? "SchoolConnect"}
               </p>
+              <Badge tone={item.type === "event" ? "info" : "neutral"} className="shrink-0">
+                {item.type === "event" ? "Event" : "Announcement"}
+              </Badge>
               <Badge tone={roleTone} className="shrink-0">
                 {roleLabel}
               </Badge>
@@ -284,11 +278,11 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
 
             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-navy-500 dark:text-navy-400">
               <span>{getRelativeTime(item.created_at)}</span>
-              <span>•</span>
+              <span>/</span>
               <span>{item.type === "event" ? "Event bulletin" : "Announcement bulletin"}</span>
               {item.is_team_event && (
                 <>
-                  <span>•</span>
+                  <span>/</span>
                   <span>Team event</span>
                 </>
               )}
@@ -297,10 +291,11 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
         </div>
       </div>
 
-      <div className="px-4 py-4 sm:px-6">
+      <div className="bg-white px-4 py-4 dark:bg-navy-950 sm:px-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-xl font-semibold tracking-tight text-navy-900 dark:text-white">
+            <p className="text-xs font-semibold uppercase tracking-wide text-navy-500 dark:text-navy-400">Caption</p>
+            <h3 className="mt-1 text-xl font-semibold tracking-tight text-navy-900 dark:text-white">
               {item.title}
             </h3>
             {item.type === "announcement" && item.target_audience?.length ? (
@@ -310,15 +305,13 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
             ) : null}
           </div>
 
-          <Badge tone={item.type === "event" ? "info" : "neutral"} className="shrink-0">
-            {item.type === "event" ? "Event" : "Announcement"}
-          </Badge>
+          {hasMedia && <Badge tone="neutral" className="shrink-0">Media</Badge>}
         </div>
 
         <p
           className={cn(
             "mt-3 text-sm leading-6 text-navy-600 dark:text-navy-300",
-            compact ? "line-clamp-2" : "line-clamp-4",
+            compact ? "line-clamp-2" : "line-clamp-5",
           )}
         >
           {body}
@@ -328,7 +321,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="mt-2 text-sm font-medium text-sky-700 transition-colors hover:text-sky-600 dark:text-sky-400"
+            className="mt-2 text-sm font-semibold text-blue-700 transition-colors hover:text-blue-600 dark:text-blue-300"
           >
             {expanded ? "Show less" : "Read more"}
           </button>
@@ -339,7 +332,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
             {item.tags.slice(0, compact ? 3 : 6).map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center rounded-full bg-navy-100 px-3 py-1 text-xs font-medium text-navy-600 dark:bg-navy-900 dark:text-navy-300"
+                className="inline-flex items-center rounded-lg bg-navy-100 px-3 py-1 text-xs font-medium text-navy-600 dark:bg-navy-900 dark:text-navy-300"
               >
                 #{tag}
               </span>
@@ -348,17 +341,12 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
         ) : null}
       </div>
 
-      <button
-        type="button"
-        onClick={() => {
-          if (hasMedia) setLightboxOpen(true);
-        }}
-        className={cn(
-          "relative block w-full overflow-hidden bg-navy-950 text-left",
-          hasMedia ? "cursor-zoom-in" : "cursor-default",
-        )}
-      >
-        {hasMedia ? (
+      {hasMedia && (
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="relative block w-full cursor-zoom-in overflow-hidden border-y border-navy-100 bg-navy-950 text-left dark:border-navy-800"
+        >
           <>
             <img
               src={mediaUrl ?? ""}
@@ -367,36 +355,8 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
             />
             <div className="absolute inset-0 bg-gradient-to-t from-navy-950/70 via-navy-950/10 to-transparent" />
           </>
-        ) : (
-          <div className={cn("relative flex h-52 items-end overflow-hidden px-4 py-4 sm:px-6", HERO_TONES[item.type])}>
-            <div className="absolute inset-0 opacity-15">
-              <div className="absolute left-6 top-6 h-24 w-24 rounded-full bg-white/25 blur-2xl" />
-              <div className="absolute right-8 bottom-8 h-28 w-28 rounded-full bg-white/20 blur-3xl" />
-            </div>
-            <div className="relative z-10 flex w-full items-end justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Social bulletin
-                </div>
-                <div className="mt-3 max-w-lg">
-                  <p className="text-lg font-semibold text-white">
-                    {item.type === "event" ? "Community event spotlight" : "School bulletin highlight"}
-                  </p>
-                  <p className="mt-1 text-sm text-white/80">
-                    {item.type === "event"
-                      ? "Check the schedule, reserve your slot, and add it to your calendar."
-                      : "Read the latest notice and share it with your class or organization."}
-                  </p>
-                </div>
-              </div>
-              <div className="hidden rounded-2xl border border-white/20 bg-white/10 p-3 text-white backdrop-blur sm:block">
-                <ImageIcon className="h-6 w-6" />
-              </div>
-            </div>
-          </div>
-        )}
-      </button>
+        </button>
+      )}
 
       {hasMedia && lightboxOpen && (
         <div
@@ -423,9 +383,10 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
       )}
 
       {item.type === "event" && (
-        <div className="border-y border-navy-100 bg-navy-50 px-4 py-4 dark:border-navy-800 dark:bg-navy-900/30 sm:px-6">
+        <div className="border-t border-navy-100 bg-navy-50 px-4 py-4 dark:border-navy-800 dark:bg-navy-900/30 sm:px-6">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-500 dark:text-navy-400">Event details</p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-navy-100 dark:bg-navy-950 dark:ring-navy-800">
+            <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-navy-100 dark:bg-navy-950 dark:ring-navy-800 dark:shadow-none">
               <p className="text-xs font-semibold uppercase tracking-wide text-navy-500">Date & Time</p>
               <p className="mt-1 text-sm font-medium text-navy-900 dark:text-white">
                 {formatDateTime(item.start_time)}
@@ -437,7 +398,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
               )}
             </div>
 
-            <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-navy-100 dark:bg-navy-950 dark:ring-navy-800">
+            <div className="rounded-lg bg-white p-3 shadow-sm ring-1 ring-navy-100 dark:bg-navy-950 dark:ring-navy-800 dark:shadow-none">
               <p className="text-xs font-semibold uppercase tracking-wide text-navy-500">Venue</p>
               <p className="mt-1 flex items-center gap-2 text-sm font-medium text-navy-900 dark:text-white">
                 <MapPin className="h-4 w-4 text-rose-500" />
@@ -495,7 +456,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
 
       {documentAttachments.length > 0 && (
         <div className="border-t border-navy-100 px-4 py-4 dark:border-navy-800 sm:px-6">
-          <p className="mb-3 text-xs font-bold uppercase tracking-wide text-navy-500">Attachments</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-500 dark:text-navy-400">Attachments</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {documentAttachments.map((attachment) => {
               const name = attachment.original_name ?? attachment.filename ?? "Attachment";
@@ -504,9 +465,9 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
                   type="button"
                   key={attachment.id}
                   onClick={() => downloadAttachment(attachment)}
-                  className="flex min-w-0 items-center gap-3 rounded-2xl border border-navy-100 bg-navy-50 px-3 py-3 text-sm transition hover:bg-navy-100 dark:border-navy-800 dark:bg-navy-900/50 dark:hover:bg-navy-900"
+                  className="flex min-w-0 items-center gap-3 rounded-lg border border-navy-100 bg-navy-50 px-3 py-3 text-sm transition hover:bg-navy-100 dark:border-navy-800 dark:bg-navy-900/50 dark:hover:bg-navy-900"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-sky-700 shadow-sm dark:bg-navy-950">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-sky-700 shadow-sm dark:bg-navy-950">
                     <FileText className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -521,31 +482,34 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
         </div>
       )}
 
-      <div className="flex flex-col gap-2 border-t border-navy-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-navy-800">
-        <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" size="sm" onClick={openPrimary} className="gap-2">
-            <ExternalLink className="h-4 w-4" />
-            {item.type === "event" ? (user ? "Register now" : "View event") : "Open bulletin"}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={copyLink} className="gap-2">
-            <Copy className="h-4 w-4" />
-            Share
-          </Button>
-        </div>
-
-        {item.type === "event" ? (
-          <Button size="sm" onClick={addToCalendar} className="gap-2">
-            <CalendarDays className="h-4 w-4" />
-            Add to calendar
-          </Button>
-        ) : (
-          <Link to="/announcements" className="inline-flex">
-            <Button size="sm" className="gap-2">
-              <Megaphone className="h-4 w-4" />
-              View all announcements
+      <div className="border-t border-navy-100 bg-slate-50 px-4 py-4 dark:border-navy-800 dark:bg-navy-900/40 sm:px-6">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-navy-500 dark:text-navy-400">Actions</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={openPrimary} className="gap-2">
+              <ExternalLink className="h-4 w-4" />
+              {item.type === "event" ? (user ? "Register now" : "View event") : "Open bulletin"}
             </Button>
-          </Link>
-        )}
+            <Button variant="secondary" size="sm" onClick={copyLink} className="gap-2">
+              <Copy className="h-4 w-4" />
+              Share
+            </Button>
+          </div>
+
+          {item.type === "event" ? (
+            <Button size="sm" onClick={addToCalendar} className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Add to calendar
+            </Button>
+          ) : (
+            <Link to="/announcements" className="inline-flex">
+              <Button size="sm" className="gap-2">
+                <Megaphone className="h-4 w-4" />
+                View all announcements
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
     </Card>
   );

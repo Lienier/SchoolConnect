@@ -1,7 +1,7 @@
 /** Event detail page: smart student registration plus staff controls. */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Calendar,
@@ -21,6 +21,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
+import { apiClient } from "@/api/client";
+import { API_BASE_URL } from "@/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { eventsApi, registrationsApi } from "@/features/events/services/eventsApi";
 import type { EventResult, SchoolEvent, TeamRegistration } from "@/features/events/types";
@@ -37,6 +39,58 @@ function apiMessage(error: unknown, fallback: string) {
     return data?.message ?? data?.error ?? fallback;
   }
   return fallback;
+}
+
+function resolveUploadUrl(url: string | null | undefined) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("/api")) {
+    const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL.slice(0, -4) : "";
+    return `${base}${url}`;
+  }
+  return url;
+}
+
+function apiPathFromUploadUrl(url: string | null | undefined) {
+  if (!url) return null;
+  if (url.startsWith("/api/")) return url.slice(4);
+  if (url.startsWith("/")) return url;
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname.startsWith("/api/") ? parsed.pathname.slice(4) : null;
+  } catch {
+    return null;
+  }
+}
+
+function useProtectedImage(url: string | null | undefined) {
+  const resolvedUrl = resolveUploadUrl(url);
+  const [objectUrl, setObjectUrl] = useState<{ path: string; url: string } | null>(null);
+  const protectedPath = apiPathFromUploadUrl(resolvedUrl);
+
+  useEffect(() => {
+    if (!protectedPath) return undefined;
+
+    let cancelled = false;
+    let nextObjectUrl: string | null = null;
+    apiClient
+      .get(protectedPath, { responseType: "blob" })
+      .then((response) => {
+        if (cancelled) return;
+        nextObjectUrl = URL.createObjectURL(response.data);
+        setObjectUrl({ path: protectedPath, url: nextObjectUrl });
+      })
+      .catch(() => setObjectUrl(null));
+
+    return () => {
+      cancelled = true;
+      if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+    };
+  }, [protectedPath]);
+
+  return protectedPath
+    ? objectUrl?.path === protectedPath ? objectUrl.url : null
+    : resolvedUrl;
 }
 
 const statusTones: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {
@@ -81,6 +135,7 @@ export default function EventDetailPage() {
     queryFn: () => eventsApi.listResults(id),
     enabled: Boolean(id) && ["completed", "ongoing"].includes(event?.status ?? ""),
   });
+  const detailImageUrl = useProtectedImage(event?.banner_url);
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["event", id] });
@@ -212,11 +267,18 @@ export default function EventDetailPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <Card className="overflow-hidden p-0 dark:border-navy-800 dark:bg-navy-950">
+        {detailImageUrl && (
+          <div
+            className="h-64 border-b border-navy-100 bg-cover bg-center dark:border-navy-800"
+            style={{ backgroundImage: `url(${detailImageUrl})` }}
+            aria-label={`${event.title} photo`}
+          />
+        )}
         <div className="p-5 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-black tracking-tight text-navy-900 dark:text-white">{event.title}</h1>
+                <h1 className="text-3xl font-semibold tracking-tight text-navy-900 dark:text-white">{event.title}</h1>
                 {event.category && <Badge tone="neutral" className="text-xs">{event.category}</Badge>}
               </div>
               <div className="flex flex-wrap gap-2">
@@ -236,7 +298,7 @@ export default function EventDetailPage() {
             <Detail icon={Users} label="Capacity" value={event.capacity ? `${event.capacity} seats` : "Unlimited"} />
           </dl>
           {event.registration_deadline && (
-            <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+            <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
               Registration deadline: {formatDate(event.registration_deadline)}
             </p>
           )}
@@ -352,7 +414,7 @@ export default function EventDetailPage() {
         onClose={() => setPendingAction(null)}
         footer={<><Button variant="secondary" onClick={() => setPendingAction(null)}>Cancel</Button><Button variant="danger" onClick={confirmPendingAction}>Confirm</Button></>}
       >
-        <p className="text-sm text-navy-600">{pendingAction?.message}</p>
+        <p className="text-sm text-navy-600 dark:text-navy-300">{pendingAction?.message}</p>
       </Modal>
     </div>
   );
@@ -436,7 +498,7 @@ function RegistrationModal({
     <Modal open={open} title="Register for event" onClose={onClose} className="max-w-2xl">
       <div className="space-y-5">
         <Card className="border-navy-100 bg-navy-50 p-4 shadow-none dark:border-navy-800 dark:bg-navy-900">
-          <h3 className="font-bold text-navy-900 dark:text-white">{event.title}</h3>
+          <h3 className="font-semibold text-navy-900 dark:text-white">{event.title}</h3>
           <div className="mt-2 grid gap-2 text-sm text-navy-600 dark:text-navy-300 sm:grid-cols-2">
             <span>{event.start_time ? new Date(event.start_time).toLocaleString() : "Schedule TBD"}</span>
             <span>{event.capacity ? `${event.capacity} seats` : "Unlimited capacity"}</span>
@@ -454,32 +516,32 @@ function RegistrationModal({
         )}
 
         {mode === "individual" && (
-          <label className="block text-sm font-bold text-navy-800 dark:text-white">
+          <label className="block text-sm font-semibold text-navy-800 dark:text-white">
             Notes
             <textarea
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
               placeholder="Optional note for the organizer"
-              className="mt-2 min-h-24 w-full rounded-2xl border border-navy-200 px-3 py-2 text-sm font-normal outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
+              className="mt-2 min-h-24 w-full rounded-lg border border-navy-200 px-3 py-2 text-sm font-normal outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
             />
           </label>
         )}
 
         {mode === "create-team" && (
           <div className="space-y-3">
-            <label className="block text-sm font-bold text-navy-800 dark:text-white">
+            <label className="block text-sm font-semibold text-navy-800 dark:text-white">
               Team name
               <input
                 value={teamName}
                 onChange={(event) => setTeamName(event.target.value)}
                 placeholder="Example: STEM Titans"
-                className="mt-2 h-11 w-full rounded-2xl border border-navy-200 px-3 text-sm font-normal outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
+                className="mt-2 h-11 w-full rounded-lg border border-navy-200 px-3 text-sm font-normal outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
               />
             </label>
             {createdTeam && (
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
-                <p className="text-sm font-bold">Team created</p>
-                <div className="mt-2 flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 font-mono text-lg font-black">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+                <p className="text-sm font-semibold">Team created</p>
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 font-mono text-lg font-semibold dark:bg-navy-950 dark:text-white">
                   {createdTeam.team_code}
                   <Button size="sm" variant="secondary" onClick={copyCode}>
                     <Copy className="mr-1.5 h-3.5 w-3.5" />
@@ -492,13 +554,13 @@ function RegistrationModal({
         )}
 
         {mode === "join-team" && (
-          <label className="block text-sm font-bold text-navy-800 dark:text-white">
+          <label className="block text-sm font-semibold text-navy-800 dark:text-white">
             Team code
             <input
               value={teamCode}
               onChange={(event) => setTeamCode(event.target.value.toUpperCase())}
               placeholder="SC-1234"
-              className="mt-2 h-11 w-full rounded-2xl border border-navy-200 px-3 font-mono text-sm font-normal uppercase outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
+              className="mt-2 h-11 w-full rounded-lg border border-navy-200 px-3 font-mono text-sm font-normal uppercase outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
             />
           </label>
         )}
@@ -527,7 +589,7 @@ function ModeButton({ active, onClick, children }: { active: boolean; onClick: (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border px-4 py-3 text-sm font-bold transition ${active ? "border-sky-200 bg-sky-50 text-sky-700" : "border-navy-200 text-navy-700 hover:bg-navy-50 dark:border-navy-800 dark:text-navy-300"}`}
+      className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${active ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300" : "border-navy-200 text-navy-700 hover:bg-navy-50 dark:border-navy-800 dark:text-navy-300 dark:hover:bg-navy-900"}`}
     >
       {children}
     </button>
@@ -567,7 +629,7 @@ function ResultsCard({
     <Card className="border-slate-200 p-6 shadow-sm dark:border-navy-800 dark:bg-navy-950">
       <div className="flex items-center gap-2">
         <Trophy className="text-amber-500" size={20} />
-        <h2 className="text-lg font-bold text-[#102858] dark:text-white">Event Results</h2>
+        <h2 className="text-lg font-semibold text-[#102858] dark:text-white">Event Results</h2>
       </div>
       {results.length ? (
         <div className="mt-4 space-y-3">
@@ -575,7 +637,7 @@ function ResultsCard({
             <div key={result.id} className="rounded-xl border border-slate-200 p-4 dark:border-navy-800">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="rounded-lg bg-amber-50 px-2 py-1 text-sm font-black text-amber-700">{result.placement ? `#${result.placement}` : "Award"}</span>
+                  <span className="rounded-lg bg-amber-50 px-2 py-1 text-sm font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-200">{result.placement ? `#${result.placement}` : "Award"}</span>
                   <strong className="text-[#102858] dark:text-white">{result.title}</strong>
                 </div>
                 {isManager && (

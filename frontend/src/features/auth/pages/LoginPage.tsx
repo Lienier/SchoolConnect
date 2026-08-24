@@ -34,9 +34,9 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-navy-50 px-4">
-        <div className="flex items-center gap-3 text-navy-600">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-navy-800 border-t-transparent" />
+      <main className="flex min-h-screen items-center justify-center bg-navy-50 px-4 dark:bg-navy-950">
+        <div className="flex items-center gap-3 text-navy-600 dark:text-navy-300">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-navy-800 border-t-transparent dark:border-navy-200 dark:border-t-transparent" />
           <span>Loading…</span>
         </div>
       </main>
@@ -58,11 +58,11 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-navy-50 px-4">
-      <Card className="w-full max-w-md">
+    <main className="flex min-h-screen items-center justify-center bg-navy-50 px-4 dark:bg-navy-950">
+      <Card className="w-full max-w-md border-navy-100 bg-white shadow-sm dark:border-navy-800 dark:bg-navy-900 dark:shadow-none">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-navy-800">{APP_NAME}</h1>
-          <p className="mt-2 text-sm text-navy-500">Sign in to your account</p>
+          <h1 className="text-2xl font-semibold text-navy-800 dark:text-white">{APP_NAME}</h1>
+          <p className="mt-2 text-sm text-navy-500 dark:text-navy-300">Sign in to your account</p>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
           <div className="space-y-1.5">
@@ -92,7 +92,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-navy-500 hover:text-navy-700"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-navy-500 hover:text-navy-700 dark:text-navy-300 dark:hover:text-white"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? "Hide" : "Show"}
@@ -106,9 +106,9 @@ export default function LoginPage() {
             Sign In
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-navy-500">
+        <p className="mt-6 text-center text-sm text-navy-500 dark:text-navy-300">
           Don&apos;t have an account?{" "}
-          <Link to="/register" className="font-medium text-navy-700 hover:underline">
+          <Link to="/register" className="font-medium text-blue-700 hover:underline dark:text-blue-300">
             Register
           </Link>
         </p>

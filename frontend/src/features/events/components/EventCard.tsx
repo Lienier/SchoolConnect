@@ -1,9 +1,11 @@
 /** Event card with student-friendly event and registration context. */
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Calendar, Clock, MapPin, Shield, Users } from "lucide-react";
 
+import { apiClient } from "@/api/client";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { API_BASE_URL } from "@/constants";
 import { cn } from "@/utils/cn";
 
 interface EventCardProps {
@@ -21,6 +23,7 @@ interface EventCardProps {
   status?: string;
   priority?: "normal" | "important" | "urgent";
   category?: string | null;
+  imageUrl?: string | null;
   actions?: ReactNode;
   className?: string;
 }
@@ -40,18 +43,54 @@ export function EventCard({
   status = "approved",
   priority = "normal",
   category,
+  imageUrl,
   actions,
   className,
 }: EventCardProps) {
+  const [objectUrl, setObjectUrl] = useState<{ path: string; url: string } | null>(null);
   const dateLabel = startDate
     ? new Date(startDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "TBD";
   const timeLabel = startDate
     ? `${new Date(startDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}${endDate ? ` - ${new Date(endDate).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : ""}`
     : "Time to be announced";
+  const resolvedImageUrl = resolveUploadUrl(imageUrl);
+  const protectedMediaPath = apiPathFromUploadUrl(resolvedImageUrl);
+  const mediaUrl = protectedMediaPath
+    ? objectUrl?.path === protectedMediaPath ? objectUrl.url : null
+    : resolvedImageUrl;
+
+  useEffect(() => {
+    const apiPath = apiPathFromUploadUrl(resolvedImageUrl);
+    if (!apiPath) return undefined;
+
+    let cancelled = false;
+    let nextObjectUrl: string | null = null;
+    apiClient
+      .get(apiPath, { responseType: "blob" })
+      .then((response) => {
+        if (cancelled) return;
+        nextObjectUrl = URL.createObjectURL(response.data);
+        setObjectUrl({ path: apiPath, url: nextObjectUrl });
+      })
+      .catch(() => setObjectUrl(null));
+
+    return () => {
+      cancelled = true;
+      if (nextObjectUrl) URL.revokeObjectURL(nextObjectUrl);
+    };
+  }, [resolvedImageUrl]);
 
   return (
-    <Card className={cn("flex h-full flex-col p-5 transition hover:-translate-y-0.5 hover:shadow-soft", className)}>
+    <Card className={cn("flex h-full flex-col overflow-hidden p-0 transition hover:-translate-y-0.5 hover:shadow-soft dark:hover:shadow-none", className)}>
+      {mediaUrl && (
+        <div
+          className="h-40 border-b border-navy-100 bg-cover bg-center dark:border-navy-800"
+          style={{ backgroundImage: `url(${mediaUrl})` }}
+          aria-label={`${title} photo`}
+        />
+      )}
+      <div className="flex flex-1 flex-col p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -97,8 +136,31 @@ export function EventCard({
       </div>
 
       {actions && <div className="mt-auto flex justify-end gap-2 pt-4">{actions}</div>}
+      </div>
     </Card>
   );
+}
+
+function resolveUploadUrl(url: string | null | undefined) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith("/api")) {
+    const base = API_BASE_URL.endsWith("/api") ? API_BASE_URL.slice(0, -4) : "";
+    return `${base}${url}`;
+  }
+  return url;
+}
+
+function apiPathFromUploadUrl(url: string | null | undefined) {
+  if (!url) return null;
+  if (url.startsWith("/api/")) return url.slice(4);
+  if (url.startsWith("/")) return url;
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname.startsWith("/api/") ? parsed.pathname.slice(4) : null;
+  } catch {
+    return null;
+  }
 }
 
 function Info({

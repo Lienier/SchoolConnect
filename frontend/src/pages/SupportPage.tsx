@@ -19,21 +19,21 @@ export default function SupportPage() {
         {topics.map((topic) => {
           const Icon = topic.icon;
           return (
-            <Card key={topic.title} className="border-slate-200 shadow-sm">
-              <Icon className="mb-4 text-blue-600" size={24} />
-              <h2 className="font-bold text-[#102858]">{topic.title}</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">{topic.body}</p>
+            <Card key={topic.title} className="border-slate-200 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
+              <Icon className="mb-4 text-blue-600 dark:text-blue-300" size={24} />
+              <h2 className="font-semibold text-[#102858] dark:text-white">{topic.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-navy-300">{topic.body}</p>
             </Card>
           );
         })}
       </div>
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-slate-200 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <HelpCircle className="mt-1 text-blue-600" size={22} />
+            <HelpCircle className="mt-1 text-blue-600 dark:text-blue-300" size={22} />
             <div>
-              <h2 className="font-bold text-[#102858]">Need direct help?</h2>
-              <p className="mt-1 text-sm text-slate-600">Contact your school administrator or IT support desk with your role, email, and the page where the issue happened.</p>
+              <h2 className="font-semibold text-[#102858] dark:text-white">Need direct help?</h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-navy-300">Contact your school administrator or IT support desk with your role, email, and the page where the issue happened.</p>
             </div>
           </div>
           <Link to="/notifications">

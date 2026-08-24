@@ -1,5 +1,6 @@
 /** Events feature types matching the backend API. */
 import type { ApiResponse, PaginationMeta } from "@/types/api";
+import type { AnnouncementAttachment } from "@/features/announcements/types";
 
 export type EventStatus =
   | "draft"
@@ -50,6 +51,8 @@ export interface SchoolEvent {
   organizer_name?: string | null;
   organizer_avatar?: string | null;
   organizer_role?: string | null;
+  attachments?: AnnouncementAttachment[];
+  banner_url?: string | null;
   approvals?: EventApproval[];
 }
 

@@ -16,6 +16,7 @@ from werkzeug.utils import secure_filename
 
 from app.announcements.model import Announcement, AnnouncementAttachment, UploadedFile
 from app.common.exceptions import ValidationError
+from app.events.model import Event, EventAttachment
 from app.extensions import db
 
 
@@ -48,6 +49,9 @@ class UploadService:
         if entity_type == "announcement" and entity_id is not None:
             if db.session.get(Announcement, entity_id) is None:
                 raise ValidationError("Announcement not found.")
+        if entity_type == "event" and entity_id is not None:
+            if db.session.get(Event, entity_id) is None:
+                raise ValidationError("Event not found.")
 
         original = secure_filename(file.filename)
         ext = original.rsplit(".", 1)[1].lower() if "." in original else ""
@@ -75,6 +79,9 @@ class UploadService:
         if entity_type == "announcement" and entity_id is not None:
             db.session.flush()
             db.session.add(AnnouncementAttachment(announcement_id=entity_id, file_id=record.id))
+        if entity_type == "event" and entity_id is not None:
+            db.session.flush()
+            db.session.add(EventAttachment(event_id=entity_id, file_id=record.id))
         db.session.commit()
         return record
 

@@ -41,7 +41,7 @@ function NotificationBell() {
     <button
       type="button"
       onClick={() => navigate("/notifications")}
-      className="relative rounded-full p-2 text-[#102858] transition hover:bg-slate-100"
+      className="relative rounded-lg p-2 text-navy-700 transition hover:bg-slate-100 dark:text-navy-200 dark:hover:bg-navy-800"
       aria-label={`Notifications${count ? `, ${count} unread` : ""}`}
     >
       <Bell size={21} />
@@ -108,7 +108,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f6f9fe] text-[#102858]">
+    <div className="flex min-h-screen bg-slate-50 text-navy-900 dark:bg-navy-950 dark:text-navy-100">
       {isSidebarOpen && (
         <button
           type="button"
@@ -120,12 +120,12 @@ export function AppShell({ title, nav, children }: AppShellProps) {
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-screen w-[276px] flex-col overflow-hidden bg-gradient-to-b from-[#06245c] via-[#062b70] to-[#041d4e] text-white shadow-2xl transition-transform md:sticky md:top-0 md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-[276px] flex-col overflow-hidden bg-navy-950 text-white shadow-2xl transition-transform dark:bg-[#08111f] md:sticky md:top-0 md:translate-x-0",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex items-center gap-3 border-b border-white/10 px-6 py-6">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/60 bg-white/10 shadow-lg">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10">
             <GraduationCap size={27} />
           </div>
           <div className="min-w-0">
@@ -141,7 +141,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
         <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-7">
           {visibleNav.map((section) => (
             <div key={section.title}>
-              <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-blue-200/70">
+              <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-navy-300/75">
                 {section.title}
               </p>
               <div className="space-y-1.5">
@@ -156,10 +156,10 @@ export function AppShell({ title, nav, children }: AppShellProps) {
                       onClick={() => window.innerWidth < 768 && setIsSidebarOpen(false)}
                       className={() =>
                         cn(
-                          "group flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-all",
+                          "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all",
                           isSelected
-                            ? "bg-[#0d5ee8] text-white shadow-lg shadow-blue-950/30"
-                            : "text-blue-100 hover:bg-white/10 hover:text-white",
+                            ? "bg-blue-700 text-white shadow-sm"
+                            : "text-navy-200 hover:bg-white/10 hover:text-white",
                         )
                       }
                     >
@@ -175,12 +175,12 @@ export function AppShell({ title, nav, children }: AppShellProps) {
 
         <div className="border-t border-white/10 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 font-bold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 font-semibold">
               {user?.full_name?.charAt(0).toUpperCase() ?? "U"}
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{user?.full_name ?? "User"}</p>
-              <p className="truncate text-xs text-blue-200">{user?.email ?? ""}</p>
+              <p className="truncate text-xs text-navy-300">{user?.email ?? ""}</p>
             </div>
           </div>
           <button
@@ -194,10 +194,10 @@ export function AppShell({ title, nav, children }: AppShellProps) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur md:px-8">
+        <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur dark:border-navy-800 dark:bg-navy-950/95 dark:shadow-none md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
-              className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 md:hidden"
+              className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 dark:text-navy-300 dark:hover:bg-navy-800 md:hidden"
               onClick={() => setIsSidebarOpen(true)}
               aria-label="Open navigation menu"
             >
@@ -205,17 +205,17 @@ export function AppShell({ title, nav, children }: AppShellProps) {
             </button>
             {isStudent && (
               <div className="flex min-w-0 items-center gap-3 md:hidden">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#102858]/20 bg-[#102858] text-white shadow-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-navy-900/20 bg-navy-900 text-white shadow-sm dark:border-navy-700 dark:bg-navy-900">
                   <GraduationCap size={22} />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-base font-black tracking-tight text-[#102858]">
+                  <p className="truncate text-base font-bold tracking-tight text-navy-900 dark:text-white">
                     School<span className="text-[#0d5ee8]">Connect</span>
                   </p>
                 </div>
               </div>
             )}
-            <p className="hidden text-sm font-bold uppercase tracking-[0.18em] text-slate-400 md:block">{title}</p>
+            <p className="hidden text-sm font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-navy-500 md:block">{title}</p>
           </div>
 
           <div className="ml-auto flex items-center gap-3 sm:gap-4">
@@ -225,7 +225,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
               <button
                 type="button"
                 onClick={() => setIsLogoutConfirmOpen(true)}
-                className="hidden rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-[#102858] transition hover:bg-slate-100 sm:inline-flex"
+                className="hidden rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-800 transition hover:bg-slate-100 dark:border-navy-700 dark:text-navy-200 dark:hover:bg-navy-800 sm:inline-flex"
               >
                 Log out
               </button>
@@ -234,7 +234,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
         </header>
 
         {navEntries.length > 0 && (
-          <div className="border-b border-slate-200 bg-white/95 px-3 py-2 shadow-sm md:hidden">
+          <div className="border-b border-slate-200 bg-white/95 px-3 py-2 shadow-sm dark:border-navy-800 dark:bg-navy-950/95 dark:shadow-none md:hidden">
             <nav className="flex gap-2 overflow-x-auto pb-1">
               {navEntries.slice(0, 6).map(({ item, key }) => {
                 const Icon = item.icon ?? Circle;
@@ -245,8 +245,8 @@ export function AppShell({ title, nav, children }: AppShellProps) {
                     to={item.to}
                     className={() =>
                       cn(
-                        "inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition",
-                        isSelected ? "bg-[#0d5ee8] text-white shadow-sm" : "bg-slate-50 text-[#102858] hover:bg-slate-100",
+                        "inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition",
+                        isSelected ? "bg-blue-700 text-white shadow-sm" : "bg-slate-50 text-navy-800 hover:bg-slate-100 dark:bg-navy-900 dark:text-navy-200 dark:hover:bg-navy-800",
                       )
                     }
                   >
@@ -259,7 +259,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
           </div>
         )}
 
-        <main className="min-w-0 flex-1 p-4 md:p-7 lg:p-9">
+        <main className="min-w-0 flex-1 p-4 md:p-7 lg:p-8">
           <div className="mx-auto max-w-[1480px]">{children}</div>
         </main>
       </div>
@@ -285,7 +285,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
           </>
         }
       >
-        <p className="text-sm text-slate-600">You will need to sign in again to continue using SchoolConnect.</p>
+        <p className="text-sm text-slate-600 dark:text-navy-300">You will need to sign in again to continue using SchoolConnect.</p>
       </Modal>
     </div>
   );
