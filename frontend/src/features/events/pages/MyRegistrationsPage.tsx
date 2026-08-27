@@ -136,9 +136,12 @@ export default function MyRegistrationsPage() {
 }
 
 function RegistrationCard({ registration, onCancel }: { registration: Registration; onCancel: () => void }) {
+  const { toast } = useToast();
   const canCancel = ["pending", "approved", "waitlisted"].includes(registration.status);
   const copyCode = async () => {
-    if (registration.team_code) await navigator.clipboard?.writeText(registration.team_code);
+    if (!registration.team_code) return;
+    const copied = await copyText(registration.team_code);
+    toast(copied ? "Team code copied." : "Copy was blocked. Long-press the code and copy it manually.", copied ? "success" : "warning");
   };
 
   return (
@@ -187,4 +190,29 @@ function RegistrationCard({ registration, onCancel }: { registration: Registrati
       </div>
     </Card>
   );
+}
+
+async function copyText(value: string) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // Fall through to the selection-based copy path for mobile browsers.
+  }
+
+  const input = document.createElement("textarea");
+  input.value = value;
+  input.setAttribute("readonly", "");
+  input.style.position = "fixed";
+  input.style.left = "-9999px";
+  input.style.top = "0";
+  document.body.appendChild(input);
+  input.focus();
+  input.select();
+  input.setSelectionRange(0, value.length);
+  const copied = document.execCommand("copy");
+  document.body.removeChild(input);
+  return copied;
 }

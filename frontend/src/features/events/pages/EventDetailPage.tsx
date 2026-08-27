@@ -452,6 +452,7 @@ export default function EventDetailPage() {
       )}
 
       <RegistrationModal
+        key={`${event.id}:${registrationOpen ? "open" : "closed"}`}
         event={event}
         open={registrationOpen}
         onClose={() => setRegistrationOpen(false)}
@@ -527,7 +528,27 @@ function RegistrationModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
 
+  const selectMode = (nextMode: "individual" | "create-team" | "join-team") => {
+    setMode(nextMode);
+    setCreatedTeam(null);
+    setCopyStatus("idle");
+  };
+
   const submit = async () => {
+    if (isSubmitting) return;
+    if (mode === "create-team" && createdTeam) {
+      onClose();
+      return;
+    }
+    if (mode === "create-team" && !teamName.trim()) {
+      onError("Enter a team name before creating a team.");
+      return;
+    }
+    if (mode === "join-team" && !normalizeTeamCode(teamCode)) {
+      onError("Enter a team code before joining.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       if (mode === "create-team") {
@@ -537,7 +558,9 @@ function RegistrationModal({
         return;
       }
       if (mode === "join-team") {
-        const registration = await registrationsApi.joinTeam(normalizeTeamCode(teamCode));
+        const normalizedCode = normalizeTeamCode(teamCode);
+        setTeamCode(normalizedCode);
+        const registration = await registrationsApi.joinTeam(normalizedCode);
         onSuccess(`Joined team registration ${registration.status}.`);
         return;
       }
@@ -572,9 +595,9 @@ function RegistrationModal({
 
         {event.is_team_event && (
           <div className="grid gap-2 sm:grid-cols-3">
-            <ModeButton active={mode === "individual"} onClick={() => setMode("individual")}>Solo</ModeButton>
-            <ModeButton active={mode === "create-team"} onClick={() => setMode("create-team")}>Create team</ModeButton>
-            <ModeButton active={mode === "join-team"} onClick={() => setMode("join-team")}>Join code</ModeButton>
+            <ModeButton active={mode === "individual"} onClick={() => selectMode("individual")}>Solo</ModeButton>
+            <ModeButton active={mode === "create-team"} onClick={() => selectMode("create-team")}>Create team</ModeButton>
+            <ModeButton active={mode === "join-team"} onClick={() => selectMode("join-team")}>Join code</ModeButton>
           </div>
         )}
 
@@ -639,12 +662,12 @@ function RegistrationModal({
             isLoading={isSubmitting}
             disabled={
               isSubmitting ||
-              (mode === "create-team" && !teamName.trim()) ||
+              (mode === "create-team" && !createdTeam && !teamName.trim()) ||
               (mode === "join-team" && !teamCode.trim())
             }
             onClick={submit}
           >
-            {mode === "create-team" ? "Create team" : mode === "join-team" ? "Join team" : "Confirm registration"}
+            {mode === "create-team" ? (createdTeam ? "Done" : "Create team") : mode === "join-team" ? "Join team" : "Confirm registration"}
           </Button>
         </div>
       </div>
@@ -657,7 +680,7 @@ function ModeButton({ active, onClick, children }: { active: boolean; onClick: (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${active ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300" : "border-navy-200 text-navy-700 hover:bg-navy-50 dark:border-navy-800 dark:text-navy-300 dark:hover:bg-navy-900"}`}
+      className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${active ? "border-navy-800 bg-navy-900 text-white dark:border-blue-700 dark:bg-blue-700" : "border-navy-200 bg-white text-navy-700 hover:bg-navy-50 dark:border-navy-800 dark:bg-navy-950 dark:text-navy-300 dark:hover:bg-navy-900"}`}
     >
       {children}
     </button>
