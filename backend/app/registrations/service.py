@@ -144,6 +144,16 @@ class RegistrationService:
         chars = string.ascii_uppercase + string.digits
         return "SC-" + "".join(random.choices(chars, k=4))
 
+    @staticmethod
+    def normalize_team_code(team_code: str) -> str:
+        value = str(team_code or "").strip().upper()
+        for hyphen in (chr(0x2010), chr(0x2011), chr(0x2012), chr(0x2013), chr(0x2014), chr(0x2212)):
+            value = value.replace(hyphen, "-")
+        value = "".join(value.split())
+        if value.startswith("SC") and not value.startswith("SC-") and len(value) > 2:
+            value = f"SC-{value[2:]}"
+        return value
+
     def register_team(
         self, *, event_id: uuid.UUID, leader_id: uuid.UUID, name: str, member_ids: list[uuid.UUID]
     ) -> Team:
@@ -185,7 +195,7 @@ class RegistrationService:
         return team
 
     def join_team_by_code(self, *, team_code: str, user_id: uuid.UUID) -> Registration:
-        team = self.teams.get_by_code(team_code)
+        team = self.teams.get_by_code(self.normalize_team_code(team_code))
         if team is None:
             raise NotFoundError("Invalid team code.")
         event = self._get_open_event(team.event_id)
@@ -194,16 +204,27 @@ class RegistrationService:
         if existing is not None and existing.status not in {"cancelled", "rejected"}:
             raise ValidationError("You are already registered for this event.")
         # Check team size
+        already_member = any(member.user_id == user_id for member in team.members)
         current_members = len(team.members)
-        if event.max_team_size and current_members >= event.max_team_size:
+        if event.max_team_size and current_members >= event.max_team_size and not already_member:
             raise ValidationError("This team is already full.")
         # Add member and register
-        self.teams.add_member(TeamMember(team_id=team.id, user_id=user_id, role="member"))
-        registration = Registration(
-            event_id=team.event_id, user_id=user_id, team_id=team.id,
-            status="pending" if event.approval_required else "approved",
-        )
-        self.registrations.add(registration)
+        if not already_member:
+            self.teams.add_member(TeamMember(team_id=team.id, user_id=user_id, role="member"))
+        status = "pending" if event.approval_required else "approved"
+        if existing is not None:
+            existing.team_id = team.id
+            existing.status = status
+            existing.notes = None
+            existing.reviewed_by = None
+            existing.reviewed_at = None
+            existing.deleted_at = None
+            registration = existing
+        else:
+            registration = Registration(
+                event_id=team.event_id, user_id=user_id, team_id=team.id, status=status
+            )
+            self.registrations.add(registration)
         self.registrations.commit()
         return registration
 

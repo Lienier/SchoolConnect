@@ -41,6 +41,40 @@ function apiMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function normalizeTeamCode(value: string) {
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\s+/g, "")
+    .replace(/^SC(?!-)(.+)/, "SC-$1");
+}
+
+async function copyText(value: string) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // Fall through to the selection-based copy path for mobile browsers.
+  }
+
+  const input = document.createElement("textarea");
+  input.value = value;
+  input.setAttribute("readonly", "");
+  input.style.position = "fixed";
+  input.style.left = "-9999px";
+  input.style.top = "0";
+  document.body.appendChild(input);
+  input.focus();
+  input.select();
+  input.setSelectionRange(0, value.length);
+  const copied = document.execCommand("copy");
+  document.body.removeChild(input);
+  return copied;
+}
+
 function resolveUploadUrl(url: string | null | undefined) {
   if (!url) return null;
   if (/^https?:\/\//i.test(url)) return url;
@@ -465,6 +499,7 @@ function RegistrationModal({
   const [teamCode, setTeamCode] = useState("");
   const [createdTeam, setCreatedTeam] = useState<TeamRegistration | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
 
   const submit = async () => {
     setIsSubmitting(true);
@@ -476,7 +511,7 @@ function RegistrationModal({
         return;
       }
       if (mode === "join-team") {
-        const registration = await registrationsApi.joinTeam(teamCode.trim().toUpperCase());
+        const registration = await registrationsApi.joinTeam(normalizeTeamCode(teamCode));
         onSuccess(`Joined team registration ${registration.status}.`);
         return;
       }
@@ -491,7 +526,9 @@ function RegistrationModal({
 
   const copyCode = async () => {
     if (!createdTeam?.team_code) return;
-    await navigator.clipboard?.writeText(createdTeam.team_code);
+    const copied = await copyText(createdTeam.team_code);
+    setCopyStatus(copied ? "copied" : "failed");
+    window.setTimeout(() => setCopyStatus("idle"), 1800);
   };
 
   return (
@@ -543,11 +580,16 @@ function RegistrationModal({
                 <p className="text-sm font-semibold">Team created</p>
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 font-mono text-lg font-semibold dark:bg-navy-950 dark:text-white">
                   {createdTeam.team_code}
-                  <Button size="sm" variant="secondary" onClick={copyCode}>
+                  <Button size="sm" variant="secondary" onClick={copyCode} type="button">
                     <Copy className="mr-1.5 h-3.5 w-3.5" />
-                    Copy
+                    {copyStatus === "copied" ? "Copied" : "Copy"}
                   </Button>
                 </div>
+                {copyStatus === "failed" && (
+                  <p className="mt-2 text-xs text-emerald-900 dark:text-emerald-100">
+                    Copy was blocked. Long-press the code and copy it manually.
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -558,7 +600,7 @@ function RegistrationModal({
             Team code
             <input
               value={teamCode}
-              onChange={(event) => setTeamCode(event.target.value.toUpperCase())}
+              onChange={(event) => setTeamCode(normalizeTeamCode(event.target.value))}
               placeholder="SC-1234"
               className="mt-2 h-11 w-full rounded-lg border border-navy-200 px-3 font-mono text-sm font-normal uppercase outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
             />
