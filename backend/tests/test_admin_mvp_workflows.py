@@ -14,6 +14,7 @@ from app.events.model import Event, EventRequirement
 from app.events.service import EventService
 from app.extensions import db
 from app.permissions.model import Permission, Role, RolePermission, UserRole
+from app.registrations.model import Registration
 from app.registrations.service import RegistrationService
 from app.users.model import StudentProfile
 from app.utils.datetime import utcnow
@@ -279,6 +280,65 @@ def test_student_http_profile_team_and_qr_workflows(app_ctx):
         headers=member_headers,
     )
     assert repeated.status_code == 422
+
+
+def test_registration_reuses_cancelled_or_rejected_records(app_ctx):
+    role = _role("student", ["registrations.create", "events.view"])
+    student = _user("retry.student@example.com", role)
+    team_student = _user("retry.team@example.com", role)
+    db.session.add_all(
+        [
+            StudentProfile(id=student.id, year_level=1),
+            StudentProfile(id=team_student.id, year_level=1),
+        ]
+    )
+    solo_event = Event(
+        title="Retry solo event",
+        organizer_id=student.id,
+        status="approved",
+        start_time=utcnow() + timedelta(days=7),
+        end_time=utcnow() + timedelta(days=7, hours=2),
+        registration_deadline=utcnow() + timedelta(days=3),
+        is_team_event=False,
+        approval_required=False,
+        created_by=student.id,
+        updated_by=student.id,
+    )
+    team_event = Event(
+        title="Retry team event",
+        organizer_id=student.id,
+        status="approved",
+        start_time=utcnow() + timedelta(days=10),
+        end_time=utcnow() + timedelta(days=10, hours=2),
+        registration_deadline=utcnow() + timedelta(days=4),
+        is_team_event=True,
+        max_team_size=4,
+        approval_required=False,
+        created_by=student.id,
+        updated_by=student.id,
+    )
+    db.session.add_all([solo_event, team_event])
+    db.session.flush()
+    cancelled = Registration(event_id=solo_event.id, user_id=student.id, status="cancelled")
+    rejected = Registration(event_id=team_event.id, user_id=team_student.id, status="rejected")
+    db.session.add_all([cancelled, rejected])
+    db.session.commit()
+
+    service = RegistrationService()
+    retried = service.register(event_id=solo_event.id, user_id=student.id, notes="Trying again")
+    assert retried.id == cancelled.id
+    assert retried.status == "approved"
+    assert retried.notes == "Trying again"
+
+    team = service.register_team(
+        event_id=team_event.id,
+        leader_id=team_student.id,
+        name="Retry Team",
+        member_ids=[],
+    )
+    db.session.refresh(rejected)
+    assert rejected.team_id == team.id
+    assert rejected.status == "approved"
 
 
 def test_event_wide_qr_is_reusable_until_expiry(app_ctx):

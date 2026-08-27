@@ -104,14 +104,23 @@ class RegistrationService:
             if active >= event.capacity:
                 return self._add_to_waitlist(event_id, user_id, notes)
 
-        registration = Registration(
-            event_id=event_id,
-            user_id=user_id,
-            team_id=team_id,
-            status=status,
-            notes=notes,
-        )
-        self.registrations.add(registration)
+        if existing is not None:
+            existing.team_id = team_id
+            existing.status = status
+            existing.notes = notes
+            existing.reviewed_by = None
+            existing.reviewed_at = None
+            existing.deleted_at = None
+            registration = existing
+        else:
+            registration = Registration(
+                event_id=event_id,
+                user_id=user_id,
+                team_id=team_id,
+                status=status,
+                notes=notes,
+            )
+            self.registrations.add(registration)
         self.registrations.commit()
         self._notify(user_id, f"Registration {registration.status}", f"Your registration for '{event.title}' is {registration.status}.", event.id)
         return registration
@@ -167,15 +176,23 @@ class RegistrationService:
                 f"Team exceeds the maximum size of {event.max_team_size}."
             )
 
+        existing_by_user = {
+            uid: self.registrations.get_for_user_event(uid, event_id)
+            for uid in members
+        }
+        if any(
+            existing is not None and existing.status not in {"cancelled", "rejected"}
+            for existing in existing_by_user.values()
+        ):
+            raise ValidationError(
+                "One or more members are already registered for this event."
+            )
+
         team = Team(event_id=event_id, name=name, leader_id=leader_id, team_code=self._generate_team_code())
         self.teams.add(team)
         self.teams.flush()
 
         for uid in members:
-            if self.registrations.get_for_user_event(uid, event_id):
-                raise ValidationError(
-                    "One or more members are already registered for this event."
-                )
             self.teams.add_member(
                 TeamMember(
                     team_id=team.id,
@@ -183,14 +200,23 @@ class RegistrationService:
                     role="leader" if uid == leader_id else "member",
                 )
             )
-            self.registrations.add(
-                Registration(
-                    event_id=event_id,
-                    user_id=uid,
-                    team_id=team.id,
-                    status="pending" if event.approval_required else "approved",
+            existing = existing_by_user[uid]
+            if existing is not None:
+                existing.team_id = team.id
+                existing.status = "pending" if event.approval_required else "approved"
+                existing.notes = None
+                existing.reviewed_by = None
+                existing.reviewed_at = None
+                existing.deleted_at = None
+            else:
+                self.registrations.add(
+                    Registration(
+                        event_id=event_id,
+                        user_id=uid,
+                        team_id=team.id,
+                        status="pending" if event.approval_required else "approved",
+                    )
                 )
-            )
         self.teams.commit()
         return team
 
