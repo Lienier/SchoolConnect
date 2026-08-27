@@ -5,7 +5,7 @@ import { Check, FileCheck2, Megaphone, X } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Modal } from "@/components/ui/Modal";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { announcementsApi } from "@/features/announcements/services/announcementsApi";
 import { eventsApi } from "@/features/events/services/eventsApi";
 import { useToast } from "@/providers/ToastProvider";
@@ -78,8 +78,8 @@ export function ApprovalInboxPage() {
       item.type === "announcement"
         ? announcementsApi.approve(item.id, decision, comment)
         : eventsApi.approve(item.id, decision, comment),
-    onSuccess: () => {
-      toast("Approval updated.", "success");
+    onSuccess: (_data, variables) => {
+      toast(`${variables.item.type === "announcement" ? "Announcement" : "Event"} ${variables.decision === "returned" ? "returned for revision" : variables.decision}.`, "success");
       queryClient.invalidateQueries({ queryKey: ["approvals"] });
       queryClient.invalidateQueries({ queryKey: ["admin"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -159,46 +159,45 @@ export function ApprovalInboxPage() {
         )}
       </Card>
 
-      <Modal
+      <ConfirmActionModal
         open={Boolean(confirm)}
         title="Confirm approval action"
-        onClose={() => setConfirm(null)}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setConfirm(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant={confirm?.decision === "rejected" ? "danger" : "primary"}
-              disabled={action.isPending}
-              onClick={() =>
-                confirm &&
-                action.mutate({
-                  item: confirm.item,
-                  decision: confirm.decision,
-                  comment: comment.trim() || undefined,
-                })
-              }
-            >
-              {action.isPending ? "Saving..." : "Confirm"}
-            </Button>
-          </>
+        description={confirm ? approvalDescription(confirm.decision) : ""}
+        itemName={confirm?.item.title}
+        confirmLabel={confirm ? approvalLabel(confirm.decision) : "Confirm"}
+        confirmVariant={confirm?.decision === "rejected" ? "danger" : confirm?.decision === "returned" ? "secondary" : "primary"}
+        isLoading={action.isPending}
+        onCancel={() => setConfirm(null)}
+        onConfirm={() =>
+          confirm &&
+          action.mutate({
+            item: confirm.item,
+            decision: confirm.decision,
+            comment: comment.trim() || undefined,
+          })
         }
       >
-        <div className="space-y-3">
-          <p className="text-sm text-slate-600">
-            This will mark "{confirm?.item.title}" as {confirm?.decision}.
-          </p>
-          <textarea
-            value={comment}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder="Optional review comment"
-            className="h-24 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          />
-        </div>
-      </Modal>
+        <textarea
+          value={comment}
+          onChange={(event) => setComment(event.target.value)}
+          placeholder="Optional review comment"
+          className="h-24 w-full resize-none rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-navy-800 dark:bg-navy-900 dark:text-white"
+        />
+      </ConfirmActionModal>
     </div>
   );
 }
 
 export default ApprovalInboxPage;
+
+function approvalLabel(decision: ApprovalDecision) {
+  if (decision === "approved") return "Approve";
+  if (decision === "returned") return "Return";
+  return "Reject";
+}
+
+function approvalDescription(decision: ApprovalDecision) {
+  if (decision === "approved") return "This will approve the submission and make it available in the appropriate school views.";
+  if (decision === "returned") return "This will send the submission back for revision with the optional review comment.";
+  return "This will reject the submission and keep it out of public school views.";
+}

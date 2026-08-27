@@ -28,13 +28,13 @@ const sizes: Record<Size, string> = {
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant = "primary", size = "md", isLoading, children, ...props },
+    { className, variant = "primary", size = "md", isLoading, children, disabled, ...props },
     ref,
   ) => {
     return (
       <button
         ref={ref}
-        disabled={isLoading}
+        disabled={isLoading || disabled}
         className={cn(
           "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400 disabled:cursor-not-allowed",
           variants[variant],
@@ -43,7 +43,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {...props}
       >
-        {isLoading ? "Loading…" : children}
+        {isLoading ? "Loading..." : children}
       </button>
     );
   },

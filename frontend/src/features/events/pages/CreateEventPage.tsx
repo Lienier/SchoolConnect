@@ -12,12 +12,14 @@ import { useToast } from "@/providers/ToastProvider";
 import { PageHeader } from "@/components/ui/AdminPrimitives";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { uploadsApi } from "@/features/uploads/services/uploadsApi";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState<{ values: EventFormValues; files: File[] } | null>(null);
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
   const isAdmin = Boolean(user?.roles?.includes("admin"));
 
@@ -26,7 +28,9 @@ export default function CreateEventPage() {
     queryFn: () => eventsApi.listCategories(),
   });
 
-  const onSubmit = async (values: EventFormValues, files: File[]) => {
+  const shouldConfirmSubmit = (values: EventFormValues) => !isAdmin && (isProfessor || values.submit_for_approval);
+
+  const createEvent = async (values: EventFormValues, files: File[]) => {
     setSubmitting(true);
     try {
       const event = await eventsApi.create({
@@ -64,6 +68,14 @@ export default function CreateEventPage() {
     }
   };
 
+  const onSubmit = async (values: EventFormValues, files: File[]) => {
+    if (shouldConfirmSubmit(values)) {
+      setPendingSubmit({ values, files });
+      return;
+    }
+    await createEvent(values, files);
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
@@ -90,6 +102,19 @@ export default function CreateEventPage() {
         isSubmitting={submitting}
         showApprovalOption={!isAdmin}
         submitLabel={isAdmin ? "Create Event" : isProfessor ? "Submit Event" : "Create Event"}
+      />
+      <ConfirmActionModal
+        open={!!pendingSubmit}
+        title="Submit event"
+        description="This will send the event to administrators for approval before students can register."
+        itemName={pendingSubmit?.values.title}
+        confirmLabel="Submit Event"
+        isLoading={submitting}
+        onCancel={() => setPendingSubmit(null)}
+        onConfirm={() => {
+          if (!pendingSubmit) return;
+          void createEvent(pendingSubmit.values, pendingSubmit.files).finally(() => setPendingSubmit(null));
+        }}
       />
     </div>
   );

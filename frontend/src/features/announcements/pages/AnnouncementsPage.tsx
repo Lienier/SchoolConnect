@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Modal } from "@/components/ui/Modal";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { EmptyState, StatusBadge } from "@/components/ui/AdminPrimitives";
 import { BulletinFeed } from "@/features/announcements/components/BulletinFeed";
 import { announcementsApi } from "@/features/announcements/services/announcementsApi";
@@ -20,7 +20,15 @@ export default function AnnouncementsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [pendingAction, setPendingAction] = useState<{ title: string; message: string; action: () => Promise<void> } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{
+    title: string;
+    message: string;
+    itemName: string;
+    confirmLabel: string;
+    variant?: "primary" | "danger" | "secondary";
+    successMessage: string;
+    action: () => Promise<void>;
+  } | null>(null);
   const canManage = can("announcements.approve") || can("announcements.delete") || can("announcements.update");
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
 
@@ -31,16 +39,24 @@ export default function AnnouncementsPage() {
   });
 
   const mutate = useMutation({
-    mutationFn: (action: () => Promise<void>) => action(),
-    onSuccess: () => {
-      toast("Announcement updated.", "success");
+    mutationFn: (pending: NonNullable<typeof pendingAction>) => pending.action(),
+    onSuccess: (_data, pending) => {
+      toast(pending.successMessage, "success");
       queryClient.invalidateQueries({ queryKey: ["announcements-management"] });
       queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
     onError: () => toast("Announcement action failed.", "error"),
   });
 
-  const confirm = (title: string, message: string, action: () => Promise<void>) => setPendingAction({ title, message, action });
+  const confirm = (
+    announcement: Announcement,
+    title: string,
+    message: string,
+    confirmLabel: string,
+    successMessage: string,
+    action: () => Promise<void>,
+    variant: "primary" | "danger" | "secondary" = "primary",
+  ) => setPendingAction({ title, message, itemName: announcement.title, confirmLabel, successMessage, action, variant });
   const runAction = (announcement: Announcement, decision: "approved" | "rejected" | "returned") => {
     if (decision === "approved") return announcementsApi.approve(announcement.id, decision);
     return announcementsApi.approve(announcement.id, decision, decision === "returned" ? "Returned for revision." : "Rejected.");
@@ -82,10 +98,10 @@ export default function AnnouncementsPage() {
                     <td>{new Date(item.created_at).toLocaleDateString()}</td>
                     <td>
                       <div className="flex flex-wrap gap-2">
-                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" onClick={() => mutate.mutate(() => runAction(item, "approved"))}><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Approve</Button>}
-                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" variant="secondary" onClick={() => confirm("Return announcement", "Return this announcement for revision?", () => runAction(item, "returned"))}><RotateCcw className="mr-1.5 h-3.5 w-3.5" />Return</Button>}
-                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" variant="danger" onClick={() => confirm("Reject announcement", "Reject this announcement?", () => runAction(item, "rejected"))}><X className="mr-1.5 h-3.5 w-3.5" />Reject</Button>}
-                        {can("announcements.delete") && <Button size="sm" variant="danger" onClick={() => confirm("Delete announcement", "Delete this announcement?", () => announcementsApi.remove(item.id))}><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete</Button>}
+                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" onClick={() => confirm(item, "Approve announcement", "This will publish the announcement to the school feed for its selected audience.", "Approve", "Announcement approved.", () => runAction(item, "approved"))}><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Approve</Button>}
+                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" variant="secondary" onClick={() => confirm(item, "Return announcement", "This will send the announcement back for revision instead of publishing it.", "Return", "Announcement returned for revision.", () => runAction(item, "returned"), "secondary")}><RotateCcw className="mr-1.5 h-3.5 w-3.5" />Return</Button>}
+                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" variant="danger" onClick={() => confirm(item, "Reject announcement", "This will reject the announcement and keep it out of the school feed.", "Reject", "Announcement rejected.", () => runAction(item, "rejected"), "danger")}><X className="mr-1.5 h-3.5 w-3.5" />Reject</Button>}
+                        {can("announcements.delete") && <Button size="sm" variant="danger" onClick={() => confirm(item, "Delete announcement", "This will remove the announcement from management views and the feed.", "Delete", "Announcement deleted.", () => announcementsApi.remove(item.id), "danger")}><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete</Button>}
                       </div>
                     </td>
                   </tr>
@@ -104,14 +120,19 @@ export default function AnnouncementsPage() {
         defaultTab="all"
         showHeader={false}
       />
-      <Modal
+      <ConfirmActionModal
         open={!!pendingAction}
         title={pendingAction?.title ?? "Confirm action"}
-        onClose={() => setPendingAction(null)}
-        footer={<><Button variant="secondary" onClick={() => setPendingAction(null)}>Cancel</Button><Button variant="danger" isLoading={mutate.isPending} onClick={() => { if (pendingAction) mutate.mutate(pendingAction.action, { onSettled: () => setPendingAction(null) }); }}>Confirm</Button></>}
-      >
-        <p className="text-sm text-slate-600">{pendingAction?.message}</p>
-      </Modal>
+        description={pendingAction?.message ?? ""}
+        itemName={pendingAction?.itemName}
+        confirmLabel={pendingAction?.confirmLabel ?? "Confirm"}
+        confirmVariant={pendingAction?.variant}
+        isLoading={mutate.isPending}
+        onCancel={() => setPendingAction(null)}
+        onConfirm={() => {
+          if (pendingAction) mutate.mutate(pendingAction, { onSettled: () => setPendingAction(null) });
+        }}
+      />
     </div>
   );
 }

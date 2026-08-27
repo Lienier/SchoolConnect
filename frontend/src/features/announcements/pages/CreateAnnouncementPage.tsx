@@ -1,4 +1,5 @@
 /** Create announcement page with new design system layout. */
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -11,11 +12,14 @@ import { PageHeader } from "@/components/ui/AdminPrimitives";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { uploadsApi } from "@/features/uploads/services/uploadsApi";
 import type { AnnouncementFormValues } from "@/features/announcements/validators";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 
 export default function CreateAnnouncementPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState<{ values: AnnouncementFormValues; files: File[] } | null>(null);
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
   const isAdmin = Boolean(user?.roles?.includes("admin"));
 
@@ -24,7 +28,10 @@ export default function CreateAnnouncementPage() {
     queryFn: () => announcementsApi.listCategories(),
   });
 
-  const onSubmit = async (values: AnnouncementFormValues, files: File[]) => {
+  const shouldConfirmSubmit = (values: AnnouncementFormValues) => !isAdmin && (isProfessor || values.submit_for_approval);
+
+  const createAnnouncement = async (values: AnnouncementFormValues, files: File[]) => {
+    setSubmitting(true);
     try {
       const announcement = await announcementsApi.create({
         title: values.title,
@@ -50,7 +57,17 @@ export default function CreateAnnouncementPage() {
       navigate("/announcements");
     } catch {
       toast("Could not create announcement.", "error");
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const onSubmit = async (values: AnnouncementFormValues, files: File[]) => {
+    if (shouldConfirmSubmit(values)) {
+      setPendingSubmit({ values, files });
+      return;
+    }
+    await createAnnouncement(values, files);
   };
 
   return (
@@ -76,9 +93,22 @@ export default function CreateAnnouncementPage() {
       <CreateAnnouncementForm
         categories={categories}
         onSubmit={onSubmit}
-        isSubmitting={false}
+        isSubmitting={submitting}
         showApprovalOption={!isAdmin}
         submitLabel={isProfessor ? "Submit Announcement" : "Create Announcement"}
+      />
+      <ConfirmActionModal
+        open={!!pendingSubmit}
+        title="Submit announcement"
+        description="This will send the announcement to administrators for approval before it appears in the school feed."
+        itemName={pendingSubmit?.values.title}
+        confirmLabel="Submit Announcement"
+        isLoading={submitting}
+        onCancel={() => setPendingSubmit(null)}
+        onConfirm={() => {
+          if (!pendingSubmit) return;
+          void createAnnouncement(pendingSubmit.values, pendingSubmit.files).finally(() => setPendingSubmit(null));
+        }}
       />
     </div>
   );

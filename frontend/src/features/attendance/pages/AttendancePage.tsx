@@ -4,6 +4,7 @@ import { CheckCircle2, ClipboardCheck, Copy, Download, QrCode, ScanLine, Search 
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState, IconStat, PageHeader, StatusBadge } from "@/components/ui/AdminPrimitives";
 import { eventsApi } from "@/features/events/services/eventsApi";
@@ -55,6 +56,14 @@ export default function AttendancePage() {
   const [search, setSearch] = useState("");
   const [qrToken, setQrToken] = useState<QrTokenResponse | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    title: string;
+    description: string;
+    itemName?: string | null;
+    confirmLabel: string;
+    variant?: "primary" | "danger" | "secondary";
+    onConfirm: () => void;
+  } | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -84,9 +93,9 @@ export default function AttendancePage() {
 
   const mark = useMutation({
     mutationFn: ({ userId, status }: { userId: string; status: AttendanceRecord["status"] }) => attendanceApi.mark(selectedEventId, userId, status),
-    onSuccess: () => {
+    onSuccess: (_record, variables) => {
       refreshAttendance();
-      toast("Attendance updated.", "success");
+      toast(`Attendance marked ${variables.status}.`, "success");
     },
     onError: () => toast("Attendance could not be updated.", "error"),
   });
@@ -96,7 +105,7 @@ export default function AttendancePage() {
     onSuccess: (data) => {
       setQrToken(data);
       navigator.clipboard?.writeText(data.token);
-      toast("Event-wide check-in QR generated and copied.", "success");
+      toast(`QR generated for ${selectedEvent?.title ?? "the selected event"}.`, "success");
     },
     onError: (error) => toast(apiErrorMessage(error, "Could not generate a check-in code."), "error"),
   });
@@ -117,6 +126,25 @@ export default function AttendancePage() {
   );
 
   const selectedEvent = availableEvents.find((event) => event.id === selectedEventId);
+  const confirmQr = (isRegenerate = false) =>
+    setPendingAction({
+      title: isRegenerate ? "Regenerate attendance QR" : "Generate attendance QR",
+      description: isRegenerate
+        ? "This will create a new event-wide check-in code. Students should use the latest code shown on screen."
+        : "This will create an event-wide check-in code that students can scan from My Attendance until it expires.",
+      itemName: selectedEvent?.title ?? "Selected event",
+      confirmLabel: isRegenerate ? "Regenerate QR" : "Generate QR",
+      onConfirm: () => qr.mutate(undefined, { onSettled: () => setPendingAction(null) }),
+    });
+  const confirmMarkAttendance = (item: AttendanceRecord, status: AttendanceRecord["status"]) =>
+    setPendingAction({
+      title: "Mark attendance",
+      description: `This will mark the participant as ${status} for the selected event and update the attendance sheet.`,
+      itemName: item.participant_name ?? "Participant",
+      confirmLabel: `Mark ${status}`,
+      variant: status === "absent" ? "danger" : "primary",
+      onConfirm: () => mark.mutate({ userId: item.user_id, status }, { onSettled: () => setPendingAction(null) }),
+    });
   const exportAttendance = () => {
     const csv = [
       ["participant", "registration_status", "attendance_status", "check_in_at", "method"],
@@ -143,7 +171,7 @@ export default function AttendancePage() {
             <Button variant="secondary" disabled={!selectedEventId || !items.length} onClick={exportAttendance}>
               <Download size={16} className="mr-2" />Export CSV
             </Button>
-            <Button variant="secondary" disabled={!selectedEventId || qr.isPending} onClick={() => qr.mutate()}>
+            <Button variant="secondary" disabled={!selectedEventId || qr.isPending} onClick={() => confirmQr(false)}>
               <QrCode size={16} className="mr-2" />{!selectedEventId ? "Select event first" : qr.isPending ? "Generating..." : "Generate QR"}
             </Button>
             <Button variant="primary" onClick={() => setScannerOpen(true)}>
@@ -199,7 +227,7 @@ export default function AttendancePage() {
                       <td>
                         <div className="flex flex-wrap gap-2">
                           {(["present", "late", "absent", "excused"] as const).map((status) => (
-                            <Button key={status} size="sm" disabled={mark.isPending} variant={status === item.status ? "primary" : "secondary"} onClick={() => mark.mutate({ userId: item.user_id, status })}>{status}</Button>
+                            <Button key={status} size="sm" disabled={mark.isPending} variant={status === item.status ? "primary" : "secondary"} onClick={() => confirmMarkAttendance(item, status)}>{status}</Button>
                           ))}
                         </div>
                       </td>
@@ -222,7 +250,7 @@ export default function AttendancePage() {
         footer={
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => qrToken && navigator.clipboard?.writeText(qrToken.token)}><Copy size={16} className="mr-2" />Copy code</Button>
-            <Button disabled={!selectedEventId || qr.isPending} onClick={() => qr.mutate()}><QrCode size={16} className="mr-2" />Regenerate</Button>
+            <Button disabled={!selectedEventId || qr.isPending} onClick={() => confirmQr(true)}><QrCode size={16} className="mr-2" />Regenerate</Button>
           </div>
         }
       >
@@ -240,6 +268,17 @@ export default function AttendancePage() {
         </div>
       </Modal>
       <ScannerModal open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={(token) => scan.mutate(token)} />
+      <ConfirmActionModal
+        open={!!pendingAction}
+        title={pendingAction?.title ?? "Confirm action"}
+        description={pendingAction?.description ?? ""}
+        itemName={pendingAction?.itemName}
+        confirmLabel={pendingAction?.confirmLabel ?? "Confirm"}
+        confirmVariant={pendingAction?.variant}
+        isLoading={mark.isPending || qr.isPending}
+        onCancel={() => setPendingAction(null)}
+        onConfirm={() => pendingAction?.onConfirm()}
+      />
     </div>
   );
 }

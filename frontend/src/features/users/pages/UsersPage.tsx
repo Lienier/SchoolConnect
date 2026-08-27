@@ -6,6 +6,7 @@ import { Edit3, Lock, Plus, Shield, Trash2, UserCheck, UserX } from "lucide-reac
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
@@ -59,8 +60,8 @@ export default function UsersPage() {
 
   const createMut = useMutation({
     mutationFn: usersApi.create,
-    onSuccess: () => {
-      toast("User created.", "success");
+    onSuccess: (_data, variables) => {
+      toast(`User created: ${variables.full_name}.`, "success");
       setForm(emptyForm);
       invalidate();
     },
@@ -70,7 +71,7 @@ export default function UsersPage() {
   const updateMut = useMutation({
     mutationFn: (args: { id: string; payload: { full_name?: string; username?: string | null; status?: UserStatus } }) => usersApi.update(args.id, args.payload),
     onSuccess: () => {
-      toast("User updated.", "success");
+      toast(`User updated: ${editTarget?.full_name ?? "account"}.`, "success");
       setEditTarget(null);
       invalidate();
     },
@@ -80,7 +81,7 @@ export default function UsersPage() {
   const rolesMut = useMutation({
     mutationFn: (args: { id: string; roles: string[] }) => usersApi.assignRoles(args.id, args.roles),
     onSuccess: () => {
-      toast("Roles updated.", "success");
+      toast(`Roles updated for ${rolesTarget?.full_name ?? "user"}.`, "success");
       setRolesTarget(null);
       invalidate();
     },
@@ -94,8 +95,10 @@ export default function UsersPage() {
       else if (args.action === "suspend") await usersApi.suspend(args.id);
       else await usersApi.delete(args.id);
     },
-    onSuccess: () => {
-      toast("User updated.", "success");
+    onSuccess: (_data, variables) => {
+      const name = confirmTarget?.user.full_name ?? "User";
+      const actionLabel = variables.action === "reactivate" ? "reactivated" : variables.action === "delete" ? "deleted" : variables.action === "disable" ? "disabled" : "suspended";
+      toast(`${name} ${actionLabel}.`, "success");
       invalidate();
     },
     onError: (e: unknown) => toast(errorMessage(e, "Action failed."), "error"),
@@ -104,7 +107,7 @@ export default function UsersPage() {
   const resetMut = useMutation({
     mutationFn: (args: { id: string; password: string }) => usersApi.resetPassword(args.id, args.password),
     onSuccess: () => {
-      toast("Password reset.", "success");
+      toast(`Password reset for ${resetTarget?.full_name ?? "user"}.`, "success");
       setResetTarget(null);
       setNewPassword("");
     },
@@ -204,19 +207,65 @@ export default function UsersPage() {
         <UserForm form={form} setForm={setForm} roleOptions={roleOptions} editMode />
       </Modal>
 
-      <Modal open={!!rolesTarget} title={`Assign roles - ${rolesTarget?.full_name ?? ""}`} onClose={() => setRolesTarget(null)} footer={<><Button variant="secondary" onClick={() => setRolesTarget(null)}>Cancel</Button><Button isLoading={rolesMut.isPending} disabled={!selectedRoles.length} onClick={() => rolesTarget && rolesMut.mutate({ id: rolesTarget.id, roles: selectedRoles })}>Save roles</Button></>}>
+      <ConfirmActionModal
+        open={!!rolesTarget}
+        title="Assign roles"
+        description="This will replace the user's current role assignments and immediately change their access after the next refresh."
+        itemName={rolesTarget?.full_name}
+        confirmLabel="Update Roles"
+        isLoading={rolesMut.isPending}
+        confirmDisabled={!selectedRoles.length}
+        onCancel={() => setRolesTarget(null)}
+        onConfirm={() => rolesTarget && rolesMut.mutate({ id: rolesTarget.id, roles: selectedRoles })}
+      >
         <div className="grid gap-2 sm:grid-cols-2">{roleOptions.map((item) => <label key={item} className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={selectedRoles.includes(item)} onChange={() => toggleRole(item)} />{roleLabel(item)}</label>)}</div>
-      </Modal>
+      </ConfirmActionModal>
 
-      <Modal open={!!resetTarget} title={`Reset password - ${resetTarget?.full_name ?? ""}`} onClose={() => setResetTarget(null)}>
-        <div className="space-y-4"><Input type="password" placeholder="New password (min 8 chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /><div className="flex justify-end gap-2"><Button isLoading={resetMut.isPending} disabled={newPassword.length < 8} onClick={() => resetTarget && resetMut.mutate({ id: resetTarget.id, password: newPassword })}>Reset Password</Button></div></div>
-      </Modal>
+      <ConfirmActionModal
+        open={!!resetTarget}
+        title="Reset password"
+        description="This will replace the user's current password. Share the new password securely after the reset succeeds."
+        itemName={resetTarget?.full_name}
+        confirmLabel="Reset Password"
+        confirmVariant="danger"
+        isLoading={resetMut.isPending}
+        confirmDisabled={newPassword.length < 8}
+        onCancel={() => setResetTarget(null)}
+        onConfirm={() => resetTarget && resetMut.mutate({ id: resetTarget.id, password: newPassword })}
+      >
+        <Input type="password" placeholder="New password (min 8 chars)" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+        {newPassword.length > 0 && newPassword.length < 8 && <p className="text-xs text-red-600">Password must be at least 8 characters.</p>}
+      </ConfirmActionModal>
 
-      <Modal open={!!confirmTarget} title="Confirm account action" onClose={() => setConfirmTarget(null)} footer={<><Button variant="secondary" onClick={() => setConfirmTarget(null)}>Cancel</Button><Button variant={confirmTarget?.action === "reactivate" ? "primary" : "danger"} isLoading={lifecycle.isPending} onClick={() => { if (confirmTarget) lifecycle.mutate({ id: confirmTarget.user.id, action: confirmTarget.action }, { onSettled: () => setConfirmTarget(null) }); }}>Confirm</Button></>}>
-        <p className="text-sm text-slate-600">{confirmTarget ? `${confirmTarget.action.charAt(0).toUpperCase() + confirmTarget.action.slice(1)} ${confirmTarget.user.full_name}'s account?` : ""}</p>
-      </Modal>
+      <ConfirmActionModal
+        open={!!confirmTarget}
+        title="Confirm account action"
+        description={confirmTarget ? accountActionDescription(confirmTarget.action) : ""}
+        itemName={confirmTarget?.user.full_name}
+        confirmLabel={confirmTarget ? accountActionLabel(confirmTarget.action) : "Confirm"}
+        confirmVariant={confirmTarget?.action === "reactivate" ? "primary" : "danger"}
+        isLoading={lifecycle.isPending}
+        onCancel={() => setConfirmTarget(null)}
+        onConfirm={() => {
+          if (confirmTarget) lifecycle.mutate({ id: confirmTarget.user.id, action: confirmTarget.action }, { onSettled: () => setConfirmTarget(null) });
+        }}
+      />
     </div>
   );
+}
+
+function accountActionLabel(action: "disable" | "reactivate" | "suspend" | "delete") {
+  if (action === "disable") return "Disable";
+  if (action === "reactivate") return "Reactivate";
+  if (action === "suspend") return "Suspend";
+  return "Delete";
+}
+
+function accountActionDescription(action: "disable" | "reactivate" | "suspend" | "delete") {
+  if (action === "reactivate") return "This will restore account access according to the user's assigned roles.";
+  if (action === "delete") return "This will remove the account from active user management. Historical records may remain for audit purposes.";
+  if (action === "disable") return "This will prevent the user from using the account until it is reactivated.";
+  return "This will suspend the account and block access until an administrator reactivates it.";
 }
 
 function UserForm({ form, setForm, roleOptions, includePassword = false, editMode = false }: {

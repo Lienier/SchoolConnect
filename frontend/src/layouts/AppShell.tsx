@@ -6,12 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Bell, Circle, GraduationCap, Menu, X } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { notificationsApi } from "@/features/notifications/services/notificationsApi";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/utils/cn";
 
 export interface NavItem {
@@ -57,6 +57,7 @@ function NotificationBell() {
 export function AppShell({ title, nav, children }: AppShellProps) {
   const { user, logout } = useAuth();
   const { can } = usePermissions();
+  const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -104,6 +105,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
 
   const handleLogout = async () => {
     await logout();
+    toast("Signed out.", "success");
     navigate("/login", { replace: true });
   };
 
@@ -264,29 +266,19 @@ export function AppShell({ title, nav, children }: AppShellProps) {
         </main>
       </div>
 
-      <Modal
+      <ConfirmActionModal
         open={isLogoutConfirmOpen}
         title="Log out"
-        onClose={() => setIsLogoutConfirmOpen(false)}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setIsLogoutConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="danger"
-              onClick={async () => {
-                await handleLogout();
-                setIsLogoutConfirmOpen(false);
-              }}
-            >
-              Log out
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-slate-600 dark:text-navy-300">You will need to sign in again to continue using SchoolConnect.</p>
-      </Modal>
+        description="You will need to sign in again to continue using SchoolConnect."
+        itemName={user?.email}
+        confirmLabel="Log Out"
+        confirmVariant="danger"
+        onCancel={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={async () => {
+          await handleLogout();
+          setIsLogoutConfirmOpen(false);
+        }}
+      />
     </div>
   );
 }

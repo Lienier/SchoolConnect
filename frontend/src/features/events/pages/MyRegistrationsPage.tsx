@@ -7,7 +7,7 @@ import { Calendar, Copy, Users, X } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Modal } from "@/components/ui/Modal";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { PageHeader } from "@/components/ui/AdminPrimitives";
 import { registrationsApi } from "@/features/events/services/eventsApi";
 import type { Registration } from "@/features/events/types";
@@ -118,27 +118,19 @@ export default function MyRegistrationsPage() {
         ))}
       </div>
 
-      <Modal
+      <ConfirmActionModal
         open={Boolean(cancelTarget)}
         title="Cancel registration"
-        onClose={() => setCancelTarget(null)}
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setCancelTarget(null)}>Keep registration</Button>
-            <Button
-              variant="danger"
-              onClick={async () => {
-                if (cancelTarget) await handleCancel(cancelTarget.id);
-                setCancelTarget(null);
-              }}
-            >
-              Cancel registration
-            </Button>
-          </>
-        }
-      >
-        <p className="text-sm text-navy-600 dark:text-navy-300">Are you sure you want to cancel your registration for {cancelTarget?.title}?</p>
-      </Modal>
+        description="This will cancel your registration and remove you from the active roster for this event."
+        itemName={cancelTarget?.title}
+        confirmLabel="Cancel Registration"
+        confirmVariant="danger"
+        onCancel={() => setCancelTarget(null)}
+        onConfirm={async () => {
+          if (cancelTarget) await handleCancel(cancelTarget.id);
+          setCancelTarget(null);
+        }}
+      />
     </div>
   );
 }

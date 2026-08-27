@@ -20,6 +20,7 @@ import {
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { Modal } from "@/components/ui/Modal";
 import { apiClient } from "@/api/client";
 import { API_BASE_URL } from "@/constants";
@@ -148,7 +149,14 @@ export default function EventDetailPage() {
   const [resultRemarks, setResultRemarks] = useState("");
   const [editingResult, setEditingResult] = useState<EventResult | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ title: string; message: string; action: () => Promise<void> } | null>(null);
+  const [pendingAction, setPendingAction] = useState<{
+    title: string;
+    message: string;
+    itemName?: string | null;
+    confirmLabel: string;
+    variant?: "primary" | "danger" | "secondary";
+    action: () => Promise<void>;
+  } | null>(null);
 
   const isApprover = user?.roles?.some((r) => ["admin"].includes(r));
   const isManager = user?.roles?.some((r) => ["admin", "teacher", "student_council"].includes(r));
@@ -181,7 +189,14 @@ export default function EventDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
   };
 
-  const askConfirmation = (title: string, message: string, action: () => Promise<void>) => setPendingAction({ title, message, action });
+  const askConfirmation = (
+    title: string,
+    message: string,
+    action: () => Promise<void>,
+    confirmLabel = "Confirm",
+    variant: "primary" | "danger" | "secondary" = "primary",
+    itemName: string | null = event?.title ?? null,
+  ) => setPendingAction({ title, message, action, confirmLabel, variant, itemName });
   const confirmPendingAction = async () => {
     if (!pendingAction) return;
     const action = pendingAction.action;
@@ -346,26 +361,35 @@ export default function EventDetailPage() {
             )}
             {isApprover && event.status === "pending_approval" && (
               <>
-                <Button onClick={() => handleDecideEvent("approved")}>
+                <Button onClick={() => askConfirmation("Approve event", "This will approve the event and make it available for eligible students when registration is open.", () => handleDecideEvent("approved"), "Approve")}>
                   <Shield className="mr-2 h-4 w-4" />
                   Approve
                 </Button>
-                <Button variant="danger" onClick={() => askConfirmation("Reject event", "Reject this event proposal?", () => handleDecideEvent("rejected"))}>
+                <Button variant="danger" onClick={() => askConfirmation("Reject event", "This will reject the event proposal and keep it unavailable to students.", () => handleDecideEvent("rejected"), "Reject", "danger")}>
                   <X className="mr-2 h-4 w-4" />
                   Reject
                 </Button>
               </>
             )}
             {isManager && ["approved", "ongoing"].includes(event.status) && (
-              <Button variant="secondary" onClick={() => handleStatus(event.status === "approved" ? "ongoing" : "completed")}>
+              <Button variant="secondary" onClick={() => {
+                const nextStatus = event.status === "approved" ? "ongoing" : "completed";
+                askConfirmation(
+                  nextStatus === "ongoing" ? "Start event" : "Complete event",
+                  nextStatus === "ongoing" ? "This will mark the event as ongoing and keep attendance and registration views synchronized." : "This will mark the event as completed and move it out of active event workflows.",
+                  () => handleStatus(nextStatus),
+                  nextStatus === "ongoing" ? "Start Event" : "Complete Event",
+                  "primary",
+                );
+              }}>
                 {event.status === "approved" ? "Start event" : "Complete event"}
               </Button>
             )}
             {isManager && event.status === "completed" && (
-              <Button variant="secondary" onClick={() => askConfirmation("Archive event", "Archive this completed event?", () => handleStatus("archived"))}>Archive event</Button>
+              <Button variant="secondary" onClick={() => askConfirmation("Archive event", "This will archive the completed event and remove it from active event views.", () => handleStatus("archived"), "Archive", "secondary")}>Archive event</Button>
             )}
             {isManager && ["approved", "ongoing"].includes(event.status) && (
-              <Button variant="danger" onClick={() => askConfirmation("Cancel event", "Cancel this event for all participants?", () => handleStatus("cancelled"))}>Cancel event</Button>
+              <Button variant="danger" onClick={() => askConfirmation("Cancel event", "This will cancel the event for all participants and remove it from active registration workflows.", () => handleStatus("cancelled"), "Cancel Event", "danger")}>Cancel event</Button>
             )}
           </div>
         </div>
@@ -393,8 +417,8 @@ export default function EventDetailPage() {
                   </span>
                   {r.status === "pending" && (
                     <span className="flex gap-2">
-                      <Button size="sm" onClick={() => handleDecideReg(r.id, "approved")}>Approve</Button>
-                      <Button size="sm" variant="danger" onClick={() => askConfirmation("Reject registration", "Reject this participant registration?", () => handleDecideReg(r.id, "rejected"))}>Reject</Button>
+                      <Button size="sm" onClick={() => askConfirmation("Approve registration", "This will approve the participant for this event and update the roster.", () => handleDecideReg(r.id, "approved"), "Approve", "primary", r.participant_name ?? "Participant")}>Approve</Button>
+                      <Button size="sm" variant="danger" onClick={() => askConfirmation("Reject registration", "This will reject the participant registration and remove it from active attendance workflows.", () => handleDecideReg(r.id, "rejected"), "Reject", "danger", r.participant_name ?? "Participant")}>Reject</Button>
                     </span>
                   )}
                 </li>
@@ -416,7 +440,7 @@ export default function EventDetailPage() {
           setResultTitle={setResultTitle}
           setResultRemarks={setResultRemarks}
           startEditResult={startEditResult}
-          handleDeleteResult={(resultId) => askConfirmation("Delete result", "Remove this event result?", () => handleDeleteResult(resultId))}
+          handleDeleteResult={(resultId) => askConfirmation("Delete result", "This will remove the event result from the published event details.", () => handleDeleteResult(resultId), "Delete", "danger")}
           handleSave={editingResult ? handleUpdateResult : handleAddResult}
           clearEdit={() => {
             setEditingResult(null);
@@ -442,14 +466,16 @@ export default function EventDetailPage() {
         }}
         onError={(message) => toast(message, "error")}
       />
-      <Modal
+      <ConfirmActionModal
         open={Boolean(pendingAction)}
         title={pendingAction?.title ?? "Confirm action"}
-        onClose={() => setPendingAction(null)}
-        footer={<><Button variant="secondary" onClick={() => setPendingAction(null)}>Cancel</Button><Button variant="danger" onClick={confirmPendingAction}>Confirm</Button></>}
-      >
-        <p className="text-sm text-navy-600 dark:text-navy-300">{pendingAction?.message}</p>
-      </Modal>
+        description={pendingAction?.message ?? ""}
+        itemName={pendingAction?.itemName}
+        confirmLabel={pendingAction?.confirmLabel ?? "Confirm"}
+        confirmVariant={pendingAction?.variant}
+        onCancel={() => setPendingAction(null)}
+        onConfirm={confirmPendingAction}
+      />
     </div>
   );
 }

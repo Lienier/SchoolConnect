@@ -6,6 +6,7 @@ import { Plus, Settings, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Table, TD, TH, THead, TR, TBody } from "@/components/ui/Table";
@@ -63,6 +64,7 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<{ open: boolean; item: SchoolRecord | null }>({ open: false, item: null });
+  const [deleteTarget, setDeleteTarget] = useState<SchoolRecord | null>(null);
 
   const query = useQuery({
     queryKey: [entity, page, search],
@@ -80,7 +82,7 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
       return api[`create${name}`](payload);
     },
     onSuccess: () => {
-      toast("Saved.", "success");
+      toast(`${singularLabel(entity)} saved.`, "success");
       setEditor({ open: false, item: null });
       invalidate();
     },
@@ -91,7 +93,8 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
     mutationFn: (id: string) =>
       (schoolApi as unknown as DynamicSchoolApi)[`delete${capitalize(singular(entity))}`](id),
     onSuccess: () => {
-      toast("Deleted.", "success");
+      toast(`${singularLabel(entity)} deleted.`, "success");
+      setDeleteTarget(null);
       invalidate();
     },
     onError: (e: unknown) => toast((e as ApiError)?.response?.data?.message ?? "Failed to delete.", "error"),
@@ -135,7 +138,7 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
                     <Button
                       size="sm"
                       variant="danger"
-                      onClick={() => { if (confirm("Delete this item?")) deleteMut.mutate(item.id); }}
+                      onClick={() => setDeleteTarget(item)}
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
                     </Button>
@@ -172,8 +175,35 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
           submitting={saveMut.isPending}
         />
       </Modal>
+      <ConfirmActionModal
+        open={!!deleteTarget}
+        title={`Delete ${singularLabel(entity).toLowerCase()}`}
+        description="This will remove the record from the school structure. Related records may prevent deletion if the backend requires them."
+        itemName={recordLabel(deleteTarget)}
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        isLoading={deleteMut.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget?.id && deleteMut.mutate(deleteTarget.id)}
+      />
     </Card>
   );
+}
+
+function singularLabel(entity: EntityKey) {
+  return {
+    departments: "Department",
+    courses: "Course",
+    sections: "Section",
+    organizations: "Organization",
+    academic_years: "Academic year",
+    semesters: "Semester",
+  }[entity];
+}
+
+function recordLabel(item: SchoolRecord | null) {
+  if (!item) return null;
+  return String(item.name ?? item.code ?? item.id ?? "Record");
 }
 
 function columnsFor(entity: EntityKey): string[] {
