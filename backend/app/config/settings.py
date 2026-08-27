@@ -70,7 +70,7 @@ class Config:
     MAIL_USE_SSL: bool = _get_bool("MAIL_USE_SSL", False)
     MAIL_USERNAME: str | None = os.getenv("MAIL_USERNAME")
     MAIL_PASSWORD: str | None = os.getenv("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER: str = os.getenv("MAIL_DEFAULT_SENDER", "no-reply@schoolconnect.local")
+    MAIL_DEFAULT_SENDER: str = os.getenv("MAIL_DEFAULT_SENDER", "no-reply@schoolconnect.example.com")
 
     # Rate limiting
     RATELIMIT_STORAGE_URI: str = os.getenv("RATELIMIT_STORAGE_URI", "memory://")

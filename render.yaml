@@ -30,19 +30,19 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
       - key: SEED_ADMIN_EMAIL
-        value: admin@schoolconnect.local
+        value: admin@schoolconnect.example.com
       - key: SEED_ADMIN_PASSWORD
         sync: false
       - key: SEED_PROFESSOR_EMAIL
-        value: professor@schoolconnect.local
+        value: professor@schoolconnect.example.com
       - key: SEED_PROFESSOR_PASSWORD
         sync: false
       - key: SEED_OFFICER_EMAIL
-        value: officer@schoolconnect.local
+        value: officer@schoolconnect.example.com
       - key: SEED_OFFICER_PASSWORD
         sync: false
       - key: SEED_STUDENT_EMAIL
-        value: student@schoolconnect.local
+        value: student@schoolconnect.example.com
       - key: SEED_STUDENT_PASSWORD
         sync: false
       - key: RATELIMIT_STORAGE_URI
