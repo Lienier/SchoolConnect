@@ -11,6 +11,7 @@ from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
 from app.permissions.decorators import has_permission, has_role, require_permission
+from app.realtime.service import emit_update
 from app.registrations.service import RegistrationService
 from app.registrations.validators import (
     RegistrationCreateRequest,
@@ -91,6 +92,13 @@ def register():
     reg = _service.register(
         event_id=uuid.UUID(payload.event_id), user_id=actor, notes=payload.notes
     )
+    emit_update(
+        "registration",
+        "created",
+        entity_id=reg.id,
+        message=f"Registration {reg.status}.",
+        data={"event_id": str(reg.event_id), "user_id": str(reg.user_id), "status": reg.status},
+    )
     return success_response(
         data=reg.to_dict(), message=f"Registration {reg.status}.", status_code=201
     )
@@ -109,6 +117,13 @@ def register_team():
         name=payload.name,
         member_ids=[uuid.UUID(m) for m in payload.member_ids],
     )
+    emit_update(
+        "registration",
+        "team_created",
+        entity_id=team.id,
+        message=f"Team registered: {team.name}",
+        data={"event_id": str(team.event_id), "team_code": team.team_code},
+    )
     return success_response(
         data=team.to_dict(), message="Team registered.", status_code=201
     )
@@ -125,6 +140,13 @@ def join_team():
         raise ValidationError("team_code is required.")
     actor = uuid.UUID(get_jwt_identity())
     reg = _service.join_team_by_code(team_code=team_code, user_id=actor)
+    emit_update(
+        "registration",
+        "team_joined",
+        entity_id=reg.id,
+        message=f"Team registration {reg.status}.",
+        data={"event_id": str(reg.event_id), "team_id": str(reg.team_id), "user_id": str(reg.user_id), "status": reg.status},
+    )
     return success_response(data=reg.to_dict(), message="Joined team successfully.", status_code=201)
 
 
@@ -141,6 +163,13 @@ def decide(registration_id: str):
         decision=payload.decision,
         notes=payload.notes,
     )
+    emit_update(
+        "registration",
+        payload.decision,
+        entity_id=reg.id,
+        message=f"Registration {reg.status}.",
+        data={"event_id": str(reg.event_id), "user_id": str(reg.user_id), "status": reg.status},
+    )
     return success_response(data=reg.to_dict(), message=f"Registration {reg.status}.")
 
 
@@ -150,6 +179,13 @@ def decide(registration_id: str):
 def promote(registration_id: str):
     actor = uuid.UUID(get_jwt_identity())
     reg = _service.promote(registration_id=uuid.UUID(registration_id), actor_id=actor)
+    emit_update(
+        "registration",
+        "promoted",
+        entity_id=reg.id,
+        message=f"Registration {reg.status}.",
+        data={"event_id": str(reg.event_id), "user_id": str(reg.user_id), "status": reg.status},
+    )
     return success_response(data=reg.to_dict(), message=f"Registration {reg.status}.")
 
 
@@ -158,6 +194,7 @@ def promote(registration_id: str):
 @require_permission("registrations.manage")
 def remove(registration_id: str):
     _service.remove(registration_id=uuid.UUID(registration_id), actor_id=uuid.UUID(get_jwt_identity()))
+    emit_update("registration", "removed", entity_id=registration_id)
     return success_response(message="Registration removed.")
 
 
@@ -167,4 +204,12 @@ def cancel(registration_id: str):
     """Cancel a registration (owner or manager)."""
     actor = uuid.UUID(get_jwt_identity())
     reg = _service.cancel(registration_id=uuid.UUID(registration_id), actor_id=actor)
+    emit_update(
+        "registration",
+        "cancelled",
+        entity_id=reg.id,
+        user_id=reg.user_id,
+        message="Registration cancelled.",
+        data={"event_id": str(reg.event_id), "status": reg.status},
+    )
     return success_response(data=reg.to_dict(), message="Registration cancelled.")

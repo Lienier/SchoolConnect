@@ -43,7 +43,7 @@ Use the included `render.yaml` blueprint, or create the service manually:
 The backend container runs this command on start:
 
 ```sh
-flask db upgrade && python -m seed && gunicorn --bind 0.0.0.0:${PORT:-10000} --workers ${WEB_CONCURRENCY:-2} --timeout ${WEB_TIMEOUT:-120} wsgi:app
+flask db upgrade && python -m seed && gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --threads ${WEB_THREADS:-100} --timeout ${WEB_TIMEOUT:-120} wsgi:app
 ```
 
 Set these Render environment variables:

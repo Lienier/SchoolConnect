@@ -12,7 +12,7 @@ from flask import Flask
 from app.common.registry import register_blueprints
 from app.common.responses import success_response
 from app.config import get_config, validate_security_config
-from app.extensions import cache, cors, db, jwt, limiter, mail, migrate
+from app.extensions import cache, cors, db, jwt, limiter, mail, migrate, socketio
 from app.middleware import (
     configure_logging,
     register_error_handlers,
@@ -55,9 +55,20 @@ def _init_extensions(app: Flask) -> None:
     limiter.init_app(app)
     cors.init_app(
         app,
-        resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", [])}},
+        resources={
+            r"/api/*": {"origins": app.config.get("CORS_ORIGINS", [])},
+            r"/socket.io/*": {"origins": app.config.get("CORS_ORIGINS", [])},
+        },
         supports_credentials=True,
     )
+    socketio.init_app(
+        app,
+        cors_allowed_origins=app.config.get("CORS_ORIGINS", []),
+        cors_credentials=True,
+    )
+    from app.realtime.events import register_socket_handlers
+
+    register_socket_handlers(socketio)
 
 
 def _configure_jwt() -> None:

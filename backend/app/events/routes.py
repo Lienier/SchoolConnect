@@ -20,6 +20,7 @@ from app.events.validators import (
     EventUpdateRequest,
 )
 from app.permissions.decorators import has_permission, has_role, require_permission
+from app.realtime.service import emit_update
 
 bp = Blueprint("events", __name__, url_prefix="/events")
 _service = EventService()
@@ -124,6 +125,7 @@ def create_event():
         max_team_size=payload.max_team_size,
         submit_for_approval=payload.submit_for_approval,
     )
+    emit_update("event", "created", entity_id=event.id, message=f"Event created: {event.title}")
     return success_response(
         data=event.to_dict(), message="Event created.", status_code=201
     )
@@ -142,6 +144,7 @@ def update_event(event_id: str):
         can_override=has_permission(str(actor), "events.approve"),
         **payload.model_dump(exclude_none=True),
     )
+    emit_update("event", "updated", entity_id=event.id, message=f"Event updated: {event.title}")
     return success_response(data=event.to_dict(), message="Event updated.")
 
 
@@ -152,6 +155,7 @@ def submit_event(event_id: str):
     """Submit a draft event for approval."""
     actor = uuid.UUID(get_jwt_identity())
     event = _service.submit_for_approval(uuid.UUID(event_id), actor)
+    emit_update("event", "submitted", entity_id=event.id, message=f"Event submitted: {event.title}")
     return success_response(data=event.to_dict(), message="Event submitted for approval.")
 
 
@@ -168,6 +172,7 @@ def approve_event(event_id: str):
         decision=payload.decision,
         comment=payload.comment,
     )
+    emit_update("event", event.status, entity_id=event.id, message=f"Event {event.status}: {event.title}")
     return success_response(data=event.to_dict(), message=f"Event {event.status}.")
 
 
@@ -189,6 +194,7 @@ def change_status(event_id: str):
         message="You can only change the status of events you organize.",
     )
     updated = _service.change_status(uuid.UUID(event_id), actor, payload.status)
+    emit_update("event", updated.status, entity_id=updated.id, message=f"Event status updated: {updated.title}")
     return success_response(data=updated.to_dict(), message="Event status updated.")
 
 
@@ -203,6 +209,7 @@ def delete_event(event_id: str):
         actor,
         can_override=has_permission(str(actor), "events.approve"),
     )
+    emit_update("event", "deleted", entity_id=event_id)
     return success_response(message="Event deleted.")
 
 

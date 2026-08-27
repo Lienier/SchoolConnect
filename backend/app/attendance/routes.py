@@ -17,6 +17,7 @@ from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
 from app.permissions.decorators import has_permission, require_any_permission, require_permission
+from app.realtime.service import emit_update
 
 bp = Blueprint("attendance", __name__, url_prefix="/attendance")
 _service = AttendanceService()
@@ -80,6 +81,13 @@ def mark():
         status=payload.status,
         actor_id=actor,
     )
+    emit_update(
+        "attendance",
+        "marked",
+        entity_id=record.id,
+        message="Attendance recorded.",
+        data={"event_id": str(record.event_id), "user_id": str(record.user_id), "status": record.status},
+    )
     return success_response(data=record.to_dict(), message="Attendance recorded.")
 
 
@@ -98,6 +106,13 @@ def generate_qr():
         user_id=uuid.UUID(payload.user_id) if payload.user_id else None,
         ttl_minutes=payload.ttl_minutes,
     )
+    emit_update(
+        "attendance",
+        "qr_generated",
+        entity_id=token.id,
+        message="Attendance QR generated.",
+        data={"event_id": str(token.event_id), "expires_at": token.expires_at.isoformat() if token.expires_at else None},
+    )
     return success_response(data=token.to_dict(), message="QR token generated.", status_code=201)
 
 
@@ -109,4 +124,12 @@ def qr_check_in():
     payload = QrCheckInRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
     record = _service.check_in_via_qr(token=payload.token, actor_id=actor)
+    emit_update(
+        "attendance",
+        "checked_in",
+        entity_id=record.id,
+        user_id=record.user_id,
+        message="Attendance checked in.",
+        data={"event_id": str(record.event_id), "user_id": str(record.user_id), "status": record.status},
+    )
     return success_response(data=record.to_dict(), message="Checked in.")

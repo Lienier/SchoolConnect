@@ -27,6 +27,7 @@ from app.permissions.decorators import (
     require_any_permission,
     require_permission,
 )
+from app.realtime.service import emit_update
 
 bp = Blueprint("announcements", __name__, url_prefix="/announcements")
 _service = AnnouncementService()
@@ -107,6 +108,12 @@ def create_announcement():
         expires_at=payload.expires_at,
         submit_for_approval=payload.submit_for_approval,
     )
+    emit_update(
+        "announcement",
+        "created",
+        entity_id=announcement.id,
+        message=f"Announcement created: {announcement.title}",
+    )
     return success_response(
         data=announcement.to_dict(),
         message="Announcement created.",
@@ -133,6 +140,12 @@ def update_announcement(announcement_id: str):
         target_audience=payload.target_audience,
         expires_at=payload.expires_at,
     )
+    emit_update(
+        "announcement",
+        "updated",
+        entity_id=announcement.id,
+        message=f"Announcement updated: {announcement.title}",
+    )
     return success_response(data=announcement.to_dict(), message="Announcement updated.")
 
 
@@ -148,6 +161,12 @@ def approve_announcement(announcement_id: str):
         reviewer_id=reviewer,
         decision=payload.decision,
         comment=payload.comment,
+    )
+    emit_update(
+        "announcement",
+        announcement.status,
+        entity_id=announcement.id,
+        message=f"Announcement {announcement.status}: {announcement.title}",
     )
     return success_response(
         data=announcement.to_dict(),
@@ -166,6 +185,7 @@ def delete_announcement(announcement_id: str):
         actor_id=actor,
         can_override=has_role(str(actor), "admin") or has_role(str(actor), "teacher"),
     )
+    emit_update("announcement", "deleted", entity_id=announcement_id)
     return success_response(message="Announcement deleted.")
 
 

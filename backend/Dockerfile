@@ -17,4 +17,4 @@ COPY . .
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "flask db upgrade && python -m seed && gunicorn --bind 0.0.0.0:${PORT:-10000} --workers ${WEB_CONCURRENCY:-2} --timeout ${WEB_TIMEOUT:-120} wsgi:app"]
+CMD ["sh", "-c", "flask db upgrade && python -m seed && gunicorn --bind 0.0.0.0:${PORT:-10000} --workers 1 --threads ${WEB_THREADS:-100} --timeout ${WEB_TIMEOUT:-120} wsgi:app"]

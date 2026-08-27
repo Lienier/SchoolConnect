@@ -21,6 +21,7 @@ from app.notifications.repository import (
     NotificationRepository,
     NotificationTemplateRepository,
 )
+from app.realtime.service import emit_update
 from app.utils.datetime import utcnow
 
 
@@ -67,6 +68,14 @@ class NotificationService:
             )
         )
         self.logs.commit()
+        emit_update(
+            "notification",
+            "created",
+            entity_id=notification.id,
+            user_id=user_id,
+            message=title,
+            data=notification.to_dict(),
+        )
         return notification
 
     def notify_from_template(
@@ -106,6 +115,13 @@ class NotificationService:
         notification.status = "read"
         notification.read_at = utcnow()
         self.notifications.commit()
+        emit_update(
+            "notification",
+            "read",
+            entity_id=notification.id,
+            user_id=user_id,
+            data={"unread": self.unread_count(user_id)},
+        )
         return notification
 
     def mark_all_read(self, user_id: uuid.UUID) -> int:
@@ -118,6 +134,12 @@ class NotificationService:
             n.status = "read"
             n.read_at = now
         self.notifications.commit()
+        emit_update(
+            "notification",
+            "read_all",
+            user_id=user_id,
+            data={"updated": len(items), "unread": 0},
+        )
         return len(items)
 
     # --- templates --------------------------------------------------------
