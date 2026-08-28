@@ -30,11 +30,11 @@ export type ToastProps = ToastPrimitive.ToastProps & {
 export const Toast = forwardRef<Ref<typeof ToastPrimitive.Root>, ToastProps>(
   ({ className, variant = "default", title, description, action, ...props }, ref) => {
     const variantClasses = {
-      default: "bg-white border-navy-200",
-      success: "bg-green-50 border-green-200",
-      error: "bg-red-50 border-red-200",
-      warning: "bg-amber-50 border-amber-200",
-      info: "bg-sky-50 border-sky-200",
+      default: "border-navy-200 bg-white dark:border-navy-700 dark:bg-navy-900",
+      success: "border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950",
+      error: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950",
+      warning: "border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950",
+      info: "border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-navy-900",
     };
 
     const iconComponents = {
@@ -61,14 +61,14 @@ export const Toast = forwardRef<Ref<typeof ToastPrimitive.Root>, ToastProps>(
         <div className="flex items-start gap-3 flex-1">
           <div className="flex-shrink-0">{iconComponents[variant]}</div>
           <div className="flex-1 min-w-0">
-            {title && <div className="font-medium text-navy-900">{title}</div>}
+            {title && <div className="font-medium text-navy-900 dark:text-white">{title}</div>}
             {description && (
-              <div className="mt-1 text-sm text-navy-600">{description}</div>
+              <div className="mt-1 text-sm text-navy-600 dark:text-navy-200">{description}</div>
             )}
           </div>
         </div>
         {action && <div className="flex-shrink-0">{action}</div>}
-        <ToastPrimitive.Close className="flex-shrink-0 p-1 text-navy-400 hover:text-navy-600">
+        <ToastPrimitive.Close aria-label="Dismiss notification" className="flex-shrink-0 p-1 text-navy-400 hover:text-navy-600 dark:text-navy-300 dark:hover:text-white">
           <X className="h-4 w-4" />
         </ToastPrimitive.Close>
       </ToastPrimitive.Root>

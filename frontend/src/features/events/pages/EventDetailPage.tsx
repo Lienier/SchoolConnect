@@ -1,8 +1,7 @@
 /** Event detail page: smart student registration plus staff controls. */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -23,23 +22,16 @@ import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { Modal } from "@/components/ui/Modal";
 import { apiClient } from "@/api/client";
+import { apiErrorMessage } from "@/api/errors";
 import { API_BASE_URL } from "@/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { eventsApi, registrationsApi } from "@/features/events/services/eventsApi";
-import type { EventResult, SchoolEvent, TeamRegistration } from "@/features/events/types";
+import type { EventResult, SchoolEvent } from "@/features/events/types";
 import { useToast } from "@/providers/ToastProvider";
 
 function formatDate(value: string | null): string {
   if (!value) return "TBD";
   return new Date(value).toLocaleString(undefined, { dateStyle: "full", timeStyle: "short" });
-}
-
-function apiMessage(error: unknown, fallback: string) {
-  if (error instanceof AxiosError) {
-    const data = error.response?.data as { message?: string; error?: string } | undefined;
-    return data?.message ?? data?.error ?? fallback;
-  }
-  return fallback;
 }
 
 function normalizeTeamCode(value: string) {
@@ -141,6 +133,7 @@ const statusTones: Record<string, "neutral" | "success" | "warning" | "danger" |
 
 export default function EventDetailPage() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -185,6 +178,8 @@ export default function EventDetailPage() {
     queryClient.invalidateQueries({ queryKey: ["event-results", id] });
     queryClient.invalidateQueries({ queryKey: ["my-registrations"] });
     queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["student-dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["events"] });
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
     queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
   };
@@ -209,8 +204,8 @@ export default function EventDetailPage() {
       await eventsApi.approve(id, decision);
       toast(`Event ${decision}.`, "success");
       refresh();
-    } catch {
-      toast("Could not update the event.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not update the event."), "error");
     }
   };
 
@@ -219,8 +214,8 @@ export default function EventDetailPage() {
       await eventsApi.changeStatus(id, status);
       toast(`Event marked ${status}.`, "success");
       refresh();
-    } catch {
-      toast("Could not update event status.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not update event status."), "error");
     }
   };
 
@@ -240,8 +235,8 @@ export default function EventDetailPage() {
       setResultRemarks("");
       queryClient.invalidateQueries({ queryKey: ["event-results", id] });
       toast("Event result added.", "success");
-    } catch {
-      toast("Could not add event result.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not add event result."), "error");
     }
   };
 
@@ -259,8 +254,8 @@ export default function EventDetailPage() {
       setResultRemarks("");
       refresh();
       toast("Event result updated.", "success");
-    } catch {
-      toast("Could not update event result.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not update event result."), "error");
     }
   };
 
@@ -276,8 +271,8 @@ export default function EventDetailPage() {
       await eventsApi.deleteResult(resultId);
       refresh();
       toast("Event result removed.", "success");
-    } catch {
-      toast("Could not remove event result.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not remove event result."), "error");
     }
   };
 
@@ -286,8 +281,8 @@ export default function EventDetailPage() {
       await registrationsApi.decide(regId, decision);
       toast(`Registration ${decision}.`, "success");
       refresh();
-    } catch {
-      toast("Could not update registration.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not update registration."), "error");
     }
   };
 
@@ -456,16 +451,12 @@ export default function EventDetailPage() {
         event={event}
         open={registrationOpen}
         onClose={() => setRegistrationOpen(false)}
-        onSuccess={(message) => {
-          toast(message, "success");
-          setRegistrationOpen(false);
-          refresh();
-        }}
-        onTeamCreated={(message) => {
+        onCompleted={(message) => {
           toast(message, "success");
           refresh();
         }}
         onError={(message) => toast(message, "error")}
+        onViewRegistrations={() => navigate("/registrations/mine")}
       />
       <ConfirmActionModal
         open={Boolean(pendingAction)}
@@ -509,73 +500,89 @@ function RegistrationModal({
   event,
   open,
   onClose,
-  onSuccess,
-  onTeamCreated,
+  onCompleted,
   onError,
+  onViewRegistrations,
 }: {
   event: SchoolEvent;
   open: boolean;
   onClose: () => void;
-  onSuccess: (message: string) => void;
-  onTeamCreated: (message: string) => void;
+  onCompleted: (message: string) => void;
   onError: (message: string) => void;
+  onViewRegistrations: () => void;
 }) {
-  const [mode, setMode] = useState<"individual" | "create-team" | "join-team">("individual");
+  const [mode, setMode] = useState<"individual" | "create-team" | "join-team">(
+    event.is_team_event ? "create-team" : "individual",
+  );
   const [notes, setNotes] = useState("");
   const [teamName, setTeamName] = useState("");
   const [teamCode, setTeamCode] = useState("");
-  const [createdTeam, setCreatedTeam] = useState<TeamRegistration | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [inlineError, setInlineError] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState<{
+    status: "pending" | "approved" | "waitlisted";
+    teamName?: string | null;
+    teamCode?: string | null;
+  } | null>(null);
 
   const selectMode = (nextMode: "individual" | "create-team" | "join-team") => {
     setMode(nextMode);
-    setCreatedTeam(null);
+    setInlineError(null);
     setCopyStatus("idle");
+  };
+
+  const reportError = (message: string) => {
+    setInlineError(message);
+    onError(message);
   };
 
   const submit = async () => {
     if (isSubmitting) return;
-    if (mode === "create-team" && createdTeam) {
-      onClose();
-      return;
-    }
     if (mode === "create-team" && !teamName.trim()) {
-      onError("Enter a team name before creating a team.");
+      reportError("Enter a team name before creating a team.");
       return;
     }
     if (mode === "join-team" && !normalizeTeamCode(teamCode)) {
-      onError("Enter a team code before joining.");
+      reportError("Enter a team code before joining.");
       return;
     }
 
+    setInlineError(null);
     setIsSubmitting(true);
     try {
       if (mode === "create-team") {
         const team = await registrationsApi.registerTeam(event.id, teamName.trim());
-        setCreatedTeam(team);
-        onTeamCreated(`Team ${team.name} registered. Share code ${team.team_code}.`);
+        const status = team.registration_status ?? (event.approval_required ? "pending" : "approved");
+        setReceipt({ status, teamName: team.name, teamCode: team.team_code });
+        onCompleted(status === "waitlisted" ? "Team created. Your registration is waitlisted." : `Team created. Registration ${status}.`);
         return;
       }
       if (mode === "join-team") {
         const normalizedCode = normalizeTeamCode(teamCode);
         setTeamCode(normalizedCode);
         const registration = await registrationsApi.joinTeam(normalizedCode);
-        onSuccess(`Joined team registration ${registration.status}.`);
+        setReceipt({
+          status: registration.status as "pending" | "approved" | "waitlisted",
+          teamName: registration.team_name,
+          teamCode: registration.team_code ?? normalizedCode,
+        });
+        onCompleted(registration.status === "waitlisted" ? "Team joined. Your registration is waitlisted." : `Team joined. Registration ${registration.status}.`);
         return;
       }
       const registration = await registrationsApi.register(event.id, notes.trim() || undefined);
-      onSuccess(`Registration ${registration.status}.`);
+      setReceipt({ status: registration.status as "pending" | "approved" | "waitlisted" });
+      onCompleted(registration.status === "waitlisted" ? "You were added to the event waitlist." : `Registration ${registration.status}.`);
     } catch (error) {
-      onError(apiMessage(error, "Could not complete registration."));
+      reportError(apiErrorMessage(error, "Could not complete registration."));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const copyCode = async () => {
-    if (!createdTeam?.team_code) return;
-    const copied = await copyText(createdTeam.team_code);
+    if (!receipt?.teamCode) return;
+    const copied = await copyText(receipt.teamCode);
     setCopyStatus(copied ? "copied" : "failed");
     window.setTimeout(() => setCopyStatus("idle"), 1800);
   };
@@ -593,9 +600,59 @@ function RegistrationModal({
           </div>
         </Card>
 
+        {receipt ? (
+          <div className="space-y-4 rounded-lg border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40">
+            <div>
+              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Registration recorded</p>
+              <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-200">
+                {receipt.status === "waitlisted"
+                  ? "The event is at capacity. Your place is saved on the waitlist."
+                  : receipt.status === "pending"
+                    ? "Your registration is waiting for organizer approval."
+                    : "Your place in this event is confirmed."}
+              </p>
+            </div>
+            <dl className="grid gap-3 rounded-lg border border-emerald-200 bg-white p-4 text-sm dark:border-emerald-900 dark:bg-navy-950 sm:grid-cols-2">
+              <div>
+                <dt className="text-navy-500 dark:text-navy-400">Event</dt>
+                <dd className="mt-1 font-semibold text-navy-900 dark:text-white">{event.title}</dd>
+              </div>
+              <div>
+                <dt className="text-navy-500 dark:text-navy-400">Status</dt>
+                <dd className="mt-1 font-semibold capitalize text-navy-900 dark:text-white">{receipt.status}</dd>
+              </div>
+              {receipt.teamName && (
+                <div>
+                  <dt className="text-navy-500 dark:text-navy-400">Team</dt>
+                  <dd className="mt-1 font-semibold text-navy-900 dark:text-white">{receipt.teamName}</dd>
+                </div>
+              )}
+              {receipt.teamCode && (
+                <div>
+                  <dt className="text-navy-500 dark:text-navy-400">Team code</dt>
+                  <dd className="mt-1 flex items-center gap-2 font-mono font-semibold text-navy-900 dark:text-white">
+                    <span className="select-all">{receipt.teamCode}</span>
+                    <Button size="sm" variant="secondary" onClick={copyCode} type="button">
+                      <Copy className="mr-1.5 h-3.5 w-3.5" />
+                      {copyStatus === "copied" ? "Copied" : "Copy"}
+                    </Button>
+                  </dd>
+                </div>
+              )}
+            </dl>
+            {copyStatus === "failed" && (
+              <p className="text-xs text-emerald-900 dark:text-emerald-100">Copy was blocked. Long-press the code and copy it manually.</p>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" onClick={onClose}>Done</Button>
+              <Button onClick={onViewRegistrations}>View My Registrations</Button>
+            </div>
+          </div>
+        ) : (
+          <>
+
         {event.is_team_event && (
-          <div className="grid gap-2 sm:grid-cols-3">
-            <ModeButton active={mode === "individual"} onClick={() => selectMode("individual")}>Solo</ModeButton>
+          <div className="grid gap-2 sm:grid-cols-2">
             <ModeButton active={mode === "create-team"} onClick={() => selectMode("create-team")}>Create team</ModeButton>
             <ModeButton active={mode === "join-team"} onClick={() => selectMode("join-team")}>Join code</ModeButton>
           </div>
@@ -624,23 +681,6 @@ function RegistrationModal({
                 className="mt-2 h-11 w-full rounded-lg border border-navy-200 px-3 text-sm font-normal outline-none focus:border-sky-500 dark:border-navy-800 dark:bg-navy-950"
               />
             </label>
-            {createdTeam && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
-                <p className="text-sm font-semibold">Team created</p>
-                <div className="mt-2 flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 font-mono text-lg font-semibold dark:bg-navy-950 dark:text-white">
-                  {createdTeam.team_code}
-                  <Button size="sm" variant="secondary" onClick={copyCode} type="button">
-                    <Copy className="mr-1.5 h-3.5 w-3.5" />
-                    {copyStatus === "copied" ? "Copied" : "Copy"}
-                  </Button>
-                </div>
-                {copyStatus === "failed" && (
-                  <p className="mt-2 text-xs text-emerald-900 dark:text-emerald-100">
-                    Copy was blocked. Long-press the code and copy it manually.
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         )}
 
@@ -656,20 +696,28 @@ function RegistrationModal({
           </label>
         )}
 
+        {inlineError && (
+          <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200">
+            {inlineError}
+          </div>
+        )}
+
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" onClick={onClose}>Close</Button>
           <Button
             isLoading={isSubmitting}
             disabled={
               isSubmitting ||
-              (mode === "create-team" && !createdTeam && !teamName.trim()) ||
+              (mode === "create-team" && !teamName.trim()) ||
               (mode === "join-team" && !teamCode.trim())
             }
             onClick={submit}
           >
-            {mode === "create-team" ? (createdTeam ? "Done" : "Create team") : mode === "join-team" ? "Join team" : "Confirm registration"}
+            {mode === "create-team" ? "Create team" : mode === "join-team" ? "Join team" : "Confirm registration"}
           </Button>
         </div>
+          </>
+        )}
       </div>
     </Modal>
   );

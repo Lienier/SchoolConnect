@@ -1,5 +1,10 @@
 /** Toast notifications using the new design system Toast component. */
-import { ToastProvider as ToastUIProvider, ToastViewport, useToast as useToastUI } from "@/components/ui/Toast";
+import {
+  Toast as ToastUI,
+  ToastProvider as ToastUIProvider,
+  ToastViewport,
+  useToast as useToastUI,
+} from "@/components/ui/Toast";
 import { createContext, useContext, useCallback, type ReactNode } from "react";
 
 type ToastType = "default" | "success" | "error" | "warning" | "info";
@@ -12,7 +17,7 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const { toast: toastUI, dismiss } = useToastUI();
+  const { toasts, toast: toastUI, dismiss } = useToastUI();
 
   const toast = useCallback((message: string, type: ToastType = "info") => {
     const variantMap: Record<ToastType, "default" | "success" | "error" | "warning" | "info"> = {
@@ -32,7 +37,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, dismiss }}>
       {children}
-      <ToastUIProvider>
+      <ToastUIProvider duration={5000} swipeDirection="right">
+        {toasts.map(({ id, ...props }) => (
+          <ToastUI
+            key={id}
+            {...props}
+            onOpenChange={(open) => {
+              props.onOpenChange?.(open);
+              if (!open && id) dismiss(id);
+            }}
+          />
+        ))}
         <ToastViewport />
       </ToastUIProvider>
     </ToastContext.Provider>

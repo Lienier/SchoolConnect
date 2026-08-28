@@ -8,8 +8,19 @@ from __future__ import annotations
 
 import uuid
 from datetime import timezone
+import random
+import string
 
-from app.common.exceptions import AuthorizationError, NotFoundError, ValidationError
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
+
+from app.auth.model import User
+from app.common.exceptions import (
+    AuthorizationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
 from app.events.repository import EventRepository
 from app.events.model import Event, EventRequirement
 from app.users.model import Section, StudentProfile
@@ -22,9 +33,9 @@ from app.registrations.repository import (
 from app.utils.datetime import utcnow
 from app.extensions import db
 from app.permissions.decorators import has_permission
-from sqlalchemy import select, and_
-import random
-import string
+
+
+INACTIVE_REGISTRATION_STATUSES = {"cancelled", "rejected"}
 
 
 class RegistrationService:
@@ -53,6 +64,7 @@ class RegistrationService:
         
         stmt = select(Registration).join(Event).where(
             Registration.user_id == user_id,
+            Registration.deleted_at.is_(None),
             Registration.status.notin_({"cancelled", "rejected"}),
             Event.start_time < _as_aware_utc(event.end_time),
             Event.end_time > _as_aware_utc(event.start_time),
@@ -85,26 +97,65 @@ class RegistrationService:
                 if str(req.requirement_value) not in allowed_values:
                     raise ValidationError("You do not meet the eligibility requirements for this event.")
 
-    def register(
-        self, *, event_id: uuid.UUID, user_id: uuid.UUID, notes=None, team_id=None
-    ) -> Registration:
-        event = self._get_open_event(event_id)
-
-        existing = self.registrations.get_for_user_event(user_id, event_id)
-        if existing is not None and existing.status not in {"cancelled", "rejected"}:
-            raise ValidationError("You are already registered for this event.")
-            
+    def _validate_participant(self, user_id: uuid.UUID, event: Event) -> None:
+        if db.session.get(User, user_id) is None:
+            raise ValidationError("One or more selected team members do not exist.")
         self._check_schedule_conflict(user_id, event)
-        self._check_eligibility(user_id, event_id)
+        self._check_eligibility(user_id, event.id)
 
-        status = "approved" if not event.approval_required else "pending"
+    @staticmethod
+    def _is_active_registration(registration: Registration | None) -> bool:
+        return (
+            registration is not None
+            and registration.deleted_at is None
+            and registration.status not in INACTIVE_REGISTRATION_STATUSES
+        )
 
-        if event.capacity is not None:
-            active = self.registrations.count_active(event_id)
-            if active >= event.capacity:
-                return self._add_to_waitlist(event_id, user_id, notes)
+    def _registration_status(self, event: Event) -> str:
+        if event.capacity is not None and self.registrations.count_active(event.id) >= event.capacity:
+            return "waitlisted"
+        return "pending" if event.approval_required else "approved"
 
-        if existing is not None:
+    def _set_waitlist_state(self, *, event_id: uuid.UUID, user_id: uuid.UUID, waitlisted: bool) -> None:
+        entry = self.waitlists.get_for_user_event(user_id, event_id)
+        if waitlisted:
+            if entry is None:
+                self.waitlists.add(
+                    Waitlist(
+                        event_id=event_id,
+                        user_id=user_id,
+                        position=self.waitlists.next_position(event_id),
+                    )
+                )
+            elif entry.promoted:
+                entry.promoted = False
+                entry.position = self.waitlists.next_position(event_id)
+        elif entry is not None:
+            entry.promoted = True
+
+    def _prepare_registration(
+        self,
+        *,
+        event: Event,
+        user_id: uuid.UUID,
+        existing: Registration | None,
+        status: str,
+        team_id: uuid.UUID | None = None,
+        notes: str | None = None,
+    ) -> Registration:
+        if existing is not None and existing.team_id is not None and existing.team_id != team_id:
+            self.teams.remove_member(team_id=existing.team_id, user_id=user_id)
+
+        if existing is None:
+            registration = Registration(
+                event_id=event.id,
+                user_id=user_id,
+                team_id=team_id,
+                status=status,
+                notes=notes,
+            )
+            self.registrations.add(registration)
+        else:
             existing.team_id = team_id
             existing.status = status
             existing.notes = notes
@@ -112,17 +163,45 @@ class RegistrationService:
             existing.reviewed_at = None
             existing.deleted_at = None
             registration = existing
-        else:
-            registration = Registration(
-                event_id=event_id,
-                user_id=user_id,
-                team_id=team_id,
-                status=status,
-                notes=notes,
-            )
-            self.registrations.add(registration)
-        self.registrations.commit()
-        self._notify(user_id, f"Registration {registration.status}", f"Your registration for '{event.title}' is {registration.status}.", event.id)
+
+        self._set_waitlist_state(
+            event_id=event.id,
+            user_id=user_id,
+            waitlisted=status == "waitlisted",
+        )
+        return registration
+
+    @staticmethod
+    def _commit_registration_changes(conflict_message: str) -> None:
+        try:
+            db.session.commit()
+        except IntegrityError as exc:
+            db.session.rollback()
+            raise ConflictError(conflict_message) from exc
+
+    def register(
+        self, *, event_id: uuid.UUID, user_id: uuid.UUID, notes=None, team_id=None
+    ) -> Registration:
+        event = self._get_open_event(event_id)
+        if event.is_team_event:
+            raise ValidationError("This is a team event. Create a team or join one using a team code.")
+
+        existing = self.registrations.get_any_for_user_event(user_id, event_id)
+        if self._is_active_registration(existing):
+            raise ValidationError("You are already registered for this event.")
+
+        self._validate_participant(user_id, event)
+        status = self._registration_status(event)
+        registration = self._prepare_registration(
+            event=event,
+            user_id=user_id,
+            existing=existing,
+            status=status,
+            team_id=team_id,
+            notes=notes,
+        )
+        self._commit_registration_changes("Your registration could not be saved because it conflicts with an existing record.")
+        self._notify_registration(registration, event)
         return registration
 
     @staticmethod
@@ -131,21 +210,17 @@ class RegistrationService:
             from app.notifications.service import NotificationService
             NotificationService().notify(user_id=user_id, title=title, body=body, category="registration_workflow", entity_type="event", entity_id=event_id)
         except Exception:
-            pass
+            db.session.rollback()
 
-    def _add_to_waitlist(self, event_id, user_id, notes) -> Registration:
-        registration = Registration(
-            event_id=event_id, user_id=user_id, status="waitlisted", notes=notes
+    def _notify_registration(self, registration: Registration, event: Event, *, team_name: str | None = None) -> None:
+        status_text = "on the waitlist" if registration.status == "waitlisted" else registration.status
+        team_text = f" with team '{team_name}'" if team_name else ""
+        self._notify(
+            registration.user_id,
+            f"Registration {registration.status}",
+            f"Your registration for '{event.title}'{team_text} is {status_text}.",
+            event.id,
         )
-        self.registrations.add(registration)
-        entry = Waitlist(
-            event_id=event_id,
-            user_id=user_id,
-            position=self.waitlists.next_position(event_id),
-        )
-        self.waitlists.add(entry)
-        self.registrations.commit()
-        return registration
 
     # --- team registration -----------------------------------------------
     @staticmethod
@@ -170,6 +245,12 @@ class RegistrationService:
         if not event.is_team_event:
             raise ValidationError("This event does not accept team registrations.")
 
+        team_name = name.strip()
+        if not team_name:
+            raise ValidationError("Team name is required.")
+        if self.teams.get_by_event_name(event_id, team_name) is not None:
+            raise ConflictError("That team name is already being used for this event.")
+
         members = list(dict.fromkeys([leader_id, *member_ids]))
         if event.max_team_size and len(members) > event.max_team_size:
             raise ValidationError(
@@ -177,22 +258,40 @@ class RegistrationService:
             )
 
         existing_by_user = {
-            uid: self.registrations.get_for_user_event(uid, event_id)
+            uid: self.registrations.get_any_for_user_event(uid, event_id)
             for uid in members
         }
         if any(
-            existing is not None and existing.status not in {"cancelled", "rejected"}
+            self._is_active_registration(existing)
             for existing in existing_by_user.values()
         ):
             raise ValidationError(
                 "One or more members are already registered for this event."
             )
 
-        team = Team(event_id=event_id, name=name, leader_id=leader_id, team_code=self._generate_team_code())
+        for uid in members:
+            self._validate_participant(uid, event)
+
+        team_code = None
+        for _ in range(10):
+            candidate = self._generate_team_code()
+            if self.teams.get_by_code(candidate) is None:
+                team_code = candidate
+                break
+        if team_code is None:
+            raise ConflictError("A unique team code could not be generated. Please try again.")
+
+        team = Team(event_id=event_id, name=team_name, leader_id=leader_id, team_code=team_code)
         self.teams.add(team)
-        self.teams.flush()
+        try:
+            self.teams.flush()
+        except IntegrityError as exc:
+            db.session.rollback()
+            raise ConflictError("That team name or code is already being used. Please choose another team name.") from exc
 
         for uid in members:
+            status = self._registration_status(event)
+            existing = existing_by_user[uid]
             self.teams.add_member(
                 TeamMember(
                     team_id=team.id,
@@ -200,24 +299,18 @@ class RegistrationService:
                     role="leader" if uid == leader_id else "member",
                 )
             )
-            existing = existing_by_user[uid]
-            if existing is not None:
-                existing.team_id = team.id
-                existing.status = "pending" if event.approval_required else "approved"
-                existing.notes = None
-                existing.reviewed_by = None
-                existing.reviewed_at = None
-                existing.deleted_at = None
-            else:
-                self.registrations.add(
-                    Registration(
-                        event_id=event_id,
-                        user_id=uid,
-                        team_id=team.id,
-                        status="pending" if event.approval_required else "approved",
-                    )
-                )
-        self.teams.commit()
+            self._prepare_registration(
+                event=event,
+                user_id=uid,
+                existing=existing,
+                status=status,
+                team_id=team.id,
+            )
+        self._commit_registration_changes("The team could not be created because its registration data conflicts with an existing team.")
+        for uid in members:
+            registration = self.registrations.get_for_user_event(uid, event_id)
+            if registration is not None:
+                self._notify_registration(registration, event, team_name=team.name)
         return team
 
     def join_team_by_code(self, *, team_code: str, user_id: uuid.UUID) -> Registration:
@@ -225,33 +318,29 @@ class RegistrationService:
         if team is None:
             raise NotFoundError("Invalid team code.")
         event = self._get_open_event(team.event_id)
-        # Check if already registered
-        existing = self.registrations.get_for_user_event(user_id, team.event_id)
-        if existing is not None and existing.status not in {"cancelled", "rejected"}:
+        if not event.is_team_event:
+            raise ValidationError("This event does not accept team registrations.")
+        existing = self.registrations.get_any_for_user_event(user_id, team.event_id)
+        if self._is_active_registration(existing):
             raise ValidationError("You are already registered for this event.")
-        # Check team size
+        self._validate_participant(user_id, event)
+
         already_member = any(member.user_id == user_id for member in team.members)
         current_members = len(team.members)
         if event.max_team_size and current_members >= event.max_team_size and not already_member:
             raise ValidationError("This team is already full.")
-        # Add member and register
+
         if not already_member:
             self.teams.add_member(TeamMember(team_id=team.id, user_id=user_id, role="member"))
-        status = "pending" if event.approval_required else "approved"
-        if existing is not None:
-            existing.team_id = team.id
-            existing.status = status
-            existing.notes = None
-            existing.reviewed_by = None
-            existing.reviewed_at = None
-            existing.deleted_at = None
-            registration = existing
-        else:
-            registration = Registration(
-                event_id=team.event_id, user_id=user_id, team_id=team.id, status=status
-            )
-            self.registrations.add(registration)
-        self.registrations.commit()
+        registration = self._prepare_registration(
+            event=event,
+            user_id=user_id,
+            existing=existing,
+            status=self._registration_status(event),
+            team_id=team.id,
+        )
+        self._commit_registration_changes("You could not join this team because your registration conflicts with an existing record.")
+        self._notify_registration(registration, event, team_name=team.name)
         return registration
 
     # --- read -------------------------------------------------------------
@@ -282,6 +371,8 @@ class RegistrationService:
         reg.reviewed_at = utcnow()
         if notes:
             reg.notes = notes
+        if decision == "rejected":
+            self._set_waitlist_state(event_id=reg.event_id, user_id=reg.user_id, waitlisted=False)
         self.registrations.commit()
         event = self.events.get_by_id(reg.event_id)
         if event:
@@ -310,6 +401,7 @@ class RegistrationService:
         reg.status = "cancelled"
         reg.reviewed_by = actor_id
         reg.reviewed_at = utcnow()
+        self._set_waitlist_state(event_id=reg.event_id, user_id=reg.user_id, waitlisted=False)
         self.registrations.commit()
         self._promote_waitlist(reg.event_id)
         event = self.events.get_by_id(reg.event_id)
@@ -327,6 +419,7 @@ class RegistrationService:
         reg.status = "pending" if event.approval_required else "approved"
         reg.reviewed_by = actor_id
         reg.reviewed_at = utcnow()
+        self._set_waitlist_state(event_id=reg.event_id, user_id=reg.user_id, waitlisted=False)
         self.registrations.commit()
         self._notify(reg.user_id, f"Registration {reg.status}", f"You were moved from the waitlist for '{event.title}'.", event.id)
         return reg
@@ -336,6 +429,7 @@ class RegistrationService:
         if not has_permission(str(actor_id), "registrations.manage"):
             raise AuthorizationError("You do not have permission to remove registrations.")
         reg.deleted_at = utcnow()
+        self._set_waitlist_state(event_id=reg.event_id, user_id=reg.user_id, waitlisted=False)
         self.registrations.commit()
 
     def _promote_waitlist(self, event_id: uuid.UUID) -> None:
@@ -351,6 +445,12 @@ class RegistrationService:
                 reg.status = "pending" if event.approval_required else "approved"
                 entry.promoted = True
                 self.registrations.commit()
+                self._notify(
+                    reg.user_id,
+                    f"Registration {reg.status}",
+                    f"You were moved from the waitlist for '{event.title}'.",
+                    event.id,
+                )
                 break
 
 

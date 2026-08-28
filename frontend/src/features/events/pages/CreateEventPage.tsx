@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 import { eventsApi } from "@/features/events/services/eventsApi";
+import { apiErrorMessage } from "@/api/errors";
 import { CreateEventForm } from "@/features/events/components/CreateEventForm";
 import type { EventFormValues } from "@/features/events/validators";
 import { useToast } from "@/providers/ToastProvider";
@@ -61,8 +62,8 @@ export default function CreateEventPage() {
         toast(isProfessor ? "Event submitted for admin approval." : "Event created.", "success");
       }
       navigate("/events");
-    } catch {
-      toast("Could not create event.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not create event."), "error");
     } finally {
       setSubmitting(false);
     }

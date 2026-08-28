@@ -29,6 +29,15 @@ class RegistrationRepository:
             )
         )
 
+    def get_any_for_user_event(self, user_id: uuid.UUID, event_id: uuid.UUID) -> Registration | None:
+        """Return the unique row even when it was soft-deleted."""
+        return db.session.scalar(
+            select(Registration).where(
+                Registration.user_id == user_id,
+                Registration.event_id == event_id,
+            )
+        )
+
     def list_query(self, *, event_id=None, user_id=None, status=None):
         stmt = select(Registration).where(Registration.deleted_at.is_(None))
         if event_id:
@@ -65,6 +74,24 @@ class TeamRepository:
     def get_by_code(self, code: str) -> Team | None:
         return db.session.scalar(select(Team).where(Team.team_code == code))
 
+    def get_by_event_name(self, event_id: uuid.UUID, name: str) -> Team | None:
+        return db.session.scalar(
+            select(Team).where(
+                Team.event_id == event_id,
+                func.lower(Team.name) == name.lower(),
+            )
+        )
+
+    def remove_member(self, *, team_id: uuid.UUID, user_id: uuid.UUID) -> None:
+        member = db.session.scalar(
+            select(TeamMember).where(
+                TeamMember.team_id == team_id,
+                TeamMember.user_id == user_id,
+            )
+        )
+        if member is not None:
+            db.session.delete(member)
+
     def add(self, entity: Team) -> Team:
         db.session.add(entity)
         return entity
@@ -88,6 +115,14 @@ class WaitlistRepository:
             select(func.max(Waitlist.position)).where(Waitlist.event_id == event_id)
         )
         return (current or 0) + 1
+
+    def get_for_user_event(self, user_id: uuid.UUID, event_id: uuid.UUID) -> Waitlist | None:
+        return db.session.scalar(
+            select(Waitlist).where(
+                Waitlist.user_id == user_id,
+                Waitlist.event_id == event_id,
+            )
+        )
 
     def list_for_event(self, event_id: uuid.UUID) -> list[Waitlist]:
         return list(

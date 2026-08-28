@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
+import { apiErrorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
@@ -19,7 +20,6 @@ import type { EntityKey } from "@/features/school/types";
 type SchoolRecord = Record<string, unknown> & { id?: string };
 type SchoolApiMethod = (first?: unknown, second?: unknown) => Promise<unknown>;
 type DynamicSchoolApi = Record<string, SchoolApiMethod>;
-type ApiError = { response?: { data?: { message?: string } } };
 
 const TABS: { key: EntityKey; label: string; managePerm: string }[] = [
   { key: "departments", label: "Departments", managePerm: "departments.manage" },
@@ -86,7 +86,7 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
       setEditor({ open: false, item: null });
       invalidate();
     },
-    onError: (e: unknown) => toast((e as ApiError)?.response?.data?.message ?? "Failed to save.", "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Failed to save."), "error"),
   });
 
   const deleteMut = useMutation({
@@ -97,7 +97,7 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
       setDeleteTarget(null);
       invalidate();
     },
-    onError: (e: unknown) => toast((e as ApiError)?.response?.data?.message ?? "Failed to delete.", "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Failed to delete."), "error"),
   });
 
   const result = query.data as { data?: SchoolRecord[]; meta?: { page: number; total_pages: number } } | undefined;

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
+import { apiErrorMessage } from "@/api/errors";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -41,8 +42,8 @@ export default function RegisterPage() {
       });
       toast("Account created. Welcome!", "success");
       navigate("/dashboard", { replace: true });
-    } catch {
-      toast("Could not create account. Email may already be in use.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not create account."), "error");
     }
   };
 

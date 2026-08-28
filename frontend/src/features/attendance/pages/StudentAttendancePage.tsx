@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, CheckCircle2, Keyboard, QrCode, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { apiErrorMessage } from "@/api/errors";
 import { Card } from "@/components/ui/Card";
 import { PageHeader, StatusBadge } from "@/components/ui/AdminPrimitives";
 import { attendanceApi, type AttendanceRecord } from "@/features/attendance/services/attendanceApi";
@@ -27,7 +28,7 @@ export default function StudentAttendancePage() {
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       toast(`Checked in for ${record.event_title ?? "the event"}.`, "success");
     },
-    onError: () => toast("Check-in failed. Make sure you are registered, the code has not expired, and you are using your own account.", "error"),
+    onError: (error) => toast(apiErrorMessage(error, "Check-in could not be completed."), "error"),
   });
 
   useEffect(() => {

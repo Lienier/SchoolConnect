@@ -117,6 +117,11 @@ def register_team():
         name=payload.name,
         member_ids=[uuid.UUID(m) for m in payload.member_ids],
     )
+    leader_registration = _service.registrations.get_for_user_event(actor, team.event_id)
+    response_data = team.to_dict()
+    response_data["registration_status"] = (
+        leader_registration.status if leader_registration is not None else None
+    )
     emit_update(
         "registration",
         "team_created",
@@ -125,7 +130,7 @@ def register_team():
         data={"event_id": str(team.event_id), "team_code": team.team_code},
     )
     return success_response(
-        data=team.to_dict(), message="Team registered.", status_code=201
+        data=response_data, message="Team registered.", status_code=201
     )
 
 

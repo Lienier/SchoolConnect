@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ClipboardCheck, Copy, Download, QrCode, ScanLine, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { apiErrorMessage } from "@/api/errors";
 import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { Modal } from "@/components/ui/Modal";
@@ -97,7 +98,7 @@ export default function AttendancePage() {
       refreshAttendance();
       toast(`Attendance marked ${variables.status}.`, "success");
     },
-    onError: () => toast("Attendance could not be updated.", "error"),
+    onError: (error) => toast(apiErrorMessage(error, "Attendance could not be updated."), "error"),
   });
 
   const qr = useMutation({
@@ -117,7 +118,7 @@ export default function AttendancePage() {
       queryClient.invalidateQueries({ queryKey: ["attendance-mine"] });
       toast("QR check-in recorded.", "success");
     },
-    onError: () => toast("That QR code is invalid, expired, or already used.", "error"),
+    onError: (error) => toast(apiErrorMessage(error, "That QR code could not be used."), "error"),
   });
 
   const items = useMemo(
@@ -293,9 +294,4 @@ function downloadCsv(filename: string, csv: string) {
   link.download = filename.replace(/[^a-z0-9-_ .]/gi, "_");
   link.click();
   URL.revokeObjectURL(link.href);
-}
-
-function apiErrorMessage(error: unknown, fallback: string) {
-  const response = (error as { response?: { data?: { message?: string; error?: string } } }).response;
-  return response?.data?.message ?? response?.data?.error ?? fallback;
 }

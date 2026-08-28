@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Plus, Settings, Shield, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
+import { apiErrorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
@@ -17,8 +18,6 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/providers/ToastProvider";
 
 type RoleFormValues = { name: string; display_name: string; description: string };
-type ApiError = { response?: { data?: { message?: string } } };
-const apiError = (error: unknown, fallback: string) => (error as ApiError)?.response?.data?.message ?? fallback;
 
 export default function RolesPage() {
   const { can } = usePermissions();
@@ -54,7 +53,7 @@ export default function RolesPage() {
       setEditor({ open: false, role: null });
       invalidate();
     },
-    onError: (e: unknown) => toast(apiError(e, "Failed to create role."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Failed to create role."), "error"),
   });
 
   const updateMut = useMutation({
@@ -64,7 +63,7 @@ export default function RolesPage() {
       setEditor({ open: false, role: null });
       invalidate();
     },
-    onError: (e: unknown) => toast(apiError(e, "Failed to update role."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Failed to update role."), "error"),
   });
 
   const deleteMut = useMutation({
@@ -74,7 +73,7 @@ export default function RolesPage() {
       setDeleteTarget(null);
       invalidate();
     },
-    onError: (e: unknown) => toast(apiError(e, "Failed to delete role."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Failed to delete role."), "error"),
   });
 
   const cloneMut = useMutation({
@@ -85,7 +84,7 @@ export default function RolesPage() {
       setCloner(null);
       invalidate();
     },
-    onError: (e: unknown) => toast(apiError(e, "Failed to clone role."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Failed to clone role."), "error"),
   });
 
   const assignMut = useMutation({
@@ -95,7 +94,7 @@ export default function RolesPage() {
       setPermissionEditor(null);
       invalidate();
     },
-    onError: (e: unknown) => toast(apiError(e, "Failed to update permissions."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Failed to update permissions."), "error"),
   });
 
   const openPermissions = (role: Role) => {

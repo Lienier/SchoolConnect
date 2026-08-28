@@ -88,6 +88,7 @@ export interface TeamRegistration {
   team_code: string;
   leader_id: string;
   members: TeamMember[];
+  registration_status?: "pending" | "approved" | "waitlisted";
 }
 
 export interface EventListResponse extends ApiResponse<SchoolEvent[]> {

@@ -10,11 +10,13 @@ from app.announcements.model import Announcement
 from app.attendance.model import QrToken
 from app.auth.model import User
 from app.auth.service import AuthService
+from app.common.exceptions import ConflictError, ValidationError
 from app.events.model import Event, EventRequirement
 from app.events.service import EventService
 from app.extensions import db
 from app.permissions.model import Permission, Role, RolePermission, UserRole
-from app.registrations.model import Registration
+from app.notifications.model import Notification
+from app.registrations.model import Registration, Team, TeamMember, Waitlist
 from app.registrations.service import RegistrationService
 from app.users.model import StudentProfile
 from app.utils.datetime import utcnow
@@ -250,6 +252,7 @@ def test_student_http_profile_team_and_qr_workflows(app_ctx):
         headers=leader_headers,
     )
     assert team_response.status_code == 201
+    assert team_response.get_json()["data"]["registration_status"] == "approved"
     team_code = team_response.get_json()["data"]["team_code"]
     assert team_code.startswith("SC-")
 
@@ -339,6 +342,135 @@ def test_registration_reuses_cancelled_or_rejected_records(app_ctx):
     db.session.refresh(rejected)
     assert rejected.team_id == team.id
     assert rejected.status == "approved"
+
+
+def test_full_event_waitlist_reuses_existing_rows_and_notifies(app_ctx):
+    role = _role("student", ["registrations.create", "events.view"])
+    registered_student = _user("capacity.registered@example.com", role)
+    waitlisted_student = _user("capacity.waitlisted@example.com", role)
+    db.session.add_all(
+        [
+            StudentProfile(id=registered_student.id, year_level=1),
+            StudentProfile(id=waitlisted_student.id, year_level=1),
+        ]
+    )
+    event = Event(
+        title="Capacity test event",
+        organizer_id=registered_student.id,
+        status="approved",
+        start_time=utcnow() + timedelta(days=20),
+        end_time=utcnow() + timedelta(days=20, hours=2),
+        registration_deadline=utcnow() + timedelta(days=10),
+        capacity=1,
+        is_team_event=False,
+        approval_required=False,
+        created_by=registered_student.id,
+        updated_by=registered_student.id,
+    )
+    db.session.add(event)
+    db.session.commit()
+
+    service = RegistrationService()
+    service.register(event_id=event.id, user_id=registered_student.id)
+    first_waitlist = service.register(event_id=event.id, user_id=waitlisted_student.id)
+    waitlist_entry = db.session.scalar(
+        db.select(Waitlist).where(
+            Waitlist.event_id == event.id,
+            Waitlist.user_id == waitlisted_student.id,
+        )
+    )
+    assert first_waitlist.status == "waitlisted"
+    assert waitlist_entry is not None
+
+    first_waitlist.status = "cancelled"
+    waitlist_entry.promoted = True
+    db.session.commit()
+    retried = service.register(event_id=event.id, user_id=waitlisted_student.id)
+
+    assert retried.id == first_waitlist.id
+    assert retried.status == "waitlisted"
+    assert db.session.scalar(
+        db.select(db.func.count(Waitlist.id)).where(
+            Waitlist.event_id == event.id,
+            Waitlist.user_id == waitlisted_student.id,
+        )
+    ) == 1
+    assert db.session.scalar(
+        db.select(db.func.count(Notification.id)).where(
+            Notification.user_id == waitlisted_student.id,
+            Notification.entity_id == event.id,
+        )
+    ) == 2
+
+
+def test_team_registration_is_teams_only_capacity_aware_and_atomic(app_ctx):
+    role = _role("student", ["registrations.create", "events.view"])
+    leader = _user("team.capacity.leader@example.com", role)
+    member = _user("team.capacity.member@example.com", role)
+    other_leader = _user("team.capacity.other@example.com", role)
+    db.session.add_all(
+        [
+            StudentProfile(id=leader.id, year_level=1),
+            StudentProfile(id=member.id, year_level=1),
+            StudentProfile(id=other_leader.id, year_level=1),
+        ]
+    )
+    event = Event(
+        title="Capacity team event",
+        organizer_id=leader.id,
+        status="approved",
+        start_time=utcnow() + timedelta(days=30),
+        end_time=utcnow() + timedelta(days=30, hours=2),
+        registration_deadline=utcnow() + timedelta(days=15),
+        capacity=1,
+        is_team_event=True,
+        max_team_size=3,
+        approval_required=False,
+        created_by=leader.id,
+        updated_by=leader.id,
+    )
+    db.session.add(event)
+    db.session.commit()
+    service = RegistrationService()
+
+    with pytest.raises(ValidationError, match="team event"):
+        service.register(event_id=event.id, user_id=leader.id)
+
+    team = service.register_team(event_id=event.id, leader_id=leader.id, name="Alpha", member_ids=[])
+    joined = service.join_team_by_code(team_code=team.team_code, user_id=member.id)
+    assert joined.status == "waitlisted"
+    assert joined.team_id == team.id
+    assert db.session.scalar(
+        db.select(Waitlist).where(
+            Waitlist.event_id == event.id,
+            Waitlist.user_id == member.id,
+        )
+    ) is not None
+
+    team_count = db.session.scalar(db.select(db.func.count(Team.id)))
+    with pytest.raises(ConflictError, match="team name"):
+        service.register_team(event_id=event.id, leader_id=other_leader.id, name="alpha", member_ids=[])
+    assert db.session.scalar(db.select(db.func.count(Team.id))) == team_count
+
+    joined.status = "cancelled"
+    db.session.commit()
+    replacement = service.register_team(
+        event_id=event.id,
+        leader_id=member.id,
+        name="Beta",
+        member_ids=[],
+    )
+    assert replacement.id != team.id
+    assert db.session.scalar(
+        db.select(db.func.count(TeamMember.id)).where(
+            TeamMember.team_id == team.id,
+            TeamMember.user_id == member.id,
+        )
+    ) == 0
+    replacement_registration = service.registrations.get_for_user_event(member.id, event.id)
+    assert replacement_registration is not None
+    assert replacement_registration.team_id == replacement.id
+    assert replacement_registration.status == "waitlisted"
 
 
 def test_event_wide_qr_is_reusable_until_expiry(app_ctx):

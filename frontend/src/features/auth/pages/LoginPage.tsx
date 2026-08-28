@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
+import { apiErrorMessage } from "@/api/errors";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
@@ -52,8 +53,8 @@ export default function LoginPage() {
       await login(values.email, values.password);
       toast("Welcome back!", "success");
       navigate(redirectTo, { replace: true });
-    } catch {
-      toast("Invalid email or password.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Invalid email or password."), "error");
     }
   };
 

@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 import { announcementsApi } from "@/features/announcements/services/announcementsApi";
+import { apiErrorMessage } from "@/api/errors";
 import { CreateAnnouncementForm } from "@/features/announcements/components/CreateAnnouncementForm";
 import { useToast } from "@/providers/ToastProvider";
 import { PageHeader } from "@/components/ui/AdminPrimitives";
@@ -55,8 +56,8 @@ export default function CreateAnnouncementPage() {
         toast(isProfessor ? "Announcement submitted for admin approval." : "Announcement created.", "success");
       }
       navigate("/announcements");
-    } catch {
-      toast("Could not create announcement.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not create announcement."), "error");
     } finally {
       setSubmitting(false);
     }

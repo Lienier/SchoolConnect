@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, FileCheck2, Megaphone, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
+import { apiErrorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
@@ -84,7 +85,7 @@ export function ApprovalInboxPage() {
       queryClient.invalidateQueries({ queryKey: ["admin"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: () => toast("Approval action failed.", "error"),
+    onError: (error) => toast(apiErrorMessage(error, "Approval action failed."), "error"),
     onSettled: () => {
       setConfirm(null);
       setComment("");

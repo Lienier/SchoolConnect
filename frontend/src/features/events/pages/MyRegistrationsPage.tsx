@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Calendar, Copy, Users, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
+import { apiErrorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
@@ -60,8 +61,8 @@ export default function MyRegistrationsPage() {
       toast("Registration cancelled.", "success");
       queryClient.invalidateQueries({ queryKey: ["my-registrations"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    } catch {
-      toast("Could not cancel registration.", "error");
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not cancel registration."), "error");
     }
   };
 

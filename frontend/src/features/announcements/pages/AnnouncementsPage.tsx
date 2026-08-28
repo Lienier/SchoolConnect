@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
+import { apiErrorMessage } from "@/api/errors";
 import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 import { EmptyState, StatusBadge } from "@/components/ui/AdminPrimitives";
@@ -45,7 +46,7 @@ export default function AnnouncementsPage() {
       queryClient.invalidateQueries({ queryKey: ["announcements-management"] });
       queryClient.invalidateQueries({ queryKey: ["feed"] });
     },
-    onError: () => toast("Announcement action failed.", "error"),
+    onError: (error) => toast(apiErrorMessage(error, "Announcement action failed."), "error"),
   });
 
   const confirm = (

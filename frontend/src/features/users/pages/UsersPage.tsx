@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit3, Lock, Plus, Shield, Trash2, UserCheck, UserX } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
+import { apiErrorMessage } from "@/api/errors";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
@@ -23,11 +24,6 @@ const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "neutral" |
   invited: "info",
   inactive: "neutral",
   suspended: "danger",
-};
-
-const errorMessage = (error: unknown, fallback: string) => {
-  const response = error as { response?: { data?: { message?: string } } };
-  return response.response?.data?.message ?? fallback;
 };
 
 const emptyForm = { email: "", full_name: "", username: "", password: "", roles: ["student"], status: "active" as UserStatus };
@@ -65,7 +61,7 @@ export default function UsersPage() {
       setForm(emptyForm);
       invalidate();
     },
-    onError: (e: unknown) => toast(errorMessage(e, "User could not be created."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "User could not be created."), "error"),
   });
 
   const updateMut = useMutation({
@@ -75,7 +71,7 @@ export default function UsersPage() {
       setEditTarget(null);
       invalidate();
     },
-    onError: (e: unknown) => toast(errorMessage(e, "User could not be updated."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "User could not be updated."), "error"),
   });
 
   const rolesMut = useMutation({
@@ -85,7 +81,7 @@ export default function UsersPage() {
       setRolesTarget(null);
       invalidate();
     },
-    onError: (e: unknown) => toast(errorMessage(e, "Roles could not be updated."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Roles could not be updated."), "error"),
   });
 
   const lifecycle = useMutation({
@@ -101,7 +97,7 @@ export default function UsersPage() {
       toast(`${name} ${actionLabel}.`, "success");
       invalidate();
     },
-    onError: (e: unknown) => toast(errorMessage(e, "Action failed."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Action failed."), "error"),
   });
 
   const resetMut = useMutation({
@@ -111,7 +107,7 @@ export default function UsersPage() {
       setResetTarget(null);
       setNewPassword("");
     },
-    onError: (e: unknown) => toast(errorMessage(e, "Reset failed."), "error"),
+    onError: (e: unknown) => toast(apiErrorMessage(e, "Reset failed."), "error"),
   });
 
   const users = usersQuery.data?.data ?? [];

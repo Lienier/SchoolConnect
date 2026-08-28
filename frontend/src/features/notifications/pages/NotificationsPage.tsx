@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCheck, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
+import { apiErrorMessage } from "@/api/errors";
 import { Card } from "@/components/ui/Card";
 import { EmptyState, PageHeader, StatusBadge } from "@/components/ui/AdminPrimitives";
 import { notificationsApi } from "@/features/notifications/services/notificationsApi";
@@ -20,7 +21,7 @@ export default function NotificationsPage() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
     },
-    onError: () => toast("Could not update notification.", "error"),
+    onError: (error) => toast(apiErrorMessage(error, "Could not update notification."), "error"),
   });
   const markAll = useMutation({
     mutationFn: notificationsApi.markAllRead,
@@ -29,7 +30,7 @@ export default function NotificationsPage() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
     },
-    onError: () => toast("Could not mark notifications as read.", "error"),
+    onError: (error) => toast(apiErrorMessage(error, "Could not mark notifications as read."), "error"),
   });
   const hrefFor = (type: string | null, id: string | null) => type === "event" && id ? `/events/${id}` : type === "announcement" && id ? `/announcements#feed-${id}` : null;
   const meta = query.data?.meta;
