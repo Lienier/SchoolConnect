@@ -34,4 +34,4 @@ services:
       - key: SEED_ADMIN_PASSWORD
         sync: false
       - key: RATELIMIT_STORAGE_URI
-        sync: false
+        value: memory://

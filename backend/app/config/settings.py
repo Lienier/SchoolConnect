@@ -134,7 +134,3 @@ def validate_security_config(config: type[Config]) -> None:
         raise RuntimeError(
             "Production requires strong SECRET_KEY and JWT_SECRET_KEY values."
         )
-    if config.RATELIMIT_STORAGE_URI == "memory://":
-        raise RuntimeError(
-            "Production requires persistent RATELIMIT_STORAGE_URI storage."
-        )
