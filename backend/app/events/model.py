@@ -1,7 +1,7 @@
 """SQLAlchemy models for the events module.
 
-Includes event categories, events (with draft/approval workflow, capacity and
-team settings), attachments, requirements, approvals and the calendar view.
+Includes event categories, direct-published events, capacity and team settings,
+attachments, requirements, officer assignments and the calendar view.
 """
 
 from __future__ import annotations
@@ -42,12 +42,12 @@ class EventCategory(db.Model):
 
 
 class Event(db.Model):
-    """A school event organized by a staff member."""
+    """A college event organized by a staff member."""
 
     __tablename__ = "events"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('draft','pending_approval','approved','ongoing','completed','cancelled','archived','returned')",
+            "status IN ('approved','ongoing','completed','cancelled','archived')",
             name="ck_events_status",
         ),
         CheckConstraint("capacity IS NULL OR capacity >= 0", name="ck_events_capacity"),
@@ -74,7 +74,7 @@ class Event(db.Model):
     organization_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True
     )
-    status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="approved", nullable=False, index=True)
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     location: Mapped[str | None] = mapped_column(String(200), nullable=True)
@@ -107,9 +107,6 @@ class Event(db.Model):
     organizer: Mapped["User"] = relationship(
         "User", foreign_keys=[organizer_id], lazy="joined"
     )
-    approvals: Mapped[list["EventApproval"]] = relationship(
-        back_populates="event", cascade="all, delete-orphan"
-    )
     attachments: Mapped[list["EventAttachment"]] = relationship(
         back_populates="event", cascade="all, delete-orphan"
     )
@@ -124,7 +121,7 @@ class Event(db.Model):
     def soft_delete(self) -> None:
         self.deleted_at = utcnow()
 
-    def to_dict(self, include_approvals: bool = False) -> dict:
+    def to_dict(self) -> dict:
         data = {
             "id": str(self.id),
             "title": self.title,
@@ -155,19 +152,7 @@ class Event(db.Model):
             "attachments": [attachment.to_dict() for attachment in self.attachments],
             "banner_url": self.banner_url,
         }
-        if include_approvals:
-            data["approvals"] = [
-                {
-                    "id": str(a.id),
-                    "reviewer_id": str(a.reviewer_id),
-                    "reviewer_name": a.reviewer.full_name if a.reviewer else None,
-                    "decision": a.decision,
-                    "comment": a.comment,
-                    "decided_at": a.decided_at.isoformat() if a.decided_at else None,
-                }
-                for a in self.approvals
-            ]
-            data["results"] = [r.to_dict() for r in self.results]
+        data["results"] = [r.to_dict() for r in self.results]
         return data
 
     @property
@@ -235,32 +220,29 @@ class EventRequirement(db.Model):
     is_mandatory: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
-class EventApproval(db.Model):
-    """Approval decision record for an event (history is append-only)."""
+class EventOfficerAssignment(db.Model):
+    """Assign a Student Council officer to manage one event."""
 
-    __tablename__ = "event_approvals"
+    __tablename__ = "event_officer_assignments"
+    __table_args__ = (
+        UniqueConstraint("event_id", "officer_id", name="uq_event_officer_assignment"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     event_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("events.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
+        PG_UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    reviewer_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
+    officer_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    decision: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
-    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
-    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    assigned_by: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, server_default=func.now(), nullable=False
     )
-
-    event: Mapped[Event] = relationship(back_populates="approvals")
-    reviewer: Mapped["User"] = relationship("User", foreign_keys=[reviewer_id], lazy="joined")
 
 
 class CalendarEvent(db.Model):
@@ -322,7 +304,7 @@ __all__ = [
     "Event",
     "EventAttachment",
     "EventRequirement",
-    "EventApproval",
+    "EventOfficerAssignment",
     "CalendarEvent",
     "EventResult",
 ]

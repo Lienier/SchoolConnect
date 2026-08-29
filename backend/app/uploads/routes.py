@@ -7,10 +7,13 @@ import uuid
 from flask import Blueprint, current_app, redirect, request, send_from_directory
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from app.common.exceptions import NotFoundError, ValidationError
+from app.announcements.model import Announcement
+from app.common.exceptions import AuthorizationError, NotFoundError, ValidationError
+from app.events.access import require_event_manager
+from app.events.model import Event
+from app.extensions import db
 from app.common.responses import success_response
 from app.uploads.service import UploadService
-from app.permissions.decorators import has_permission
 
 bp = Blueprint("uploads", __name__, url_prefix="/uploads")
 _service = UploadService()
@@ -27,13 +30,26 @@ def upload():
     entity_id = request.form.get("entity_id")
     if not _service.allowed_entity_type(entity_type):
         raise ValidationError("Unsupported upload target.")
-    if entity_type and not has_permission(actor, f"{entity_type}s.update"):
-        raise ValidationError("You cannot attach files to this resource.")
+    if not entity_type or not entity_id:
+        raise ValidationError("An upload target and target identifier are required.")
+    target_id = uuid.UUID(entity_id)
+    if entity_type == "event":
+        event = db.session.get(Event, target_id)
+        if event is None:
+            raise NotFoundError("Event not found.")
+        require_event_manager(actor, event)
+    elif entity_type == "announcement":
+        announcement = db.session.get(Announcement, target_id)
+        if announcement is None:
+            raise NotFoundError("Announcement not found.")
+        from app.permissions.decorators import has_permission
+        if announcement.author_id != actor and not has_permission(str(actor), "announcements.moderate"):
+            raise AuthorizationError("You cannot attach files to this announcement.")
     record = _service.store(
         file=request.files["file"],
         uploader_id=actor,
         entity_type=entity_type,
-        entity_id=uuid.UUID(entity_id) if entity_id else None,
+        entity_id=target_id,
     )
     return success_response(
         data=_service.to_dict(record), message="File uploaded.", status_code=201

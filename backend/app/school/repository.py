@@ -1,4 +1,4 @@
-"""Data-access layer for school-structure entities.
+"""Data-access layer for college-structure entities.
 
 A single generic repository handles all structural models since they share the
 same simple lifecycle (create, read, update, delete by id).
@@ -17,7 +17,7 @@ _T = TypeVar("_T")
 
 
 class StructureRepository(Generic[_T]):
-    """Generic CRUD persistence for a school-structure model."""
+    """Generic CRUD persistence for a college-structure model."""
 
     def __init__(self, model: type[_T]) -> None:
         self._model = model

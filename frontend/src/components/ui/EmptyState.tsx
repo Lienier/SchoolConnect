@@ -125,7 +125,7 @@ export function NoUsersEmptyState({ onInvite }: { onInvite?: () => void }) {
   return (
     <EmptyStateCard
       title="No users found"
-      description="Invite users to join your school organization."
+      description="Invite users to join your college organization."
       illustration="users"
       action={onInvite && <Button onClick={onInvite}><UserPlus className="mr-2 h-4 w-4" /> Invite Users</Button>}
     />
@@ -145,10 +145,10 @@ export function NoNotificationsEmptyState() {
 export function NoSchoolEmptyState({ onCreate }: { onCreate?: () => void }) {
   return (
     <EmptyStateCard
-      title="No school configured"
-      description="Set up your school profile to get started with SchoolConnect."
+      title="No college configured"
+      description="Set up your college profile to get started with SchoolConnect."
       illustration="school"
-      action={onCreate && <Button onClick={onCreate}><Plus className="mr-2 h-4 w-4" /> Setup School</Button>}
+      action={onCreate && <Button onClick={onCreate}><Plus className="mr-2 h-4 w-4" /> Setup College</Button>}
     />
   );
 }

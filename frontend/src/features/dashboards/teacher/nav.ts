@@ -1,6 +1,6 @@
 /** Navigation config for the Professor / Event Coordinator dashboard. */
 import type { NavSection } from "@/layouts/AppShell";
-import { BarChart3, CalendarCheck, CalendarDays, ClipboardCheck, Gauge, Megaphone, Plus } from "lucide-react";
+import { CalendarCheck, CalendarDays, ClipboardCheck, Gauge, Megaphone, Plus } from "lucide-react";
 
 export const teacherNav: NavSection[] = [
   {
@@ -19,7 +19,6 @@ export const teacherNav: NavSection[] = [
   {
     title: "Insights",
     items: [
-      { label: "Reports", to: "/reports", perm: "reports.view", icon: BarChart3 },
       { label: "Calendar", to: "/calendar", perm: "events.view", icon: CalendarCheck },
     ],
   },

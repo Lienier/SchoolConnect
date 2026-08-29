@@ -21,11 +21,6 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (payload: {
-    email: string;
-    password: string;
-    full_name: string;
-  }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -62,15 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(tokens.user);
   }, []);
 
-  const register = useCallback(
-    async (payload: { email: string; password: string; full_name: string }) => {
-      const tokens = await authApi.register(payload);
-      persistTokens(tokens);
-      setUser(tokens.user);
-    },
-    [],
-  );
-
   const logout = useCallback(async () => {
     const accessToken = localStorage.getItem(TOKEN_STORAGE_KEY);
     const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
@@ -85,10 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: user !== null,
       isLoading,
       login,
-      register,
       logout,
     }),
-    [user, isLoading, login, register, logout],
+    [user, isLoading, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

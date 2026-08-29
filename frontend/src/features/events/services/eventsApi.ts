@@ -36,27 +36,23 @@ export const eventsApi = {
     capacity?: number;
     is_team_event: boolean;
     max_team_size?: number;
-    submit_for_approval: boolean;
   }): Promise<SchoolEvent> {
     const { data } = await apiClient.post("/events", payload);
     return data.data;
   },
 
-  async submit(id: string): Promise<SchoolEvent> {
-    const { data } = await apiClient.post(`/events/${id}/submit`);
-    return data.data;
-  },
-
-  async approve(id: string, decision: "approved" | "rejected" | "returned", comment?: string) {
-    const { data } = await apiClient.post(`/events/${id}/approve`, {
-      decision,
-      comment,
-    });
-    return data.data;
-  },
-
   async changeStatus(id: string, status: SchoolEvent["status"]): Promise<SchoolEvent> {
     const { data } = await apiClient.post(`/events/${id}/status`, { status });
+    return data.data;
+  },
+
+  async listOfficers(id: string): Promise<string[]> {
+    const { data } = await apiClient.get(`/events/${id}/officers`);
+    return data.data;
+  },
+
+  async assignOfficers(id: string, officerIds: string[]): Promise<string[]> {
+    const { data } = await apiClient.put(`/events/${id}/officers`, { officer_ids: officerIds });
     return data.data;
   },
 

@@ -20,7 +20,6 @@ class EventCreateRequest(BaseModel):
     registration_deadline: Optional[str] = None
     is_team_event: bool = False
     max_team_size: Optional[int] = Field(default=None, ge=2)
-    submit_for_approval: bool = False
 
 
 class EventUpdateRequest(BaseModel):
@@ -38,24 +37,16 @@ class EventUpdateRequest(BaseModel):
     max_team_size: Optional[int] = Field(default=None, ge=2)
 
 
-class EventApprovalRequest(BaseModel):
-    """Payload to approve or reject an event."""
-
-    decision: str
-    comment: Optional[str] = None
-
-    @field_validator("decision")
-    @classmethod
-    def _valid_decision(cls, value: str) -> str:
-        if value not in {"approved", "rejected", "returned"}:
-            raise ValueError("decision must be 'approved', 'rejected', or 'returned'.")
-        return value
-
-
 class EventStatusRequest(BaseModel):
     """Payload to transition an event lifecycle status."""
 
     status: str
+
+
+class EventOfficerAssignmentRequest(BaseModel):
+    """Replace the Student Council officers assigned to an event."""
+
+    officer_ids: list[str] = Field(default_factory=list)
 
 
 class EventResultRequest(BaseModel):

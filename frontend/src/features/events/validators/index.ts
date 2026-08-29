@@ -1,6 +1,15 @@
 /** Zod schema for the event create form. */
 import { z } from "zod";
 
+function isBeforeToday(value: string) {
+  if (!value) return false;
+  const selected = new Date(value);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  selected.setHours(0, 0, 0, 0);
+  return selected < today;
+}
+
 export const eventSchema = z
   .object({
     title: z.string().min(1, "Title is required.").max(200, "Title is too long."),
@@ -19,7 +28,6 @@ export const eventSchema = z
       ),
     is_team_event: z.boolean().default(false),
     max_team_size: z.string().optional().or(z.literal("")),
-    submit_for_approval: z.boolean().default(false),
   })
   .refine(
     (data) =>
@@ -27,6 +35,14 @@ export const eventSchema = z
       !data.end_time ||
       new Date(data.end_time) > new Date(data.start_time),
     { message: "End time must be after start time.", path: ["end_time"] },
-  );
+  )
+  .refine((data) => !isBeforeToday(data.start_time), {
+    message: "Start date cannot be in the past.",
+    path: ["start_time"],
+  })
+  .refine((data) => !isBeforeToday(data.end_time), {
+    message: "End date cannot be in the past.",
+    path: ["end_time"],
+  });
 
 export type EventFormValues = z.infer<typeof eventSchema>;

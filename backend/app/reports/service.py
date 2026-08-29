@@ -131,15 +131,9 @@ class ReportService:
                 Event.status.in_(("approved", "ongoing")),
             )
         ) or 0
-        pending = db.session.scalar(
-            select(func.count(Event.id)).where(
-                Event.deleted_at.is_(None), Event.status == "pending_approval"
-            )
-        ) or 0
         return {
             "total_events": total_events,
             "upcoming_events": upcoming,
-            "pending_approvals": pending,
             "registrations": self.registration_statistics(),
             "popular_categories": self.popular_categories(5),
             "department_attendance": self.department_attendance_summary(),

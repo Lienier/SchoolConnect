@@ -52,7 +52,7 @@ class Role(db.Model):
 
 
 class Permission(db.Model):
-    """A single fine-grained capability, e.g. ``events.approve``."""
+    """A single fine-grained capability, e.g. ``events.manage_all``."""
 
     __tablename__ = "permissions"
 

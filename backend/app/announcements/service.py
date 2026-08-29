@@ -1,7 +1,6 @@
 """Business logic for the announcements module.
 
-Handles creation (draft or submitted for approval), updates, listing (public
-feed vs. management views), the approval workflow, and soft deletion.
+Handles direct publishing, visibility, moderation, and soft deletion.
 """
 
 from __future__ import annotations
@@ -13,15 +12,14 @@ from sqlalchemy import select
 
 from app.announcements.model import (
     Announcement,
-    AnnouncementApproval,
     AnnouncementCategory,
 )
 from app.announcements.repository import (
-    AnnouncementApprovalRepository,
     AnnouncementCategoryRepository,
     AnnouncementRepository,
 )
 from app.common.exceptions import AuthorizationError, NotFoundError, ValidationError
+from app.utils.datetime import date_in_app_timezone, today_in_app_timezone, utcnow
 
 
 class AnnouncementService:
@@ -30,7 +28,6 @@ class AnnouncementService:
     def __init__(self) -> None:
         self.announcements = AnnouncementRepository()
         self.categories = AnnouncementCategoryRepository()
-        self.approvals = AnnouncementApprovalRepository()
 
     # --- categories -------------------------------------------------------
     def create_category(
@@ -64,16 +61,14 @@ class AnnouncementService:
         priority: str = "normal",
         target_audience=None,
         expires_at=None,
-        submit_for_approval: bool = False,
     ) -> Announcement:
-        """Create an announcement as draft or submitted for approval."""
+        """Create and immediately publish an announcement."""
         category_uuid = None
         if category_id:
             category_uuid = uuid.UUID(category_id)
             if self.categories.get_by_id(category_uuid) is None:
                 raise NotFoundError("Category not found.")
 
-        status = "pending_approval" if submit_for_approval else "draft"
         announcement = Announcement(
             title=title,
             body=body,
@@ -81,9 +76,10 @@ class AnnouncementService:
             category_id=category_uuid,
             author_id=author_id,
             priority=priority,
-            status=status,
+            status="published",
+            published_at=datetime.now(timezone.utc),
             target_audience=target_audience,
-            expires_at=self._parse_dt(expires_at),
+            expires_at=self._parse_future_date(expires_at, "expires_at"),
             created_by=author_id,
             updated_by=author_id,
         )
@@ -97,7 +93,7 @@ class AnnouncementService:
         announcement = self.announcements.get_by_id(announcement_id)
         if announcement is None:
             raise NotFoundError("Announcement not found.")
-        if announcement.status in ("published", "archived"):
+        if announcement.status in ("published", "archived") and not can_override:
             raise ValidationError("Published announcements cannot be edited.")
         if actor_id is not None and not can_override and announcement.author_id != actor_id:
             raise AuthorizationError("You can only edit your own announcements.")
@@ -110,8 +106,24 @@ class AnnouncementService:
                     if value and self.categories.get_by_id(value) is None:
                         raise NotFoundError("Category not found.")
                 if key == "expires_at":
-                    value = self._parse_dt(value)
+                    value = self._parse_future_date(value, "expires_at")
                 setattr(announcement, key, value)
+        announcement.updated_at = datetime.now(timezone.utc)
+        self.announcements.commit()
+        return announcement
+
+    def archive_announcement(
+        self,
+        announcement_id: uuid.UUID,
+        *,
+        actor_id: uuid.UUID | None = None,
+        can_override: bool = False,
+    ) -> Announcement:
+        """Hide an announcement from public feeds by archiving it."""
+        announcement = self.get_announcement(announcement_id)
+        if actor_id is not None and not can_override and announcement.author_id != actor_id:
+            raise AuthorizationError("You can only archive your own announcements.")
+        announcement.status = "archived"
         announcement.updated_at = datetime.now(timezone.utc)
         self.announcements.commit()
         return announcement
@@ -130,38 +142,20 @@ class AnnouncementService:
             raise NotFoundError("Announcement not found.")
         return announcement
 
-    # --- approval ----------------------------------------------------------
-    def decide(
-        self, *, announcement_id: uuid.UUID, reviewer_id: uuid.UUID,
-        decision: str, comment=None,
-    ) -> Announcement:
-        """Record an approval decision and transition announcement status."""
-        if decision not in ("approved", "rejected", "returned"):
-            raise ValidationError("Decision must be 'approved', 'rejected', or 'returned'.")
-        announcement = self.get_announcement(announcement_id)
-        if announcement.status != "pending_approval":
-            raise ValidationError("Announcement is not pending approval.")
-
-        record = AnnouncementApproval(
-            announcement_id=announcement.id,
-            reviewer_id=reviewer_id,
-            decision=decision,
-            comment=comment,
-            decided_at=datetime.now(timezone.utc),
-        )
-        self.approvals.add(record)
-        if decision == "approved":
-            announcement.status = "published"
-            announcement.published_at = datetime.now(timezone.utc)
-        else:
-            announcement.status = "draft"
-        self.announcements.commit()
-        try:
-            from app.notifications.service import NotificationService
-            NotificationService().notify(user_id=announcement.author_id, title=f"Announcement {announcement.status}", body=f"Your announcement '{announcement.title}' was {announcement.status}.", category="announcement_workflow", entity_type="announcement", entity_id=announcement.id)
-        except Exception:
-            pass
-        return announcement
+    @staticmethod
+    def visible_to(announcement: Announcement, role_names: set[str]) -> bool:
+        """Return whether a published announcement is active for these roles."""
+        if announcement.status != "published":
+            return False
+        if announcement.expires_at is not None:
+            expires = announcement.expires_at
+            now = utcnow()
+            if expires.tzinfo is None:
+                expires = expires.replace(tzinfo=now.tzinfo)
+            if expires < now:
+                return False
+        audience = set(announcement.target_audience or [])
+        return not audience or "all" in audience or bool(audience & role_names)
 
     # --- delete ------------------------------------------------------------
     def delete_announcement(self, announcement_id: uuid.UUID, *, actor_id: uuid.UUID | None = None, can_override: bool = False) -> None:
@@ -178,3 +172,9 @@ class AnnouncementService:
         if not value:
             return None
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+    def _parse_future_date(self, value: str | None, field: str):
+        parsed = self._parse_dt(value)
+        if parsed is not None and date_in_app_timezone(parsed) < today_in_app_timezone():
+            raise ValidationError(f"{field} cannot be in the past.")
+        return parsed

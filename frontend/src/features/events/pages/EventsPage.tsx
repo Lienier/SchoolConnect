@@ -1,31 +1,48 @@
 /** Events list page with student-friendly filters. */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Clock, Plus, Users } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Archive, Clock, Plus, Trash2, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
+import { apiErrorMessage } from "@/api/errors";
 import { EventList } from "@/features/events/components/EventList";
 import { eventsApi } from "@/features/events/services/eventsApi";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useToast } from "@/providers/ToastProvider";
 import { cn } from "@/utils/cn";
+import type { SchoolEvent } from "@/features/events/types";
 
 const STATUS_TABS = [
   { key: "", label: "All" },
   { key: "approved", label: "Upcoming" },
   { key: "ongoing", label: "Happening Now" },
   { key: "completed", label: "Past" },
-  { key: "pending_approval", label: "Pending" },
 ];
 
 export default function EventsPage() {
   const [status, setStatus] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [teamOnly, setTeamOnly] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    title: string;
+    message: string;
+    itemName: string;
+    confirmLabel: string;
+    variant?: "primary" | "danger" | "secondary";
+    successMessage: string;
+    action: () => Promise<unknown>;
+  } | null>(null);
   const { user } = useAuth();
+  const { can } = usePermissions();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const isStudent = Boolean(user?.roles?.includes("student"));
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
+  const isAdmin = Boolean(user?.roles?.includes("admin"));
   const canCreate = user?.roles?.some((r) => ["admin", "teacher", "student_council"].includes(r));
   const visibleStatusTabs = STATUS_TABS.filter((tab) => isStudent ? ["", "approved", "ongoing", "completed"].includes(tab.key) : true);
 
@@ -43,10 +60,47 @@ export default function EventsPage() {
     }),
     enabled: !isProfessor || Boolean(user?.id),
   });
+  const actionMutation = useMutation({
+    mutationFn: (pending: NonNullable<typeof pendingAction>) => pending.action(),
+    onSuccess: (_data, pending) => {
+      toast(pending.successMessage, "success");
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
+    onError: (error) => toast(apiErrorMessage(error, "Event action failed."), "error"),
+  });
 
   const items = useMemo(
     () => (data?.data ?? []).filter((event) => !teamOnly || event.is_team_event),
     [data?.data, teamOnly],
+  );
+  const confirm = (
+    event: SchoolEvent,
+    title: string,
+    message: string,
+    confirmLabel: string,
+    successMessage: string,
+    action: () => Promise<unknown>,
+    variant: "primary" | "danger" | "secondary" = "primary",
+  ) => setPendingAction({ title, message, itemName: event.title, confirmLabel, successMessage, action, variant });
+  const renderActions = (event: SchoolEvent) => (
+    <>
+      <Link to={`/events/${event.id}`}>
+        <Button size="sm" variant="secondary">View details</Button>
+      </Link>
+      {isAdmin && can("events.update") && event.status !== "archived" && (
+        <Button size="sm" variant="secondary" onClick={() => confirm(event, "Archive event", "This will hide the event from student event discovery without deleting its record.", "Archive", "Event archived.", () => eventsApi.changeStatus(event.id, "archived"), "secondary")}>
+          <Archive className="mr-1.5 h-3.5 w-3.5" />
+          Archive
+        </Button>
+      )}
+      {isAdmin && can("events.delete") && (
+        <Button size="sm" variant="danger" onClick={() => confirm(event, "Delete event", "This will remove the event from management views and student event discovery.", "Delete", "Event deleted.", () => eventsApi.remove(event.id), "danger")}>
+          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+          Delete
+        </Button>
+      )}
+    </>
   );
 
   return (
@@ -62,7 +116,7 @@ export default function EventsPage() {
               <p className="mt-1 text-sm text-slate-500 dark:text-navy-300">
                 {isProfessor
                   ? "Manage your event proposals, approved rosters, and attendance-ready events."
-                  : "Browse approved school events, join team activities, and track registration deadlines."}
+                  : "Browse approved college events, join team activities, and track registration deadlines."}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -137,8 +191,21 @@ export default function EventsPage() {
             Failed to load events. You may lack permission.
           </Card>
         )}
-        {!isLoading && !isError && <EventList items={items} />}
+        {!isLoading && !isError && <EventList items={items} renderActions={renderActions} />}
       </main>
+      <ConfirmActionModal
+        open={!!pendingAction}
+        title={pendingAction?.title ?? "Confirm action"}
+        description={pendingAction?.message ?? ""}
+        itemName={pendingAction?.itemName}
+        confirmLabel={pendingAction?.confirmLabel ?? "Confirm"}
+        confirmVariant={pendingAction?.variant}
+        isLoading={actionMutation.isPending}
+        onCancel={() => setPendingAction(null)}
+        onConfirm={() => {
+          if (pendingAction) actionMutation.mutate(pendingAction, { onSettled: () => setPendingAction(null) });
+        }}
+      />
     </div>
   );
 }

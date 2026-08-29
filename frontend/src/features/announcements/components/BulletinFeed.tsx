@@ -22,7 +22,7 @@ const TABS: { id: FeedTab; label: string }[] = [
 ];
 
 export function BulletinFeed({
-  title = "School Bulletin",
+  title = "College Bulletin",
   description = "A social-style feed for announcements and events.",
   compact = false,
   showHero = true,

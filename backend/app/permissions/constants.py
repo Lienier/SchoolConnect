@@ -41,14 +41,14 @@ PERMISSIONS: dict[str, list[str]] = {
         "announcements.create",
         "announcements.update",
         "announcements.delete",
-        "announcements.approve",
+        "announcements.moderate",
     ],
     "events": [
         "events.view",
         "events.create",
         "events.update",
         "events.delete",
-        "events.approve",
+        "events.manage_all",
     ],
     "registrations": [
         "registrations.view",
@@ -83,12 +83,10 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         for perm in perms
     ],
     "teacher": [
-        # Announcements: create/update/delete own and submit for admin approval
+        # Announcements are published immediately and immutable to authors.
         "announcements.view",
         "announcements.create",
-        "announcements.update",
-        "announcements.delete",
-        # Events: full management of own proposals, admin approves publishing
+        # Events: full management of events they organize.
         "events.view",
         "events.create",
         "events.update",
@@ -106,7 +104,7 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         "reports.view",
         "reports.generate",
         "notifications.view",
-        # Read-only school structure visibility
+        # Read-only college structure visibility
         "departments.view",
         "courses.view",
         "sections.view",
@@ -115,11 +113,10 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         "semesters.view",
     ],
     "student_council": [
-        # Announcements: draft only, submit for approval, no publish/approve/delete of others
+        # Announcements are published immediately and immutable to authors.
         "announcements.view",
         "announcements.create",
-        "announcements.update",
-        # Events: proposal only, no approve/delete
+        # Event management is restricted to owned or assigned events.
         "events.view",
         "events.create",
         "events.update",
@@ -129,7 +126,7 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         # Attendance: view + scan assigned events
         "attendance.view",
         "attendance.scan",
-        # Notifications + read-only reports/school visibility
+        # Notifications + read-only reports/college visibility
         "notifications.view",
         "reports.view",
         "departments.view",
@@ -147,7 +144,6 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         "attendance.view",
         "attendance.checkin",
         "notifications.view",
-        "users.update",
         "departments.view",
         "courses.view",
         "sections.view",

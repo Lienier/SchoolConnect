@@ -1,4 +1,4 @@
-/** School structure management: departments, courses, sections, orgs, years, semesters. */
+/** College structure management: departments, courses, sections, orgs, years, semesters. */
 import { useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Settings, Trash2 } from "lucide-react";
@@ -38,7 +38,7 @@ export default function SchoolPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="School Structure" subtitle="Manage departments, courses, sections, organizations, academic years, and semesters." />
+      <PageHeader title="College Structure" subtitle="Manage departments, courses, sections, organizations, academic years, and semesters." />
         <div className="mb-6 inline-flex flex-wrap rounded-xl border border-navy-200 bg-white p-1">
           {TABS.map((t) => (
             <button
@@ -178,7 +178,7 @@ function EntityTab({ entity, canManage }: { entity: EntityKey; canManage: boolea
       <ConfirmActionModal
         open={!!deleteTarget}
         title={`Delete ${singularLabel(entity).toLowerCase()}`}
-        description="This will remove the record from the school structure. Related records may prevent deletion if the backend requires them."
+        description="This will remove the record from the college structure. Related records may prevent deletion if the backend requires them."
         itemName={recordLabel(deleteTarget)}
         confirmLabel="Delete"
         confirmVariant="danger"

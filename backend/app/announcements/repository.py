@@ -8,7 +8,6 @@ from sqlalchemy import select, case
 
 from app.announcements.model import (
     Announcement,
-    AnnouncementApproval,
     AnnouncementCategory,
 )
 from app.extensions import db
@@ -56,7 +55,6 @@ class AnnouncementRepository:
     def commit(self) -> None:
         """Commit the current unit of work."""
         db.session.commit()
-
     def flush(self) -> None:
         """Flush pending changes."""
         db.session.flush()
@@ -85,14 +83,4 @@ class AnnouncementCategoryRepository:
         db.session.commit()
 
 
-class AnnouncementApprovalRepository:
-    """Persistence operations for ``AnnouncementApproval``."""
-
-    def add(self, entity: AnnouncementApproval) -> AnnouncementApproval:
-        """Stage a new approval record."""
-        db.session.add(entity)
-        return entity
-
-    def commit(self) -> None:
-        """Commit the current unit of work."""
-        db.session.commit()
+__all__ = ["AnnouncementCategoryRepository", "AnnouncementRepository"]

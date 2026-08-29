@@ -14,6 +14,7 @@ from app.attendance.validators import (
     QrCheckInRequest,
 )
 from app.common.exceptions import ValidationError
+from app.events.access import require_event_manager
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
 from app.permissions.decorators import has_permission, require_any_permission, require_permission
@@ -45,7 +46,9 @@ def list_mine():
 @require_permission("attendance.view")
 def list_for_event(event_id: str):
     """List the attendance sheet for an event."""
-    items = _service.sheet_for_event(uuid.UUID(event_id))
+    event = _service._get_event(uuid.UUID(event_id))
+    require_event_manager(get_jwt_identity(), event)
+    items = _service.sheet_for_event(event.id)
     return success_response(
         data=items,
         meta={
@@ -62,7 +65,9 @@ def list_for_event(event_id: str):
 @require_permission("attendance.view")
 def summary(event_id: str):
     """Return an attendance status breakdown for an event."""
-    return success_response(data=_service.summary(uuid.UUID(event_id)))
+    event = _service._get_event(uuid.UUID(event_id))
+    require_event_manager(get_jwt_identity(), event)
+    return success_response(data=_service.summary(event.id))
 
 
 @bp.post("/mark")
@@ -73,8 +78,7 @@ def mark():
     payload = MarkAttendanceRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
     event = _service._get_event(uuid.UUID(payload.event_id))
-    if event.organizer_id != actor and not has_permission(str(actor), "events.approve"):
-        raise ValidationError("You can only record attendance for events you manage.")
+    require_event_manager(actor, event)
     record = _service.mark(
         event_id=uuid.UUID(payload.event_id),
         user_id=uuid.UUID(payload.user_id),
@@ -99,8 +103,7 @@ def generate_qr():
     payload = GenerateQrRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
     event = _service._get_event(uuid.UUID(payload.event_id))
-    if event.organizer_id != actor and not has_permission(str(actor), "events.approve"):
-        raise ValidationError("You can only generate attendance codes for events you manage.")
+    require_event_manager(actor, event)
     token = _service.generate_qr(
         event_id=uuid.UUID(payload.event_id),
         user_id=uuid.UUID(payload.user_id) if payload.user_id else None,

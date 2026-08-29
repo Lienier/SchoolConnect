@@ -10,9 +10,9 @@ export const officerNav: NavSection[] = [
   {
     title: "Management",
     items: [
-      { label: "Propose Event", to: "/events/new", perm: "events.create", icon: Plus },
+      { label: "New Event", to: "/events/new", perm: "events.create", icon: Plus },
       { label: "My Events", to: "/events", perm: "events.view", icon: CalendarDays },
-      { label: "Draft Announcements", to: "/announcements", perm: "announcements.create", icon: Megaphone },
+      { label: "Announcements", to: "/announcements", perm: "announcements.create", icon: Megaphone },
       { label: "My Registrations", to: "/registrations/mine", perm: "registrations.view", icon: ClipboardList },
       { label: "Attendance", to: "/attendance", perm: "attendance.view", icon: ClipboardCheck },
     ],

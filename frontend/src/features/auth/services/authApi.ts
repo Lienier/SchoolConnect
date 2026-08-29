@@ -4,7 +4,7 @@ import type {
   AuthTokens,
   LoginResponse,
   MeResponse,
-  RegisterResponse,
+  TokenResponse,
 } from "@/features/auth/types";
 
 export const authApi = {
@@ -16,20 +16,8 @@ export const authApi = {
     return data.data;
   },
 
-  async register(payload: {
-    email: string;
-    password: string;
-    full_name: string;
-  }): Promise<AuthTokens> {
-    const { data } = await apiClient.post<RegisterResponse>(
-      "/auth/register",
-      payload,
-    );
-    return data.data;
-  },
-
   async refresh(refreshToken: string): Promise<AuthTokens> {
-    const { data } = await apiClient.post<RegisterResponse>("/auth/refresh", {
+    const { data } = await apiClient.post<TokenResponse>("/auth/refresh", {
       refresh_token: refreshToken,
     });
     return data.data;

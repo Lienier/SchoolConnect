@@ -9,7 +9,7 @@ auditable in one place.
 Convention: a service calls :func:`enforce_owner_or_permission` passing the
 record's owner id, the current user id, and a required permission. Admin
 (``*``) always passes; otherwise the user must either own the record **or**
-hold the named permission (e.g. ``events.approve`` lets a teacher approve any
+hold the named permission (e.g. ``events.manage_all`` lets an admin manage any
 pending event).
 """
 
@@ -38,7 +38,7 @@ def enforce_owner_or_permission(
         record_owner_id: The id of the record's owner/organizer/creator.
         user_id: The acting user's id.
         has_permission: Whether the user holds the overriding permission
-            (e.g. ``events.approve``). Admins should resolve this to ``True``.
+            (e.g. ``events.manage_all``). Admins should resolve this to ``True``.
         message: Error message when access is denied.
     """
     if is_owner(record_owner_id, user_id) or has_permission:

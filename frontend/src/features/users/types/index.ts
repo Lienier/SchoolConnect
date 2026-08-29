@@ -6,6 +6,9 @@ export interface UserListItem {
   email: string;
   username: string | null;
   full_name: string;
+  first_name: string | null;
+  middle_name: string | null;
+  last_name: string | null;
   status: string;
   avatar_url: string | null;
   roles: string[];
@@ -18,3 +21,14 @@ export interface UserListResponse extends ApiResponse<UserListItem[]> {
 }
 
 export type UserStatus = "active" | "inactive" | "suspended" | "invited";
+
+export type SystemRole = "admin" | "teacher" | "student_council" | "student";
+
+export interface StudentCollegeProfile {
+  student_number: string | null;
+  department_id: string | null;
+  course_id: string | null;
+  section_id: string | null;
+  year_level: number | null;
+  profile_completed: boolean;
+}

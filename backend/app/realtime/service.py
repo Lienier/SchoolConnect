@@ -18,7 +18,7 @@ def emit_update(
     user_id: uuid.UUID | str | None = None,
     roles: list[str] | tuple[str, ...] | None = None,
 ) -> None:
-    """Emit a realtime update to school-wide, role, or user rooms."""
+    """Emit a realtime update to college-wide, role, or user rooms."""
 
     payload: dict[str, Any] = {
         "topic": topic,
@@ -37,3 +37,15 @@ def emit_update(
 
     for room in rooms:
         socketio.emit("schoolconnect:update", payload, to=room)
+
+
+def disconnect_user(user_id: uuid.UUID | str) -> None:
+    """Immediately close every active realtime connection for a user."""
+    room = f"user:{user_id}"
+    participants = list(socketio.server.manager.get_participants("/", room))
+    for participant in participants:
+        sid = participant[0] if isinstance(participant, tuple) else participant
+        socketio.server.disconnect(sid, namespace="/")
+
+
+__all__ = ["disconnect_user", "emit_update"]

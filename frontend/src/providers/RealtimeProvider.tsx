@@ -23,8 +23,8 @@ function socketBaseUrl() {
 }
 
 const queryKeysByTopic: Record<string, string[]> = {
-  announcement: ["announcements", "announcements-management", "feed", "home-feed", "approvals", "dashboard", "admin"],
-  event: ["events", "event", "event-results", "event-categories", "feed", "home-feed", "calendar-events", "approvals", "dashboard", "student-dashboard", "professor", "admin"],
+  announcement: ["announcements", "announcements-management", "feed", "home-feed", "dashboard", "admin"],
+  event: ["events", "event", "event-results", "event-categories", "feed", "home-feed", "calendar-events", "dashboard", "student-dashboard", "professor", "admin"],
   registration: ["registrations", "my-registrations", "event-registrations", "events", "dashboard", "student-dashboard", "professor", "admin", "reports"],
   attendance: ["attendance", "attendance-mine", "attendance-events", "attendance-summary", "dashboard", "student-dashboard", "professor", "admin", "reports"],
   notification: ["notifications", "notifications-unread", "dashboard"],

@@ -134,7 +134,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [mediaObjectUrl, setMediaObjectUrl] = useState<{ source: string; url: string } | null>(null);
 
-  const roleLabel = ROLE_LABELS[item.author_role ?? ""] ?? "School";
+  const roleLabel = ROLE_LABELS[item.author_role ?? ""] ?? "College";
   const roleTone: "danger" | "info" | "warning" | "success" =
     ROLE_BADGE[item.author_role ?? ""] ?? "info";
   const sharePath = item.type === "event" ? `/events/${item.id}` : `/announcements#feed-${item.id}`;
@@ -173,7 +173,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
   };
 
   const isLong = item.body.length > 180;
-  const body = expanded || !isLong ? item.body : `${item.body.slice(0, 180).trimEnd()}…`;
+  const body = expanded || !isLong ? item.body : `${item.body.slice(0, 180).trimEnd()}...`;
   const attachments = item.attachments ?? [];
   const imageAttachments = attachments.filter(isImageAttachment);
   const documentAttachments = attachments.filter((attachment) => !isImageAttachment(attachment));
@@ -423,7 +423,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
             {item.approval_required ? (
               <Badge tone="warning" className="gap-1">
                 <Ticket className="h-3.5 w-3.5" />
-                Approval required
+                Registration approval
               </Badge>
             ) : null}
           </div>

@@ -11,25 +11,17 @@ import { CreateEventForm } from "@/features/events/components/CreateEventForm";
 import type { EventFormValues } from "@/features/events/validators";
 import { useToast } from "@/providers/ToastProvider";
 import { PageHeader } from "@/components/ui/AdminPrimitives";
-import { useAuth } from "@/features/auth/context/AuthContext";
 import { uploadsApi } from "@/features/uploads/services/uploadsApi";
-import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 
 export default function CreateEventPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState<{ values: EventFormValues; files: File[] } | null>(null);
-  const isProfessor = Boolean(user?.roles?.includes("teacher"));
-  const isAdmin = Boolean(user?.roles?.includes("admin"));
 
   const { data: categories = [] } = useQuery({
     queryKey: ["event-categories"],
     queryFn: () => eventsApi.listCategories(),
   });
-
-  const shouldConfirmSubmit = (values: EventFormValues) => !isAdmin && (isProfessor || values.submit_for_approval);
 
   const createEvent = async (values: EventFormValues, files: File[]) => {
     setSubmitting(true);
@@ -46,7 +38,6 @@ export default function CreateEventPage() {
         max_team_size: values.max_team_size
           ? Number(values.max_team_size)
           : undefined,
-        submit_for_approval: isAdmin ? false : isProfessor ? true : values.submit_for_approval,
       });
       if (files.length > 0) {
         const results = await Promise.allSettled(
@@ -56,10 +47,10 @@ export default function CreateEventPage() {
         if (failed > 0) {
           toast(`Event created, but ${failed} photo${failed === 1 ? "" : "s"} failed to upload.`, "warning");
         } else {
-          toast(isProfessor ? "Event and photos submitted for admin approval." : "Event and photos created.", "success");
+          toast("Event and photos posted.", "success");
         }
       } else {
-        toast(isProfessor ? "Event submitted for admin approval." : "Event created.", "success");
+        toast("Event posted.", "success");
       }
       navigate("/events");
     } catch (error) {
@@ -70,24 +61,14 @@ export default function CreateEventPage() {
   };
 
   const onSubmit = async (values: EventFormValues, files: File[]) => {
-    if (shouldConfirmSubmit(values)) {
-      setPendingSubmit({ values, files });
-      return;
-    }
     await createEvent(values, files);
   };
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
-        title={isProfessor ? "New Professor Event" : "New Event"}
-        subtitle={
-          isAdmin
-            ? "Create an official school event directly."
-            : isProfessor
-              ? "Professor events are submitted to admin for approval before students can register."
-              : "Create a draft event or submit it for approval."
-        }
+        title="New Event"
+        subtitle="Post a college event directly so students can see it."
         actions={
           <Link to="/events">
             <span className="inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900">
@@ -101,21 +82,7 @@ export default function CreateEventPage() {
         categories={categories}
         onSubmit={onSubmit}
         isSubmitting={submitting}
-        showApprovalOption={!isAdmin}
-        submitLabel={isAdmin ? "Create Event" : isProfessor ? "Submit Event" : "Create Event"}
-      />
-      <ConfirmActionModal
-        open={!!pendingSubmit}
-        title="Submit event"
-        description="This will send the event to administrators for approval before students can register."
-        itemName={pendingSubmit?.values.title}
-        confirmLabel="Submit Event"
-        isLoading={submitting}
-        onCancel={() => setPendingSubmit(null)}
-        onConfirm={() => {
-          if (!pendingSubmit) return;
-          void createEvent(pendingSubmit.values, pendingSubmit.files).finally(() => setPendingSubmit(null));
-        }}
+        submitLabel="Post Event"
       />
     </div>
   );

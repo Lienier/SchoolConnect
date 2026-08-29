@@ -129,7 +129,7 @@ export function EventCard({
         {approvalRequired && (
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 font-semibold text-blue-700">
             <Shield className="h-3.5 w-3.5" />
-            Approval required
+            Registration approval
           </span>
         )}
         {priority !== "normal" && <Badge tone={priority === "urgent" ? "danger" : "warning"}>{priority}</Badge>}

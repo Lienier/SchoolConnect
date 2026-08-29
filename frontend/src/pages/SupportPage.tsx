@@ -33,7 +33,7 @@ export default function SupportPage() {
             <HelpCircle className="mt-1 text-blue-600 dark:text-blue-300" size={22} />
             <div>
               <h2 className="font-semibold text-[#102858] dark:text-white">Need direct help?</h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-navy-300">Contact your school administrator or IT support desk with your role, email, and the page where the issue happened.</p>
+              <p className="mt-1 text-sm text-slate-600 dark:text-navy-300">Contact your college administrator or IT support desk with your role, email, and the page where the issue happened.</p>
             </div>
           </div>
           <Link to="/notifications">

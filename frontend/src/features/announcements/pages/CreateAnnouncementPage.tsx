@@ -10,26 +10,18 @@ import { apiErrorMessage } from "@/api/errors";
 import { CreateAnnouncementForm } from "@/features/announcements/components/CreateAnnouncementForm";
 import { useToast } from "@/providers/ToastProvider";
 import { PageHeader } from "@/components/ui/AdminPrimitives";
-import { useAuth } from "@/features/auth/context/AuthContext";
 import { uploadsApi } from "@/features/uploads/services/uploadsApi";
 import type { AnnouncementFormValues } from "@/features/announcements/validators";
-import { ConfirmActionModal } from "@/components/ui/ConfirmActionModal";
 
 export default function CreateAnnouncementPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState<{ values: AnnouncementFormValues; files: File[] } | null>(null);
-  const isProfessor = Boolean(user?.roles?.includes("teacher"));
-  const isAdmin = Boolean(user?.roles?.includes("admin"));
 
   const { data: categories = [] } = useQuery({
     queryKey: ["announcement-categories"],
     queryFn: () => announcementsApi.listCategories(),
   });
-
-  const shouldConfirmSubmit = (values: AnnouncementFormValues) => !isAdmin && (isProfessor || values.submit_for_approval);
 
   const createAnnouncement = async (values: AnnouncementFormValues, files: File[]) => {
     setSubmitting(true);
@@ -40,7 +32,6 @@ export default function CreateAnnouncementPage() {
         summary: values.summary || undefined,
         category_id: values.category_id || undefined,
         priority: values.priority as "normal" | "important" | "urgent",
-        submit_for_approval: isAdmin ? false : isProfessor ? true : values.submit_for_approval,
       });
       if (files.length > 0) {
         const results = await Promise.allSettled(
@@ -50,10 +41,10 @@ export default function CreateAnnouncementPage() {
         if (failed > 0) {
           toast(`Announcement created, but ${failed} attachment${failed === 1 ? "" : "s"} failed to upload.`, "warning");
         } else {
-          toast(isProfessor ? "Announcement and attachments submitted for admin approval." : "Announcement and attachments created.", "success");
+          toast("Announcement and attachments posted.", "success");
         }
       } else {
-        toast(isProfessor ? "Announcement submitted for admin approval." : "Announcement created.", "success");
+        toast("Announcement posted.", "success");
       }
       navigate("/announcements");
     } catch (error) {
@@ -64,24 +55,14 @@ export default function CreateAnnouncementPage() {
   };
 
   const onSubmit = async (values: AnnouncementFormValues, files: File[]) => {
-    if (shouldConfirmSubmit(values)) {
-      setPendingSubmit({ values, files });
-      return;
-    }
     await createAnnouncement(values, files);
   };
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <PageHeader
-        title={isProfessor ? "New Professor Announcement" : "New Announcement"}
-        subtitle={
-          isAdmin
-            ? "Create an official school bulletin directly."
-            : isProfessor
-              ? "Professor announcements are submitted to admin for approval before publishing."
-              : "Draft a school bulletin and submit it for approval when ready."
-        }
+        title="New Announcement"
+        subtitle="Post a college bulletin directly to the feed."
         actions={
           <Link to="/announcements">
             <span className="inline-flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900">
@@ -95,21 +76,7 @@ export default function CreateAnnouncementPage() {
         categories={categories}
         onSubmit={onSubmit}
         isSubmitting={submitting}
-        showApprovalOption={!isAdmin}
-        submitLabel={isProfessor ? "Submit Announcement" : "Create Announcement"}
-      />
-      <ConfirmActionModal
-        open={!!pendingSubmit}
-        title="Submit announcement"
-        description="This will send the announcement to administrators for approval before it appears in the school feed."
-        itemName={pendingSubmit?.values.title}
-        confirmLabel="Submit Announcement"
-        isLoading={submitting}
-        onCancel={() => setPendingSubmit(null)}
-        onConfirm={() => {
-          if (!pendingSubmit) return;
-          void createAnnouncement(pendingSubmit.values, pendingSubmit.files).finally(() => setPendingSubmit(null));
-        }}
+        submitLabel="Post Announcement"
       />
     </div>
   );

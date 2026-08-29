@@ -71,6 +71,12 @@ def _announcement_item(announcement: Announcement) -> dict:
 
 def _audience_allows(announcement: Announcement, role_names: set[str]) -> bool:
     """Apply announcement audience rules for both public and logged-in users."""
+    if announcement.expires_at is not None:
+        expiry = announcement.expires_at
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        if expiry < datetime.now(timezone.utc):
+            return False
     audience = announcement.target_audience or []
     if not audience or "all" in audience:
         return True

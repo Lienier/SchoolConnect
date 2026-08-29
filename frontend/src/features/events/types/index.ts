@@ -3,29 +3,17 @@ import type { ApiResponse, PaginationMeta } from "@/types/api";
 import type { AnnouncementAttachment } from "@/features/announcements/types";
 
 export type EventStatus =
-  | "draft"
-  | "pending_approval"
   | "approved"
   | "ongoing"
   | "completed"
   | "cancelled"
-  | "archived"
-  | "returned";
+  | "archived";
 
 export interface EventCategory {
   id: string;
   name: string;
   slug: string;
   color: string | null;
-}
-
-export interface EventApproval {
-  id: string;
-  reviewer_id: string;
-  reviewer_name: string | null;
-  decision: string;
-  comment: string | null;
-  decided_at: string | null;
 }
 
 export interface SchoolEvent {
@@ -51,9 +39,9 @@ export interface SchoolEvent {
   organizer_name?: string | null;
   organizer_avatar?: string | null;
   organizer_role?: string | null;
+  can_manage?: boolean;
   attachments?: AnnouncementAttachment[];
   banner_url?: string | null;
-  approvals?: EventApproval[];
 }
 
 export interface EventResult {

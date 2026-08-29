@@ -2,7 +2,7 @@
 import { apiClient } from "@/api/client";
 import type { ApiResponse } from "@/types/api";
 import type { AuthUser } from "@/features/auth/types";
-import type { UserListItem, UserListResponse, UserStatus } from "@/features/users/types";
+import type { StudentCollegeProfile, SystemRole, UserListItem, UserListResponse, UserStatus } from "@/features/users/types";
 
 export const usersApi = {
   async list(
@@ -34,9 +34,18 @@ export const usersApi = {
     email: string;
     full_name: string;
     password: string;
+    first_name?: string;
+    middle_name?: string;
+    last_name?: string;
     username?: string;
-    roles: string[];
-    status: UserStatus;
+    role?: SystemRole;
+    roles?: string[];
+    status?: UserStatus;
+    student_number?: string;
+    department_id?: string;
+    course_id?: string;
+    section_id?: string;
+    officer_position?: string;
   }): Promise<UserListItem> {
     const { data } = await apiClient.post<ApiResponse<UserListItem>>("/users", payload);
     return data.data;
@@ -62,6 +71,14 @@ export const usersApi = {
   },
   async updateMyProfile(payload: { first_name?: string | null; last_name?: string | null; phone?: string | null }): Promise<AuthUser> {
     const { data } = await apiClient.patch<ApiResponse<AuthUser>>("/users/me/profile", payload);
+    return data.data;
+  },
+  async getMyStudentProfile(): Promise<StudentCollegeProfile> {
+    const { data } = await apiClient.get<ApiResponse<StudentCollegeProfile>>("/users/me/student-profile");
+    return data.data;
+  },
+  async updateMyStudentProfile(payload: { department_id: string; course_id: string; section_id: string }): Promise<StudentCollegeProfile> {
+    const { data } = await apiClient.patch<ApiResponse<StudentCollegeProfile>>("/users/me/student-profile", payload);
     return data.data;
   },
 };

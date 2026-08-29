@@ -1,4 +1,4 @@
-/** Form to create a new event (draft or submit for approval). */
+/** Form to create and publish a new event. */
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image as ImageIcon, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -18,7 +18,6 @@ interface Props {
   categories: EventCategory[];
   onSubmit: (values: EventFormValues, files: File[]) => Promise<void>;
   isSubmitting: boolean;
-  showApprovalOption?: boolean;
   submitLabel?: string;
 }
 
@@ -26,7 +25,6 @@ export function CreateEventForm({
   categories,
   onSubmit,
   isSubmitting,
-  showApprovalOption = true,
   submitLabel = "Create Event",
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
@@ -37,10 +35,11 @@ export function CreateEventForm({
     formState: { errors },
   } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
-    defaultValues: { is_team_event: false, submit_for_approval: false },
+    defaultValues: { is_team_event: false },
   });
 
   const isTeamEvent = useWatch({ control, name: "is_team_event" });
+  const minDateTime = `${localDateInputValue()}T00:00`;
   const accept = "image/png,image/jpeg,image/jpg,image/gif";
   const totalSize = useMemo(
     () => files.reduce((sum, file) => sum + file.size, 0),
@@ -78,6 +77,7 @@ export function CreateEventForm({
             <Input
               id="start_time"
               type="datetime-local"
+              min={minDateTime}
               {...register("start_time")}
             />
             {errors.start_time && (
@@ -91,6 +91,7 @@ export function CreateEventForm({
             <Input
               id="end_time"
               type="datetime-local"
+              min={minDateTime}
               {...register("end_time")}
             />
             {errors.end_time && (
@@ -156,7 +157,6 @@ export function CreateEventForm({
         </div>
         <div className="space-y-3">
           <Checkbox {...register("is_team_event")} label="This is a team event" />
-          {showApprovalOption && <Checkbox {...register("submit_for_approval")} label="Submit for approval" />}
         </div>
         <div>
           <Label htmlFor="event_photos">Event photo</Label>
@@ -203,4 +203,12 @@ export function CreateEventForm({
       </form>
     </Card>
   );
+}
+
+function localDateInputValue() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

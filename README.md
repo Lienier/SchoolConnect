@@ -1,6 +1,6 @@
 # SchoolConnect
 
-A centralized **School Bulletin & Event Registration System** enabling school
+A centralized **College Bulletin & Event Registration System** enabling college
 administrators, teachers, student council officers and students to manage
 announcements, organise events, register participants, monitor attendance,
 generate reports and communicate via integrated notifications.

@@ -66,29 +66,6 @@ def _count_active_events() -> int:
     )
 
 
-def _count_pending_event_approvals() -> int:
-    return int(
-        db.session.scalar(
-            select(func.count(Event.id)).where(
-                Event.deleted_at.is_(None), Event.status == "pending_approval"
-            )
-        )
-        or 0
-    )
-
-
-def _count_pending_announcement_approvals() -> int:
-    return int(
-        db.session.scalar(
-            select(func.count(Announcement.id)).where(
-                Announcement.deleted_at.is_(None),
-                Announcement.status == "pending_approval",
-            )
-        )
-        or 0
-    )
-
-
 def _count_open_registrations() -> int:
     return int(
         db.session.scalar(
@@ -169,54 +146,12 @@ def _count_officer_proposals() -> int:
     )
 
 
-def _count_pending_approvals() -> int:
-    """Count events/announcements pending approval (for approvers)."""
-    event_pending = int(
-        db.session.scalar(
-            select(func.count(Event.id)).where(
-                Event.deleted_at.is_(None), Event.status == "pending_approval"
-            )
-        )
-        or 0
-    )
-    announcement_pending = int(
-        db.session.scalar(
-            select(func.count(Announcement.id)).where(
-                Announcement.deleted_at.is_(None),
-                Announcement.status == "pending_approval",
-            )
-        )
-        or 0
-    )
-    return event_pending + announcement_pending
-
-
-def _count_draft_announcements() -> int:
-    """Count current user's draft announcements."""
-    user_id = get_jwt_identity()
-    if not user_id:
-        return 0
-    user_uuid = uuid.UUID(user_id)
-    return int(
-        db.session.scalar(
-            select(func.count(Announcement.id)).where(
-                Announcement.created_by == user_uuid,
-                Announcement.deleted_at.is_(None),
-                Announcement.status == "draft",
-            )
-        )
-        or 0
-    )
-
-
 WIDGET_PROVIDERS: dict[str, Callable[[], int]] = {
     # Admin / general
     "total_users": _count_active_users,
     "total_students": _count_students,
     "total_announcements": _count_announcements,
     "active_events": _count_active_events,
-    "pending_event_approvals": _count_pending_event_approvals,
-    "pending_announcement_approvals": _count_pending_announcement_approvals,
     "open_registrations": _count_open_registrations,
     # Student
     "upcoming_events": _count_upcoming_events,
@@ -224,8 +159,6 @@ WIDGET_PROVIDERS: dict[str, Callable[[], int]] = {
     "notifications": _count_my_notifications,
     # Officer
     "officer_proposals": _count_officer_proposals,
-    "pending_approvals": _count_pending_approvals,
-    "draft_announcements": _count_draft_announcements,
 }
 
 

@@ -8,14 +8,6 @@ export interface AnnouncementCategory {
   color: string | null;
 }
 
-export interface AnnouncementApproval {
-  id: string;
-  reviewer_id: string;
-  decision: "approved" | "rejected" | "returned" | string;
-  comment: string | null;
-  decided_at: string | null;
-}
-
 export interface AnnouncementAttachment {
   id: string;
   file_id: string;
@@ -35,7 +27,7 @@ export interface Announcement {
   category: string | null;
   author_id: string;
   priority: "normal" | "important" | "urgent";
-  status: "draft" | "pending_approval" | "published" | "archived";
+  status: "published" | "archived";
   published_at: string | null;
   expires_at: string | null;
   target_audience: string[] | null;
@@ -47,7 +39,6 @@ export interface Announcement {
   author_name?: string | null;
   author_avatar?: string | null;
   author_role?: string | null;
-  approvals?: AnnouncementApproval[];
   attachments?: AnnouncementAttachment[];
   banner_url?: string | null;
 }

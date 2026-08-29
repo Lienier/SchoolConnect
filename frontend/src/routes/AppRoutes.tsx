@@ -18,7 +18,6 @@ import { ForbiddenPage } from "@/components/ui/ErrorPages";
 const HomePage = lazy(() => import("@/pages/HomePage"));
 const SupportPage = lazy(() => import("@/pages/SupportPage"));
 const LoginPage = lazy(() => import("@/features/auth/pages/LoginPage"));
-const RegisterPage = lazy(() => import("@/features/auth/pages/RegisterPage"));
 const AnnouncementsPage = lazy(
   () => import("@/features/announcements/pages/AnnouncementsPage"),
 );
@@ -39,7 +38,6 @@ const RolesPage = lazy(() => import("@/features/roles/pages/RolesPage"));
 const SchoolPage = lazy(() => import("@/features/school/pages/SchoolPage"));
 const UsersPage = lazy(() => import("@/features/users/pages/UsersPage"));
 const StudentProfilePage = lazy(() => import("@/features/users/pages/StudentProfilePage"));
-const ApprovalsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.ApprovalsPage })));
 const ReportsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.ReportsPage })));
 const ActivityLogsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.ActivityLogsPage })));
 const AdminRegistrationsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.AdminRegistrationsPage })));
@@ -65,11 +63,10 @@ const StudentDashboardPage = lazy(
 
 export function AppRoutes() {
   return (
-    <Suspense fallback={<div className="p-8 text-navy-500">Loading…</div>}>
+    <Suspense fallback={<div className="p-8 text-navy-500">Loading...</div>}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
 
         <Route
           element={
@@ -98,8 +95,7 @@ export function AppRoutes() {
           <Route path="/profile" element={<StudentProfilePage />} />
           <Route path="/roles" element={<ProtectedRoute requiredPermission="roles.view"><RolesPage /></ProtectedRoute>} />
           <Route path="/school" element={<ProtectedRoute requiredPermission="departments.view"><SchoolPage /></ProtectedRoute>} />
-          <Route path="/approvals" element={<ProtectedRoute requiredPermission="announcements.approve"><ApprovalsPage /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute requiredPermission="reports.view"><ReportsPage /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><ReportsPage /></ProtectedRoute>} />
           <Route path="/audit/logs" element={<ProtectedRoute requiredPermission="audit.view"><ActivityLogsPage /></ProtectedRoute>} />
           <Route path="/registrations" element={<ProtectedRoute allowedRoles={["admin", "teacher", "student_council"]}><AdminRegistrationsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute allowedRoles={["admin"]}><SettingsPage /></ProtectedRoute>} />

@@ -1,1 +1,1 @@
-"""Announcements feature module: school bulletin posts and visibility."""
+"""Announcements feature module: college bulletin posts and visibility."""

@@ -1,4 +1,4 @@
-"""School structure module: CRUD for the reusable organizational hierarchy.
+"""College structure module: CRUD for the reusable organizational hierarchy.
 
 Covers departments, courses, sections, organizations, academic years and
 semesters. The SQLAlchemy models live in :mod:`app.users.model` (they were

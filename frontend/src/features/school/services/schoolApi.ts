@@ -1,4 +1,4 @@
-/** School structure API calls (departments, courses, sections, orgs, AY, semesters). */
+/** College structure API calls (departments, courses, sections, orgs, AY, semesters). */
 import { apiClient } from "@/api/client";
 import type {
   AcademicYear,

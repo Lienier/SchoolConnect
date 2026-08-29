@@ -20,8 +20,6 @@ import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/AdminPrimitives";
 
 const statusLabels: Record<string, string> = {
-  draft: "Drafts",
-  pending_approval: "Pending Approval",
   approved: "Open",
   ongoing: "Live",
   completed: "Completed",
@@ -31,7 +29,7 @@ export default function TeacherDashboardPage() {
   const { user } = useAuth();
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard", "stats", "professor"],
-    queryFn: () => dashboardApi.stats(["active_events", "open_registrations", "pending_event_approvals"]),
+    queryFn: () => dashboardApi.stats(["active_events", "open_registrations", "total_announcements"]),
   });
   const ownEvents = useQuery({
     queryKey: ["professor", "events", user?.id],
@@ -41,8 +39,6 @@ export default function TeacherDashboardPage() {
 
   const grouped = useMemo(() => {
     const groups: Record<string, number> = {
-      draft: 0,
-      pending_approval: 0,
       approved: 0,
       ongoing: 0,
       completed: 0,
@@ -68,7 +64,7 @@ export default function TeacherDashboardPage() {
               Welcome back, Professor {user?.last_name ?? user?.full_name?.split(" ").slice(-1)[0] ?? ""}.
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-navy-300">
-              Manage your event proposals, rosters, QR check-ins, attendance records, and student announcements.
+              Manage your events, rosters, QR check-ins, attendance records, and student announcements.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link to="/events/new">
@@ -94,7 +90,7 @@ export default function TeacherDashboardPage() {
           <div className="grid grid-cols-3 border-t border-slate-200 bg-slate-50 dark:border-navy-800 dark:bg-navy-900 xl:border-l xl:border-t-0">
             <Metric label="Active Events" value={isLoading ? "..." : (stats?.active_events ?? 0)} />
             <Metric label="Open Rosters" value={isLoading ? "..." : (stats?.open_registrations ?? 0)} />
-            <Metric label="Pending Review" value={isLoading ? "..." : (stats?.pending_event_approvals ?? 0)} />
+            <Metric label="Announcements" value={isLoading ? "..." : (stats?.total_announcements ?? 0)} />
           </div>
         </div>
       </section>
@@ -105,7 +101,7 @@ export default function TeacherDashboardPage() {
             <h2 className="font-semibold text-[#102858] dark:text-white">My event pipeline</h2>
             <Link to="/events" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">Manage events</Link>
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-5">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {Object.entries(grouped).map(([status, count]) => (
               <div key={status} className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center dark:border-navy-800 dark:bg-navy-900">
                 <p className="text-2xl font-semibold text-[#102858] dark:text-white">{ownEvents.isLoading ? "..." : count}</p>
@@ -136,7 +132,7 @@ export default function TeacherDashboardPage() {
 
       <BulletinFeed
         title="Professor bulletin"
-        description="Published announcements and approved events for the school community."
+        description="Published announcements and current events for the college community."
         compact
         showHero={false}
         showHeader={false}

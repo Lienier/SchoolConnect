@@ -40,7 +40,7 @@ export default function NotificationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Notifications"
-        subtitle="Registration updates, event reminders, and school announcements."
+        subtitle="Registration updates, event reminders, and college announcements."
         actions={
           <Button variant="secondary" disabled={markAll.isPending || unreadCount === 0} onClick={() => markAll.mutate()}>
             <CheckCheck size={16} className="mr-2" />

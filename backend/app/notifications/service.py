@@ -1,14 +1,12 @@
 """Business logic for the notifications module.
 
 Creates in-app notifications (optionally rendered from a template), records a
-delivery log entry per notification, and manages read/unread state. Email
-delivery is logged but performed by the email worker (out of scope here).
+delivery log entry per notification, and manages read/unread state.
 """
 
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 
 from app.common.exceptions import NotFoundError, ValidationError
 from app.notifications.model import (
@@ -46,6 +44,8 @@ class NotificationService:
         entity_id=None,
         recipient=None,
     ) -> Notification:
+        if channel != "in_app":
+            raise ValidationError("Only in-app notification delivery is enabled.")
         notification = Notification(
             user_id=user_id,
             title=title,
@@ -63,8 +63,8 @@ class NotificationService:
                 user_id=user_id,
                 channel=channel,
                 recipient=recipient,
-                status="sent" if channel == "in_app" else "queued",
-                sent_at=utcnow() if channel == "in_app" else None,
+                status="sent",
+                sent_at=utcnow(),
             )
         )
         self.logs.commit()
@@ -153,67 +153,5 @@ class NotificationService:
         self.templates.add(template)
         self.templates.commit()
         return template
-
-    def schedule_event_reminders(self, event_id: uuid.UUID, event_title: str, event_start: datetime) -> list:
-        """Create reminder notifications for all approved registrants.
-        
-        Schedules 3-day, 1-day, and event-day reminders as in-app notifications.
-        Called by a background cron job that scans upcoming events.
-        """
-        from datetime import timedelta
-        from app.registrations.repository import RegistrationRepository
-        from app.extensions import db
-        
-        reg_repo = RegistrationRepository()
-        now = utcnow()
-        reminders = []
-        
-        # Define reminder intervals: (days_before, message_prefix)
-        intervals = [
-            (3, "Reminder: 3 days until"),
-            (1, "Reminder: Tomorrow is"),
-            (0, "Today's Event:"),
-        ]
-        
-        for days_before, prefix in intervals:
-            reminder_date = event_start - timedelta(days=days_before)
-            # Only send if the reminder date matches today (within the same calendar day)
-            if reminder_date.date() != now.date():
-                continue
-            
-            # Get all approved/attended registrants
-            from sqlalchemy import select, exists
-            from app.registrations.model import Registration
-            
-            registrant_ids = list(db.session.scalars(
-                select(Registration.user_id).where(
-                    Registration.event_id == event_id,
-                    Registration.deleted_at.is_(None),
-                    Registration.status.in_(("approved", "attended")),
-                )
-            ).all())
-            
-            for uid in registrant_ids:
-                already_sent = db.session.scalar(select(exists().where(
-                    Notification.user_id == uid,
-                    Notification.entity_type == "event_reminder",
-                    Notification.entity_id == event_id,
-                    Notification.category == "event_reminder",
-                    Notification.title == f"{prefix} {event_title}",
-                )))
-                if already_sent:
-                    continue
-                notification = self.notify(
-                    user_id=uid,
-                    title=f"{prefix} {event_title}",
-                    body=f"Your registered event '{event_title}' is {'today' if days_before == 0 else f'in {days_before} day(s)'}. Don't forget to attend!",
-                    category="event_reminder",
-                    entity_type="event",
-                    entity_id=event_id,
-                )
-                reminders.append(notification)
-        
-        return reminders
-
 
 __all__ = ["NotificationService"]

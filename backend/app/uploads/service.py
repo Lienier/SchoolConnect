@@ -30,6 +30,26 @@ class UploadService:
         return ext in current_app.config.get("ALLOWED_UPLOAD_EXTENSIONS", set())
 
     @staticmethod
+    def _validate_content(file: FileStorage, extension: str) -> None:
+        """Verify common upload signatures instead of trusting the filename."""
+        signatures = {
+            "png": (b"\x89PNG\r\n\x1a\n",),
+            "jpg": (b"\xff\xd8\xff",),
+            "jpeg": (b"\xff\xd8\xff",),
+            "gif": (b"GIF87a", b"GIF89a"),
+            "pdf": (b"%PDF",),
+            "docx": (b"PK\x03\x04",),
+            "xlsx": (b"PK\x03\x04",),
+        }
+        expected = signatures.get(extension)
+        if expected is None:
+            raise ValidationError("File type is not supported for content validation.")
+        header = file.stream.read(8)
+        file.stream.seek(0)
+        if not any(header.startswith(signature) for signature in expected):
+            raise ValidationError("File content does not match its extension.")
+
+    @staticmethod
     def allowed_entity_type(entity_type: str | None) -> bool:
         """Restrict polymorphic attachment targets to supported resources."""
         return entity_type in {None, "announcement", "event"}
@@ -55,6 +75,7 @@ class UploadService:
 
         original = secure_filename(file.filename)
         ext = original.rsplit(".", 1)[1].lower() if "." in original else ""
+        self._validate_content(file, ext)
         stored_name = f"{uuid.uuid4().hex}.{ext}" if ext else uuid.uuid4().hex
 
         backend = current_app.config.get("STORAGE_BACKEND", "local").lower()

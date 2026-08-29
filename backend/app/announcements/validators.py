@@ -16,7 +16,6 @@ class AnnouncementCreateRequest(BaseModel):
     priority: str = "normal"
     target_audience: Optional[List[str]] = None
     expires_at: Optional[str] = None
-    submit_for_approval: bool = False
 
     @field_validator("priority")
     @classmethod
@@ -46,20 +45,6 @@ class AnnouncementUpdateRequest(BaseModel):
         allowed = {"normal", "important", "urgent"}
         if value not in allowed:
             raise ValueError("priority must be normal, important or urgent.")
-        return value
-
-
-class AnnouncementApprovalRequest(BaseModel):
-    """Payload to approve, reject, or return an announcement."""
-
-    decision: str  # approved | rejected | returned
-    comment: Optional[str] = None
-
-    @field_validator("decision")
-    @classmethod
-    def _valid_decision(cls, value: str) -> str:
-        if value not in {"approved", "rejected", "returned"}:
-            raise ValueError("decision must be approved, rejected, or returned.")
         return value
 
 

@@ -7,7 +7,6 @@ import {
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
-  FileCheck2,
   Gauge,
   Megaphone,
   Settings,
@@ -25,7 +24,7 @@ export const adminNav: NavSection[] = [
     items: [
       { label: "User Management", to: "/users", perm: "users.view", icon: Users },
       { label: "Roles & Permissions", to: "/roles", perm: "roles.view", icon: ShieldCheck },
-      { label: "School Structure", to: "/school", perm: "departments.view", icon: ClipboardList },
+      { label: "College Structure", to: "/school", perm: "departments.view", icon: ClipboardList },
     ],
   },
   {
@@ -40,7 +39,6 @@ export const adminNav: NavSection[] = [
   {
     title: "Insights",
     items: [
-      { label: "Approvals", to: "/approvals", perm: "announcements.approve", icon: FileCheck2 },
       { label: "Reports", to: "/reports", perm: "reports.view", icon: BarChart3 },
       { label: "Activity Logs", to: "/audit/logs", perm: "audit.view", icon: Activity },
       { label: "Calendar", to: "/calendar", perm: "events.view", icon: CalendarDays },

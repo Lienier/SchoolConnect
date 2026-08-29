@@ -7,6 +7,7 @@ export interface AuthUser {
   username: string | null;
   full_name: string;
   first_name: string | null;
+  middle_name: string | null;
   last_name: string | null;
   status: string;
   email_verified: boolean;
@@ -27,5 +28,5 @@ export interface AuthTokens {
 }
 
 export type LoginResponse = ApiResponse<AuthTokens>;
-export type RegisterResponse = ApiResponse<AuthTokens>;
+export type TokenResponse = ApiResponse<AuthTokens>;
 export type MeResponse = ApiResponse<AuthUser>;

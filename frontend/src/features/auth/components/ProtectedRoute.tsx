@@ -19,7 +19,7 @@ export function ProtectedRoute({ children, requiredPermission, allowedRoles }: P
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-accent">
-        Loading…
+        Loading...
       </div>
     );
   }

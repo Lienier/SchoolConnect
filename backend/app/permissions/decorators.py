@@ -66,7 +66,8 @@ def require_permission(permission: str) -> Callable:
         def wrapper(*args, **kwargs):
             verify_jwt_in_request()
             user_id = get_jwt_identity()
-            if permission not in _load_user_permissions(user_id):
+            granted = _load_user_permissions(user_id)
+            if "*" not in granted and permission not in granted:
                 raise AuthorizationError(
                     "You do not have permission to perform this action."
                 )
@@ -86,7 +87,7 @@ def require_any_permission(*permissions: str) -> Callable:
             verify_jwt_in_request()
             user_id = get_jwt_identity()
             granted = _load_user_permissions(user_id)
-            if not set(permissions).intersection(granted):
+            if "*" not in granted and not set(permissions).intersection(granted):
                 raise AuthorizationError(
                     "You do not have permission to perform this action."
                 )

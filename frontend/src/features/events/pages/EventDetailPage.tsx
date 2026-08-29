@@ -9,11 +9,9 @@ import {
   Download,
   Edit3,
   MapPin,
-  Shield,
   Trash2,
   Trophy,
   Users,
-  X,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -26,6 +24,7 @@ import { apiErrorMessage } from "@/api/errors";
 import { API_BASE_URL } from "@/constants";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { eventsApi, registrationsApi } from "@/features/events/services/eventsApi";
+import { usersApi } from "@/features/users/services/usersApi";
 import type { EventResult, SchoolEvent } from "@/features/events/types";
 import { useToast } from "@/providers/ToastProvider";
 
@@ -121,14 +120,11 @@ function useProtectedImage(url: string | null | undefined) {
 }
 
 const statusTones: Record<string, "neutral" | "success" | "warning" | "danger" | "info"> = {
-  draft: "neutral",
-  pending_approval: "warning",
   approved: "success",
   ongoing: "info",
   completed: "info",
   cancelled: "danger",
   archived: "neutral",
-  returned: "warning",
 };
 
 export default function EventDetailPage() {
@@ -142,6 +138,7 @@ export default function EventDetailPage() {
   const [resultRemarks, setResultRemarks] = useState("");
   const [editingResult, setEditingResult] = useState<EventResult | null>(null);
   const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [selectedOfficerIds, setSelectedOfficerIds] = useState<string[] | null>(null);
   const [pendingAction, setPendingAction] = useState<{
     title: string;
     message: string;
@@ -151,8 +148,7 @@ export default function EventDetailPage() {
     action: () => Promise<void>;
   } | null>(null);
 
-  const isApprover = user?.roles?.some((r) => ["admin"].includes(r));
-  const isManager = user?.roles?.some((r) => ["admin", "teacher", "student_council"].includes(r));
+  const isAdmin = Boolean(user?.roles?.includes("admin"));
   const isStudent = Boolean(user?.roles?.includes("student"));
 
   const { data: event, isLoading } = useQuery({
@@ -160,6 +156,7 @@ export default function EventDetailPage() {
     queryFn: () => eventsApi.get(id),
     enabled: Boolean(id),
   });
+  const isManager = Boolean(event?.can_manage);
   const { data: roster } = useQuery({
     queryKey: ["event-registrations", id],
     queryFn: () => registrationsApi.listForEvent(id),
@@ -168,7 +165,17 @@ export default function EventDetailPage() {
   const { data: results } = useQuery({
     queryKey: ["event-results", id],
     queryFn: () => eventsApi.listResults(id),
-    enabled: Boolean(id) && ["completed", "ongoing"].includes(event?.status ?? ""),
+    enabled: Boolean(id) && isManager && ["completed", "ongoing"].includes(event?.status ?? ""),
+  });
+  const officers = useQuery({
+    queryKey: ["event-officers", id],
+    queryFn: () => eventsApi.listOfficers(id),
+    enabled: Boolean(id) && isAdmin,
+  });
+  const councilUsers = useQuery({
+    queryKey: ["users", "student-council", "event-assignment"],
+    queryFn: () => usersApi.list({ role: "student_council" }),
+    enabled: isAdmin,
   });
   const detailImageUrl = useProtectedImage(event?.banner_url);
 
@@ -199,16 +206,6 @@ export default function EventDetailPage() {
     await action();
   };
 
-  const handleDecideEvent = async (decision: "approved" | "rejected") => {
-    try {
-      await eventsApi.approve(id, decision);
-      toast(`Event ${decision}.`, "success");
-      refresh();
-    } catch (error) {
-      toast(apiErrorMessage(error, "Could not update the event."), "error");
-    }
-  };
-
   const handleStatus = async (status: "ongoing" | "completed" | "cancelled" | "archived") => {
     try {
       await eventsApi.changeStatus(id, status);
@@ -216,6 +213,17 @@ export default function EventDetailPage() {
       refresh();
     } catch (error) {
       toast(apiErrorMessage(error, "Could not update event status."), "error");
+    }
+  };
+
+  const saveOfficerAssignments = async () => {
+    try {
+      await eventsApi.assignOfficers(id, selectedOfficerIds ?? officers.data ?? []);
+      toast("Event officers updated.", "success");
+      setSelectedOfficerIds(null);
+      queryClient.invalidateQueries({ queryKey: ["event-officers", id] });
+    } catch (error) {
+      toast(apiErrorMessage(error, "Could not update event officers."), "error");
     }
   };
 
@@ -328,7 +336,7 @@ export default function EventDetailPage() {
               <div className="flex flex-wrap gap-2">
                 <Badge tone={statusTones[event.status] ?? "neutral"} className="text-xs">{event.status.replace("_", " ")}</Badge>
                 {event.is_team_event && <Badge tone="info" className="text-xs">Team event</Badge>}
-                {event.approval_required && <Badge tone="warning" className="text-xs">Approval required</Badge>}
+                {event.approval_required && <Badge tone="warning" className="text-xs">Registration approval</Badge>}
               </div>
             </div>
           </div>
@@ -354,18 +362,6 @@ export default function EventDetailPage() {
                 Register
               </Button>
             )}
-            {isApprover && event.status === "pending_approval" && (
-              <>
-                <Button onClick={() => askConfirmation("Approve event", "This will approve the event and make it available for eligible students when registration is open.", () => handleDecideEvent("approved"), "Approve")}>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Approve
-                </Button>
-                <Button variant="danger" onClick={() => askConfirmation("Reject event", "This will reject the event proposal and keep it unavailable to students.", () => handleDecideEvent("rejected"), "Reject", "danger")}>
-                  <X className="mr-2 h-4 w-4" />
-                  Reject
-                </Button>
-              </>
-            )}
             {isManager && ["approved", "ongoing"].includes(event.status) && (
               <Button variant="secondary" onClick={() => {
                 const nextStatus = event.status === "approved" ? "ongoing" : "completed";
@@ -389,6 +385,35 @@ export default function EventDetailPage() {
           </div>
         </div>
       </Card>
+
+      {isAdmin && (
+        <Card className="p-6 dark:border-navy-800 dark:bg-navy-950">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-navy-800 dark:text-white">Student Council Assignments</h2>
+              <p className="mt-1 text-sm text-navy-500">Assigned officers can manage this event's registrations, attendance, results, uploads, and reports.</p>
+            </div>
+            <Button size="sm" onClick={saveOfficerAssignments}>Save Assignments</Button>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {(councilUsers.data?.data ?? []).map((officer) => {
+              const selected = selectedOfficerIds ?? officers.data ?? [];
+              return (
+                <label key={officer.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm dark:border-navy-800">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(officer.id)}
+                    onChange={(change) => setSelectedOfficerIds(change.target.checked ? [...selected, officer.id] : selected.filter((id) => id !== officer.id))}
+                    className="h-4 w-4 accent-blue-600"
+                  />
+                  <span className="min-w-0"><span className="block truncate font-semibold text-navy-800 dark:text-white">{officer.full_name}</span><span className="block truncate text-xs text-navy-500">{officer.username ?? officer.email}</span></span>
+                </label>
+              );
+            })}
+          </div>
+          {!councilUsers.isLoading && !councilUsers.data?.data.length && <p className="mt-4 text-sm text-navy-500">No Student Council accounts are available.</p>}
+        </Card>
+      )}
 
       {isManager && (
         <Card className="p-6 dark:border-navy-800 dark:bg-navy-950">
@@ -423,7 +448,7 @@ export default function EventDetailPage() {
         </Card>
       )}
 
-      {["completed", "ongoing"].includes(event.status) && (
+      {isManager && ["completed", "ongoing"].includes(event.status) && (
         <ResultsCard
           results={results ?? []}
           isManager={Boolean(isManager)}
@@ -596,7 +621,7 @@ function RegistrationModal({
             <span>{event.start_time ? new Date(event.start_time).toLocaleString() : "Schedule TBD"}</span>
             <span>{event.capacity ? `${event.capacity} seats` : "Unlimited capacity"}</span>
             {event.registration_deadline && <span>Deadline {new Date(event.registration_deadline).toLocaleString()}</span>}
-            {event.approval_required && <span>Approval required</span>}
+            {event.approval_required && <span>Registration approval required</span>}
           </div>
         </Card>
 

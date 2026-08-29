@@ -7,10 +7,11 @@ import uuid
 from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
-from app.common.exceptions import ValidationError
+from app.common.exceptions import AuthorizationError, ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
 from app.permissions.decorators import has_permission, has_role, require_permission
+from app.events.access import managed_event_ids, require_event_manager
 from app.realtime.service import emit_update
 from app.registrations.service import RegistrationService
 from app.registrations.validators import (
@@ -41,10 +42,22 @@ def list_registrations():
     params = PaginationParams.from_request()
     actor = get_jwt_identity()
     user_id = request.args.get("user_id")
+    event_ids = None
     if has_role(actor, "student"):
         user_id = actor
+    else:
+        event_ids = managed_event_ids(actor)
+        requested_event = request.args.get("event_id")
+        if event_ids is not None and requested_event:
+            try:
+                requested_uuid = uuid.UUID(requested_event)
+            except ValueError as exc:
+                raise ValidationError("Invalid event identifier.") from exc
+            if requested_uuid not in event_ids:
+                raise AuthorizationError("You cannot view registrations for this event.")
     query = _service.list_registrations(
         event_id=request.args.get("event_id"),
+        event_ids=event_ids,
         user_id=user_id,
         status=request.args.get("status"),
     )
@@ -162,6 +175,11 @@ def decide(registration_id: str):
     """Approve or reject a pending registration."""
     payload = RegistrationDecisionRequest(**_body())
     reviewer = uuid.UUID(get_jwt_identity())
+    existing = _service.get_registration(uuid.UUID(registration_id))
+    event = _service.events.get_by_id(existing.event_id)
+    if event is None:
+        raise ValidationError("Event not found.")
+    require_event_manager(reviewer, event)
     reg = _service.decide(
         registration_id=uuid.UUID(registration_id),
         reviewer_id=reviewer,
@@ -183,6 +201,11 @@ def decide(registration_id: str):
 @require_permission("registrations.manage")
 def promote(registration_id: str):
     actor = uuid.UUID(get_jwt_identity())
+    existing = _service.get_registration(uuid.UUID(registration_id))
+    event = _service.events.get_by_id(existing.event_id)
+    if event is None:
+        raise ValidationError("Event not found.")
+    require_event_manager(actor, event)
     reg = _service.promote(registration_id=uuid.UUID(registration_id), actor_id=actor)
     emit_update(
         "registration",
@@ -198,7 +221,13 @@ def promote(registration_id: str):
 @jwt_required()
 @require_permission("registrations.manage")
 def remove(registration_id: str):
-    _service.remove(registration_id=uuid.UUID(registration_id), actor_id=uuid.UUID(get_jwt_identity()))
+    actor = uuid.UUID(get_jwt_identity())
+    existing = _service.get_registration(uuid.UUID(registration_id))
+    event = _service.events.get_by_id(existing.event_id)
+    if event is None:
+        raise ValidationError("Event not found.")
+    require_event_manager(actor, event)
+    _service.remove(registration_id=existing.id, actor_id=actor)
     emit_update("registration", "removed", entity_id=registration_id)
     return success_response(message="Registration removed.")
 

@@ -25,6 +25,7 @@ from app.users.validators import (
     AdminResetPasswordRequest,
     AssignRolesRequest,
     ProfileUpdateRequest,
+    StudentProfileUpdateRequest,
     SetAvatarRequest,
     UserCreateRequest,
     UserUpdateRequest,
@@ -52,6 +53,18 @@ def _body() -> dict:
     if not isinstance(data, dict):
         raise ValidationError("Request body must be a JSON object.")
     return data
+
+
+def _record_user_audit(action: str, target_id: uuid.UUID, changes=None) -> None:
+    _audit.record_audit(
+        action=action,
+        entity_type="user",
+        entity_id=target_id,
+        actor_id=uuid.UUID(get_jwt_identity()),
+        changes=changes,
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string,
+    )
 
 
 @bp.get("")
@@ -88,13 +101,20 @@ def create_user():
         email=str(payload.email),
         full_name=payload.full_name,
         password=payload.password,
-        roles=payload.roles,
+        roles=[payload.role] if payload.role else payload.roles,
         first_name=payload.first_name,
+        middle_name=payload.middle_name,
         last_name=payload.last_name,
         username=payload.username,
-        status=payload.status,
+        status="active",
+        student_number=payload.student_number,
+        department_id=payload.department_id,
+        course_id=payload.course_id,
+        section_id=payload.section_id,
+        officer_position=payload.officer_position,
         actor_id=actor,
     )
+    _record_user_audit("user.created", user.id, {"roles": [role.name for role in user.roles]})
     return success_response(
         data=public_user(user, include_roles=True),
         message="User created.",
@@ -121,11 +141,13 @@ def update_user(user_id: str):
         uuid.UUID(user_id),
         full_name=payload.full_name,
         first_name=payload.first_name,
+        middle_name=payload.middle_name,
         last_name=payload.last_name,
         username=payload.username,
         status=payload.status,
         phone=payload.phone,
     )
+    _record_user_audit("user.updated", user.id, payload.model_dump(exclude_none=True))
     return success_response(
         data=public_user(user), message="User updated."
     )
@@ -136,7 +158,11 @@ def update_user(user_id: str):
 @require_permission("users.delete")
 def delete_user(user_id: str):
     """Soft-delete a user."""
-    _service.soft_delete_user(uuid.UUID(user_id))
+    target = uuid.UUID(user_id)
+    _service.soft_delete_user(target)
+    from app.realtime.service import disconnect_user
+    disconnect_user(target)
+    _record_user_audit("user.deleted", target)
     return success_response(message="User deleted.")
 
 
@@ -146,6 +172,9 @@ def delete_user(user_id: str):
 def disable_user(user_id: str):
     """Disable a user (status -> inactive)."""
     user = _service.disable_user(uuid.UUID(user_id))
+    from app.realtime.service import disconnect_user
+    disconnect_user(user.id)
+    _record_user_audit("user.disabled", user.id, {"status": "inactive"})
     return success_response(data=public_user(user), message="User disabled.")
 
 
@@ -155,6 +184,9 @@ def disable_user(user_id: str):
 def suspend_user(user_id: str):
     """Suspend a user (status -> suspended)."""
     user = _service.suspend_user(uuid.UUID(user_id))
+    from app.realtime.service import disconnect_user
+    disconnect_user(user.id)
+    _record_user_audit("user.suspended", user.id, {"status": "suspended"})
     return success_response(data=public_user(user), message="User suspended.")
 
 
@@ -164,6 +196,7 @@ def suspend_user(user_id: str):
 def reactivate_user(user_id: str):
     """Reactivate a disabled/suspended user (status -> active)."""
     user = _service.reactivate_user(uuid.UUID(user_id))
+    _record_user_audit("user.reactivated", user.id, {"status": "active"})
     return success_response(data=public_user(user), message="User reactivated.")
 
 
@@ -173,7 +206,9 @@ def reactivate_user(user_id: str):
 def admin_reset_password(user_id: str):
     """Admin-reset a user's password."""
     payload = AdminResetPasswordRequest(**_body())
-    _service.admin_reset_password(uuid.UUID(user_id), new_password=payload.new_password)
+    target = uuid.UUID(user_id)
+    _service.admin_reset_password(target, new_password=payload.new_password)
+    _record_user_audit("user.password_reset", target)
     return success_response(message="Password reset.")
 
 
@@ -184,6 +219,7 @@ def set_avatar(user_id: str):
     """Set a user's profile-picture URL."""
     payload = SetAvatarRequest(**_body())
     user = _service.set_avatar(uuid.UUID(user_id), payload.avatar_url)
+    _record_user_audit("user.avatar_updated", user.id)
     return success_response(data=public_user(user), message="Avatar updated.")
 
 
@@ -217,6 +253,7 @@ def assign_roles(user_id: str):
     """Replace a user's roles."""
     payload = AssignRolesRequest(**_body())
     user = _service.assign_roles(uuid.UUID(user_id), payload.roles)
+    _record_user_audit("user.roles_updated", user.id, {"roles": payload.roles})
     return success_response(
         data=public_user(user, include_roles=True),
         message="Roles updated.",
@@ -258,4 +295,40 @@ def update_my_profile():
         user, phone=payload.phone, first_name=payload.first_name,
         last_name=payload.last_name,
     )
+    _record_user_audit("user.profile_updated", user.id)
     return success_response(data=public_user(user), message="Profile updated.")
+
+
+@bp.get("/me/student-profile")
+@jwt_required()
+def my_student_profile():
+    """Return the current student's college profile."""
+    actor = uuid.UUID(get_jwt_identity())
+    return success_response(data=_service.student_profile_data(actor))
+
+
+@bp.patch("/me/student-profile")
+@jwt_required()
+def update_my_student_profile():
+    """Complete the current student's department, course, and section."""
+    payload = StudentProfileUpdateRequest(**_body())
+    actor = uuid.UUID(get_jwt_identity())
+    profile = _service.update_student_profile(
+        actor,
+        department_id=payload.department_id,
+        course_id=payload.course_id,
+        section_id=payload.section_id,
+    )
+    _record_user_audit(
+        "user.college_profile_completed",
+        profile.id,
+        {
+            "department_id": str(profile.department_id),
+            "course_id": str(profile.course_id),
+            "section_id": str(profile.section_id),
+        },
+    )
+    return success_response(
+        data=_service.student_profile_data(profile.id),
+        message="College profile updated.",
+    )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import uuid
 from datetime import timedelta
 
 import pytest
@@ -18,7 +19,17 @@ from app.permissions.model import Permission, Role, RolePermission, UserRole
 from app.notifications.model import Notification
 from app.registrations.model import Registration, Team, TeamMember, Waitlist
 from app.registrations.service import RegistrationService
-from app.users.model import StudentProfile
+from app.users.model import (
+    AcademicYear,
+    AdministratorProfile,
+    Course,
+    Department,
+    OfficerProfile,
+    Section,
+    Semester,
+    StudentProfile,
+    TeacherProfile,
+)
 from app.utils.datetime import utcnow
 
 
@@ -63,8 +74,128 @@ def _user(email: str, role: Role) -> User:
     return user
 
 
-def test_admin_login_and_approval_decisions(app_ctx):
-    admin_role = _role("admin", ["announcements.approve", "events.approve"])
+def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
+    admin_role = _role("admin", ["users.create", "users.view"])
+    _role("student", [])
+    _role("student_council", [])
+    _role("teacher", [])
+    admin = _user("creator@example.com", admin_role)
+
+    department = Department(name="Computer Studies", code="CCS")
+    academic_year = AcademicYear(
+        name="2026-2027",
+        start_date=utcnow().date(),
+        end_date=(utcnow() + timedelta(days=300)).date(),
+        is_current=True,
+    )
+    db.session.add_all([department, academic_year])
+    db.session.flush()
+    semester = Semester(
+        academic_year_id=academic_year.id,
+        name="First Semester",
+        start_date=academic_year.start_date,
+        end_date=academic_year.end_date,
+    )
+    course = Course(department_id=department.id, name="BS Information Technology", code="BSIT")
+    db.session.add_all([semester, course])
+    db.session.flush()
+    section = Section(course_id=course.id, semester_id=semester.id, name="BSIT 3A")
+    db.session.add(section)
+    db.session.commit()
+
+    client = app_ctx.test_client()
+    login = client.post("/api/auth/login", json={"email": admin.email, "password": "Password123!"})
+    headers = {"Authorization": f"Bearer {login.get_json()['data']['access_token']}"}
+
+    student_response = client.post(
+        "/api/users",
+        json={
+            "email": "student.create@example.com",
+            "first_name": "Maria",
+            "middle_name": "Santos",
+            "last_name": "Cruz",
+            "full_name": "Maria S. Cruz",
+            "password": "Password123!",
+            "role": "student",
+            "student_number": "2026-0001",
+            "department_id": str(department.id),
+            "course_id": str(course.id),
+        },
+        headers=headers,
+    )
+    assert student_response.status_code == 201
+    student_data = student_response.get_json()["data"]
+    student_profile = db.session.get(StudentProfile, uuid.UUID(student_data["id"]))
+    assert student_data["status"] == "active"
+    assert student_data["username"] == "2026-0001"
+    assert student_data["full_name"] == "Maria S. Cruz"
+    assert student_profile is not None
+    assert student_profile.course_id == course.id
+    assert student_profile.section_id is None
+    assert student_profile.profile_completed is False
+
+    officer_response = client.post(
+        "/api/users",
+        json={
+            "email": "officer.create@example.com",
+            "first_name": "Juan",
+            "middle_name": "Dela Gomez",
+            "last_name": "Reyes",
+            "full_name": "Juan DG Reyes",
+            "password": "Password123!",
+            "role": "student_council",
+            "student_number": "2026-0002",
+            "officer_position": "President",
+            "department_id": str(department.id),
+            "course_id": str(course.id),
+            "section_id": str(section.id),
+        },
+        headers=headers,
+    )
+    assert officer_response.status_code == 201
+    officer_id = uuid.UUID(officer_response.get_json()["data"]["id"])
+    assert db.session.get(StudentProfile, officer_id) is not None
+    assert db.session.get(StudentProfile, officer_id).profile_completed is True
+    assert db.session.get(OfficerProfile, officer_id).position == "President"
+
+    professor_response = client.post(
+        "/api/users",
+        json={
+            "email": "professor.create@example.com",
+            "first_name": "Ana",
+            "last_name": "Lopez",
+            "full_name": "Ana Lopez",
+            "password": "Password123!",
+            "role": "teacher",
+            "department_id": str(department.id),
+        },
+        headers=headers,
+    )
+    assert professor_response.status_code == 201
+    professor_id = uuid.UUID(professor_response.get_json()["data"]["id"])
+    assert db.session.get(TeacherProfile, professor_id).department_id == department.id
+
+    admin_response = client.post(
+        "/api/users",
+        json={
+            "email": "admin.create@example.com",
+            "first_name": "System",
+            "last_name": "Owner",
+            "full_name": "System Owner",
+            "password": "Password123!",
+            "role": "admin",
+            "status": "suspended",
+        },
+        headers=headers,
+    )
+    assert admin_response.status_code == 201
+    admin_id = uuid.UUID(admin_response.get_json()["data"]["id"])
+    assert admin_response.get_json()["data"]["status"] == "active"
+    assert db.session.get(AdministratorProfile, admin_id) is not None
+
+
+def test_obsolete_content_approval_endpoints_are_removed(app_ctx):
+    admin_role = _role("admin", ["announcements.moderate", "events.manage_all"])
     admin = _user("admin@example.com", admin_role)
     officer = _user("officer@example.com", admin_role)
     db.session.commit()
@@ -77,18 +208,18 @@ def test_admin_login_and_approval_decisions(app_ctx):
     token = login.get_json()["data"]["access_token"]
 
     announcement = Announcement(
-        title="Pending announcement",
-        body="Needs review",
+        title="Published announcement",
+        body="Posted directly",
         author_id=officer.id,
-        status="pending_approval",
+        status="published",
         priority="normal",
         created_by=officer.id,
         updated_by=officer.id,
     )
     event = Event(
-        title="Pending event",
+        title="Published event",
         organizer_id=officer.id,
-        status="pending_approval",
+        status="approved",
         start_time=utcnow() + timedelta(days=3),
         end_time=utcnow() + timedelta(days=3, hours=2),
         is_team_event=False,
@@ -100,21 +231,70 @@ def test_admin_login_and_approval_decisions(app_ctx):
     db.session.commit()
 
     headers = {"Authorization": f"Bearer {token}"}
-    returned = app_ctx.test_client().post(
+    event_approval = app_ctx.test_client().post(
         f"/api/events/{event.id}/approve",
         json={"decision": "returned", "comment": "Revise schedule."},
         headers=headers,
     )
-    assert returned.status_code == 200
-    assert returned.get_json()["data"]["status"] == "returned"
+    assert event_approval.status_code == 404
 
-    approved = app_ctx.test_client().post(
+    announcement_approval = app_ctx.test_client().post(
         f"/api/announcements/{announcement.id}/approve",
         json={"decision": "approved"},
         headers=headers,
     )
-    assert approved.status_code == 200
-    assert approved.get_json()["data"]["status"] == "published"
+    assert announcement_approval.status_code == 404
+
+
+def test_content_creation_rejects_yesterday_but_allows_today(app_ctx):
+    role = _role(
+        "teacher",
+        ["announcements.create", "events.create", "events.view"],
+    )
+    professor = _user("date.guard@example.com", role)
+    db.session.commit()
+
+    client = app_ctx.test_client()
+    login = client.post("/api/auth/login", json={"email": professor.email, "password": "Password123!"})
+    headers = {"Authorization": f"Bearer {login.get_json()['data']['access_token']}"}
+
+    yesterday_start = utcnow() - timedelta(days=1)
+    yesterday_event = client.post(
+        "/api/events",
+        json={
+            "title": "Yesterday event",
+            "start_time": yesterday_start.isoformat(),
+            "end_time": (yesterday_start + timedelta(hours=1)).isoformat(),
+            "is_team_event": False,
+        },
+        headers=headers,
+    )
+    assert yesterday_event.status_code == 422
+
+    today_start = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_event = client.post(
+        "/api/events",
+        json={
+            "title": "Today event",
+            "start_time": today_start.isoformat(),
+            "end_time": (today_start + timedelta(hours=1)).isoformat(),
+            "is_team_event": False,
+        },
+        headers=headers,
+    )
+    assert today_event.status_code == 201
+    assert today_event.get_json()["data"]["status"] == "approved"
+
+    yesterday_expiry = client.post(
+        "/api/announcements",
+        json={
+            "title": "Expired bulletin",
+            "body": "This should not be accepted.",
+            "expires_at": (utcnow() - timedelta(days=1)).isoformat(),
+        },
+        headers=headers,
+    )
+    assert yesterday_expiry.status_code == 422
 
 
 def test_registration_eligibility_conflict_team_join_and_attendance(app_ctx):
@@ -126,8 +306,8 @@ def test_registration_eligibility_conflict_team_join_and_attendance(app_ctx):
     teammate = _user("teammate@example.com", role)
     db.session.add_all(
         [
-            StudentProfile(id=student.id, year_level=3),
-            StudentProfile(id=teammate.id, year_level=3),
+            StudentProfile(id=student.id, year_level=3, profile_completed=True),
+            StudentProfile(id=teammate.id, year_level=3, profile_completed=True),
         ]
     )
     db.session.commit()
@@ -219,7 +399,12 @@ def test_student_http_profile_team_and_qr_workflows(app_ctx):
     )
     leader = _user("leader@example.com", role)
     member = _user("member@example.com", role)
-    db.session.add_all([StudentProfile(id=leader.id, year_level=2), StudentProfile(id=member.id, year_level=2)])
+    db.session.add_all(
+        [
+            StudentProfile(id=leader.id, year_level=2, profile_completed=True),
+            StudentProfile(id=member.id, year_level=2, profile_completed=True),
+        ]
+    )
     event = Event(
         title="Team showcase",
         organizer_id=leader.id,
@@ -291,8 +476,8 @@ def test_registration_reuses_cancelled_or_rejected_records(app_ctx):
     team_student = _user("retry.team@example.com", role)
     db.session.add_all(
         [
-            StudentProfile(id=student.id, year_level=1),
-            StudentProfile(id=team_student.id, year_level=1),
+            StudentProfile(id=student.id, year_level=1, profile_completed=True),
+            StudentProfile(id=team_student.id, year_level=1, profile_completed=True),
         ]
     )
     solo_event = Event(
@@ -350,8 +535,8 @@ def test_full_event_waitlist_reuses_existing_rows_and_notifies(app_ctx):
     waitlisted_student = _user("capacity.waitlisted@example.com", role)
     db.session.add_all(
         [
-            StudentProfile(id=registered_student.id, year_level=1),
-            StudentProfile(id=waitlisted_student.id, year_level=1),
+            StudentProfile(id=registered_student.id, year_level=1, profile_completed=True),
+            StudentProfile(id=waitlisted_student.id, year_level=1, profile_completed=True),
         ]
     )
     event = Event(
@@ -410,9 +595,9 @@ def test_team_registration_is_teams_only_capacity_aware_and_atomic(app_ctx):
     other_leader = _user("team.capacity.other@example.com", role)
     db.session.add_all(
         [
-            StudentProfile(id=leader.id, year_level=1),
-            StudentProfile(id=member.id, year_level=1),
-            StudentProfile(id=other_leader.id, year_level=1),
+            StudentProfile(id=leader.id, year_level=1, profile_completed=True),
+            StudentProfile(id=member.id, year_level=1, profile_completed=True),
+            StudentProfile(id=other_leader.id, year_level=1, profile_completed=True),
         ]
     )
     event = Event(
@@ -488,9 +673,9 @@ def test_event_wide_qr_is_reusable_until_expiry(app_ctx):
     outsider = _user("qr.outsider@example.com", student_role)
     db.session.add_all(
         [
-            StudentProfile(id=student_one.id, year_level=1),
-            StudentProfile(id=student_two.id, year_level=1),
-            StudentProfile(id=outsider.id, year_level=1),
+            StudentProfile(id=student_one.id, year_level=1, profile_completed=True),
+            StudentProfile(id=student_two.id, year_level=1, profile_completed=True),
+            StudentProfile(id=outsider.id, year_level=1, profile_completed=True),
         ]
     )
     event = Event(
@@ -608,7 +793,7 @@ def test_professor_http_event_attendance_and_announcement_workflows(app_ctx):
     )
     professor = _user("professor@example.com", professor_role)
     student = _user("professor.student@example.com", student_role)
-    db.session.add(StudentProfile(id=student.id, year_level=1))
+    db.session.add(StudentProfile(id=student.id, year_level=1, profile_completed=True))
     db.session.commit()
 
     client = app_ctx.test_client()
@@ -626,12 +811,20 @@ def test_professor_http_event_attendance_and_announcement_workflows(app_ctx):
             "end_time": (utcnow() + timedelta(days=10, hours=2)).isoformat(),
             "location": "Auditorium",
             "is_team_event": False,
-            "submit_for_approval": True,
         },
         headers=professor_headers,
     )
     assert created.status_code == 201
-    assert created.get_json()["data"]["status"] == "pending_approval"
+    assert created.get_json()["data"]["status"] == "approved"
+    created_event_id = created.get_json()["data"]["id"]
+
+    archived_event = client.post(
+        f"/api/events/{created_event_id}/status",
+        json={"status": "archived"},
+        headers=professor_headers,
+    )
+    assert archived_event.status_code == 200
+    assert archived_event.get_json()["data"]["status"] == "archived"
 
     event = Event(
         title="Professor approved event",
@@ -691,12 +884,19 @@ def test_professor_http_event_attendance_and_announcement_workflows(app_ctx):
             "title": "Professor bulletin",
             "body": "Please attend the review session.",
             "priority": "normal",
-            "submit_for_approval": True,
         },
         headers=professor_headers,
     )
     assert announcement.status_code == 201
-    assert announcement.get_json()["data"]["status"] == "pending_approval"
+    assert announcement.get_json()["data"]["status"] == "published"
+    created_announcement_id = announcement.get_json()["data"]["id"]
+
+    archived_announcement = client.post(
+        f"/api/announcements/{created_announcement_id}/archive",
+        headers=professor_headers,
+    )
+    assert archived_announcement.status_code == 403
+    assert db.session.get(Announcement, uuid.UUID(created_announcement_id)).status == "published"
 
 
 def test_social_feed_includes_events_and_announcement_attachments(app_ctx):
@@ -737,7 +937,7 @@ def test_social_feed_includes_events_and_announcement_attachments(app_ctx):
         data={
             "entity_type": "announcement",
             "entity_id": str(announcement.id),
-            "file": (io.BytesIO(b"fake image bytes"), "post.png"),
+            "file": (io.BytesIO(b"\x89PNG\r\n\x1a\nimage bytes"), "post.png"),
         },
         content_type="multipart/form-data",
         headers=headers,
@@ -772,3 +972,108 @@ def test_social_feed_includes_events_and_announcement_attachments(app_ctx):
     filename = uploaded.get_json()["data"]["filename"]
     unauthenticated_download = client.get(f"/api/uploads/{filename}")
     assert unauthenticated_download.status_code == 401
+
+
+def test_student_cannot_manage_accounts_and_suspension_invalidates_sessions(app_ctx):
+    from app.permissions.constants import DEFAULT_ROLE_PERMISSIONS
+
+    assert "users.update" not in DEFAULT_ROLE_PERMISSIONS["student"]
+    admin_role = _role("admin", ["users.update", "users.view"])
+    student_role = _role("student", ["users.view"])
+    admin = _user("security.admin@example.com", admin_role)
+    student = _user("security.student@example.com", student_role)
+    target = _user("security.target@example.com", student_role)
+    db.session.commit()
+
+    client = app_ctx.test_client()
+    student_login = client.post(
+        "/api/auth/login",
+        json={"email": student.email, "password": "Password123!"},
+    ).get_json()["data"]
+    student_headers = {"Authorization": f"Bearer {student_login['access_token']}"}
+    tamper = client.patch(
+        f"/api/users/{target.id}",
+        json={"first_name": "Changed"},
+        headers=student_headers,
+    )
+    assert tamper.status_code == 403
+
+    admin_login = client.post(
+        "/api/auth/login",
+        json={"email": admin.email, "password": "Password123!"},
+    ).get_json()["data"]
+    suspended = client.post(
+        f"/api/users/{student.id}/suspend",
+        headers={"Authorization": f"Bearer {admin_login['access_token']}"},
+    )
+    assert suspended.status_code == 200
+    assert client.get("/api/auth/me", headers=student_headers).status_code == 401
+    assert client.post(
+        "/api/auth/refresh", json={"refresh_token": student_login["refresh_token"]}
+    ).status_code == 401
+
+
+def test_officer_cannot_manage_an_unassigned_event(app_ctx):
+    organizer_role = _role("teacher", [])
+    officer_role = _role(
+        "student_council",
+        ["events.view", "registrations.view", "registrations.manage", "attendance.view", "attendance.manage"],
+    )
+    student_role = _role("student", [])
+    organizer = _user("scope.organizer@example.com", organizer_role)
+    officer = _user("scope.officer@example.com", officer_role)
+    student = _user("scope.student@example.com", student_role)
+    event = Event(
+        title="Organizer-only event",
+        organizer_id=organizer.id,
+        status="approved",
+        start_time=utcnow() + timedelta(days=2),
+        end_time=utcnow() + timedelta(days=2, hours=1),
+        is_team_event=False,
+        created_by=organizer.id,
+        updated_by=organizer.id,
+    )
+    db.session.add(event)
+    db.session.flush()
+    registration = Registration(event_id=event.id, user_id=student.id, status="pending")
+    db.session.add(registration)
+    db.session.commit()
+
+    client = app_ctx.test_client()
+    login = client.post(
+        "/api/auth/login",
+        json={"email": officer.email, "password": "Password123!"},
+    ).get_json()["data"]
+    headers = {"Authorization": f"Bearer {login['access_token']}"}
+    decision = client.post(
+        f"/api/registrations/{registration.id}/decide",
+        json={"decision": "approved"},
+        headers=headers,
+    )
+    attendance = client.get(f"/api/attendance/event/{event.id}", headers=headers)
+    assert decision.status_code == 403
+    assert attendance.status_code == 403
+
+
+def test_removed_auth_workflows_and_invalid_uuid_are_client_errors(app_ctx):
+    role = _role("admin", ["users.view"])
+    admin = _user("validation.admin@example.com", role)
+    db.session.commit()
+    client = app_ctx.test_client()
+
+    assert client.post("/api/auth/register", json={}).status_code == 403
+    assert client.post("/api/auth/forgot-password", json={}).status_code == 404
+    assert client.post("/api/auth/reset-password", json={}).status_code == 404
+    assert client.post("/api/auth/verify-email", json={}).status_code == 404
+    assert client.post("/api/auth/oauth/google", json={}).status_code == 404
+
+    login = client.post(
+        "/api/auth/login",
+        json={"email": admin.email, "password": "Password123!"},
+    ).get_json()["data"]
+    invalid = client.get(
+        "/api/users/not-a-uuid",
+        headers={"Authorization": f"Bearer {login['access_token']}"},
+    )
+    assert invalid.status_code == 422
+    assert invalid.get_json()["error_code"] == "validation_error"

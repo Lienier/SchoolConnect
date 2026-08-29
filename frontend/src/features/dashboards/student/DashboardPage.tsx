@@ -1,4 +1,4 @@
-/** Student dashboard: social feed, quick actions, and personal school activity. */
+/** Student dashboard: social feed, quick actions, and personal college activity. */
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
@@ -56,7 +56,7 @@ export default function StudentDashboardPage() {
               Welcome back, {user?.full_name?.split(" ")[0] ?? "there"}.
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-navy-300">
-              Your school feed, registrations, check-ins, and event updates are ready from one place.
+              Your college feed, registrations, check-ins, and event updates are ready from one place.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link to="/events">
@@ -101,7 +101,7 @@ export default function StudentDashboardPage() {
         <div className="space-y-5">
           <BulletinFeed
             title="Bulletin feed"
-            description="Latest school notices and event cards in the same social-feed style."
+            description="Latest college notices and event cards in the same social-feed style."
             compact
             showHero={false}
             showHeader={false}

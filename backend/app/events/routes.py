@@ -11,19 +11,37 @@ from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
 from app.events.service import EventService
+from app.events.access import can_manage_event, require_event_manager
+from app.events.model import EventOfficerAssignment
 from app.events.validators import (
-    EventApprovalRequest,
     EventCategoryCreateRequest,
     EventCreateRequest,
     EventStatusRequest,
     EventResultRequest,
     EventUpdateRequest,
+    EventOfficerAssignmentRequest,
 )
 from app.permissions.decorators import has_permission, has_role, require_permission
+from app.permissions.model import Role, UserRole
 from app.realtime.service import emit_update
+from app.extensions import db
+from app.audit.service import AuditService
 
 bp = Blueprint("events", __name__, url_prefix="/events")
 _service = EventService()
+_audit = AuditService()
+
+
+def _record_audit(action: str, entity_id: uuid.UUID, actor_id: uuid.UUID, changes=None) -> None:
+    _audit.record_audit(
+        action=action,
+        entity_type="event",
+        entity_id=entity_id,
+        actor_id=actor_id,
+        changes=changes,
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string,
+    )
 
 
 def _body() -> dict:
@@ -38,6 +56,7 @@ def _body() -> dict:
 @require_permission("events.view")
 def list_events():
     """List events (paginated) with optional status/category/organizer filters."""
+    _service.refresh_lifecycle()
     params = PaginationParams.from_request()
     actor = get_jwt_identity()
     requested_status = request.args.get("status")
@@ -61,18 +80,23 @@ def list_events():
 @require_permission("events.view")
 def get_event(event_id: str):
     """Get a single event with approval history."""
+    _service.refresh_lifecycle()
     event = _service.get_event(uuid.UUID(event_id))
     if has_role(get_jwt_identity(), "student") and event.status not in {"approved", "ongoing"}:
         from app.common.exceptions import NotFoundError
         raise NotFoundError("Event not found.")
-    return success_response(data=event.to_dict(include_approvals=not has_role(get_jwt_identity(), "student")))
+    data = event.to_dict()
+    data["can_manage"] = can_manage_event(get_jwt_identity(), event)
+    return success_response(data=data)
 
 
 @bp.get("/<event_id>/results")
 @jwt_required()
 @require_permission("events.view")
 def list_results(event_id: str):
-    return success_response(data=[r.to_dict() for r in _service.list_results(uuid.UUID(event_id))])
+    event = _service.get_event(uuid.UUID(event_id))
+    require_event_manager(get_jwt_identity(), event)
+    return success_response(data=[r.to_dict() for r in _service.list_results(event.id)])
 
 
 @bp.post("/<event_id>/results")
@@ -81,7 +105,9 @@ def list_results(event_id: str):
 def create_result(event_id: str):
     payload = EventResultRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
-    result = _service.create_result(uuid.UUID(event_id), actor, **payload.model_dump(exclude_none=True))
+    event = _service.get_event(uuid.UUID(event_id))
+    require_event_manager(actor, event)
+    result = _service.create_result(event.id, actor, **payload.model_dump(exclude_none=True))
     return success_response(data=result.to_dict(), message="Event result added.", status_code=201)
 
 
@@ -90,7 +116,7 @@ def create_result(event_id: str):
 @require_permission("events.update")
 def delete_result(result_id: str):
     actor = uuid.UUID(get_jwt_identity())
-    _service.delete_result(uuid.UUID(result_id), actor, can_override=has_permission(str(actor), "events.approve"))
+    _service.delete_result(uuid.UUID(result_id), actor, can_override=has_permission(str(actor), "events.manage_all"))
     return success_response(message="Event result removed.")
 
 
@@ -100,7 +126,7 @@ def delete_result(result_id: str):
 def update_result(result_id: str):
     payload = EventResultRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
-    result = _service.update_result(uuid.UUID(result_id), actor, can_override=has_permission(str(actor), "events.approve"), **payload.model_dump(exclude_none=True))
+    result = _service.update_result(uuid.UUID(result_id), actor, can_override=has_permission(str(actor), "events.manage_all"), **payload.model_dump(exclude_none=True))
     return success_response(data=result.to_dict(), message="Event result updated.")
 
 
@@ -123,8 +149,8 @@ def create_event():
         registration_deadline=payload.registration_deadline,
         is_team_event=payload.is_team_event,
         max_team_size=payload.max_team_size,
-        submit_for_approval=payload.submit_for_approval,
     )
+    _record_audit("event.published", event.id, actor)
     emit_update("event", "created", entity_id=event.id, message=f"Event created: {event.title}")
     return success_response(
         data=event.to_dict(), message="Event created.", status_code=201
@@ -141,39 +167,12 @@ def update_event(event_id: str):
     event = _service.update_event(
         uuid.UUID(event_id),
         actor,
-        can_override=has_permission(str(actor), "events.approve"),
+        can_override=has_permission(str(actor), "events.manage_all"),
         **payload.model_dump(exclude_none=True),
     )
+    _record_audit("event.updated", event.id, actor)
     emit_update("event", "updated", entity_id=event.id, message=f"Event updated: {event.title}")
     return success_response(data=event.to_dict(), message="Event updated.")
-
-
-@bp.post("/<event_id>/submit")
-@jwt_required()
-@require_permission("events.update")
-def submit_event(event_id: str):
-    """Submit a draft event for approval."""
-    actor = uuid.UUID(get_jwt_identity())
-    event = _service.submit_for_approval(uuid.UUID(event_id), actor)
-    emit_update("event", "submitted", entity_id=event.id, message=f"Event submitted: {event.title}")
-    return success_response(data=event.to_dict(), message="Event submitted for approval.")
-
-
-@bp.post("/<event_id>/approve")
-@jwt_required()
-@require_permission("events.approve")
-def approve_event(event_id: str):
-    """Approve or reject a pending event."""
-    payload = EventApprovalRequest(**_body())
-    reviewer = uuid.UUID(get_jwt_identity())
-    event = _service.decide(
-        event_id=uuid.UUID(event_id),
-        reviewer_id=reviewer,
-        decision=payload.decision,
-        comment=payload.comment,
-    )
-    emit_update("event", event.status, entity_id=event.id, message=f"Event {event.status}: {event.title}")
-    return success_response(data=event.to_dict(), message=f"Event {event.status}.")
 
 
 @bp.post("/<event_id>/status")
@@ -183,17 +182,11 @@ def change_status(event_id: str):
     """Transition an event to a new lifecycle status."""
     payload = EventStatusRequest(**_body())
     actor = uuid.UUID(get_jwt_identity())
-    # Publishing/status changes are owner-only unless the actor can approve.
+    # Status changes are limited to organizers, assigned officers, and admins.
     event = _service.get_event(uuid.UUID(event_id))
-    from app.common.ownership import enforce_owner_or_permission
-
-    enforce_owner_or_permission(
-        record_owner_id=event.organizer_id,
-        user_id=actor,
-        has_permission=has_permission(str(actor), "events.approve"),
-        message="You can only change the status of events you organize.",
-    )
+    require_event_manager(actor, event)
     updated = _service.change_status(uuid.UUID(event_id), actor, payload.status)
+    _record_audit("event.status_updated", updated.id, actor, {"status": updated.status})
     emit_update("event", updated.status, entity_id=updated.id, message=f"Event status updated: {updated.title}")
     return success_response(data=updated.to_dict(), message="Event status updated.")
 
@@ -204,11 +197,13 @@ def change_status(event_id: str):
 def delete_event(event_id: str):
     """Soft-delete an event."""
     actor = uuid.UUID(get_jwt_identity())
+    target = uuid.UUID(event_id)
     _service.delete_event(
-        uuid.UUID(event_id),
+        target,
         actor,
-        can_override=has_permission(str(actor), "events.approve"),
+        can_override=has_permission(str(actor), "events.manage_all"),
     )
+    _record_audit("event.deleted", target, actor)
     emit_update("event", "deleted", entity_id=event_id)
     return success_response(message="Event deleted.")
 
@@ -242,4 +237,56 @@ def create_category():
         data={"id": str(category.id), "name": category.name, "slug": category.slug},
         message="Category created.",
         status_code=201,
+    )
+
+
+@bp.get("/<event_id>/officers")
+@jwt_required()
+@require_permission("events.update")
+def list_event_officers(event_id: str):
+    event = _service.get_event(uuid.UUID(event_id))
+    require_event_manager(get_jwt_identity(), event)
+    rows = db.session.scalars(
+        db.select(EventOfficerAssignment).where(
+            EventOfficerAssignment.event_id == event.id
+        )
+    ).all()
+    return success_response(data=[str(row.officer_id) for row in rows])
+
+
+@bp.put("/<event_id>/officers")
+@jwt_required()
+@require_permission("events.manage_all")
+def assign_event_officers(event_id: str):
+    payload = EventOfficerAssignmentRequest(**_body())
+    event = _service.get_event(uuid.UUID(event_id))
+    actor = uuid.UUID(get_jwt_identity())
+    officer_ids = list(dict.fromkeys(uuid.UUID(value) for value in payload.officer_ids))
+    valid = set(
+        db.session.scalars(
+            db.select(UserRole.user_id)
+            .join(Role, Role.id == UserRole.role_id)
+            .where(Role.name == "student_council", UserRole.user_id.in_(officer_ids))
+        ).all()
+    )
+    if valid != set(officer_ids):
+        raise ValidationError("Every assigned user must have the Student Council role.")
+    db.session.query(EventOfficerAssignment).filter(
+        EventOfficerAssignment.event_id == event.id
+    ).delete(synchronize_session=False)
+    for officer_id in officer_ids:
+        db.session.add(
+            EventOfficerAssignment(
+                event_id=event.id, officer_id=officer_id, assigned_by=actor
+            )
+        )
+    db.session.commit()
+    _record_audit(
+        "event.officers_updated",
+        event.id,
+        actor,
+        {"officer_ids": [str(value) for value in officer_ids]},
+    )
+    return success_response(
+        data=[str(value) for value in officer_ids], message="Event officers updated."
     )

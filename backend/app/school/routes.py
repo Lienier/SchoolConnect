@@ -1,4 +1,4 @@
-"""HTTP routes for the school-structure module.
+"""HTTP routes for the college-structure module.
 
 Exposes CRUD for departments, courses, sections, organizations, academic years
 and semesters. Read endpoints require the corresponding ``*.view`` permission;

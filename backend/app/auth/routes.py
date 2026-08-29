@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from flask import Blueprint, current_app, request
+from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -19,14 +19,10 @@ from app.auth.schema import auth_tokens, public_user
 from app.auth.service import AuthService
 from app.auth.validators import (
     ChangePasswordRequest,
-    ForgotPasswordRequest,
     LoginRequest,
-    OAuthLoginRequest,
     RefreshRequest,
-    RegisterRequest,
-    ResetPasswordRequest,
 )
-from app.common.exceptions import ValidationError
+from app.common.exceptions import AuthorizationError, ValidationError
 from app.common.responses import error_response, success_response
 from app.extensions import db
 
@@ -47,23 +43,9 @@ def _body() -> dict:
 @bp.post("/register")
 @limiter.limit("20 per hour")
 def register():
-    """Public self-registration endpoint."""
-    payload = RegisterRequest(**_body())
-    user = _service.register(
-        email=str(payload.email),
-        password=payload.password,
-        full_name=payload.full_name,
-        first_name=payload.first_name,
-        last_name=payload.last_name,
-        username=payload.username,
-    )
-    access, raw_refresh = _service.issue_tokens(
-        user, ip_address=request.remote_addr
-    )
-    return success_response(
-        data=auth_tokens(access, raw_refresh, user),
-        message="Registration successful.",
-        status_code=201,
+    """Explain the administrator-managed account policy."""
+    raise AuthorizationError(
+        "Public registration is disabled. Contact a college administrator to create your account."
     )
 
 
@@ -132,41 +114,6 @@ def logout():
     return success_response(message="Logged out.")
 
 
-@bp.post("/forgot-password")
-@limiter.limit("5 per hour")
-def forgot_password():
-    """Request a password reset email token (token returned for dev)."""
-    payload = ForgotPasswordRequest(**_body())
-    token = _service.create_password_reset(str(payload.email))
-    # In production the token is emailed; returned here for local testing.
-    reset_data = {"reset_token": token} if token and current_app.config.get(
-        "RETURN_RESET_TOKENS", False
-    ) else None
-    return success_response(
-        data=reset_data,
-        message="If the email exists, a reset link has been sent.",
-    )
-
-
-@bp.post("/reset-password")
-def reset_password():
-    """Set a new password using a reset token."""
-    payload = ResetPasswordRequest(**_body())
-    _service.reset_password(payload.token, payload.password)
-    return success_response(message="Password has been reset.")
-
-
-@bp.post("/verify-email")
-def verify_email():
-    """Verify an email address using a verification token."""
-    body = _body()
-    token = body.get("token")
-    if not token:
-        raise ValidationError("Verification token is required.")
-    _service.verify_email(token)
-    return success_response(message="Email verified.")
-
-
 @bp.get("/me")
 @jwt_required()
 def me():
@@ -175,43 +122,6 @@ def me():
     if user is None:
         return error_response("User not found.", status_code=404)
     return success_response(data=public_user(user))
-
-
-@bp.post("/oauth/google")
-def oauth_google():
-    """Exchange a Google ID token for SchoolConnect tokens."""
-    from google.oauth2 import id_token
-    from google.auth.transport import requests as google_requests
-
-    payload = OAuthLoginRequest(**_body())
-    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
-    if not client_id:
-        raise ValidationError("Google OAuth is not configured.")
-    try:
-        claim = id_token.verify_oauth2_token(
-            payload.id_token,
-            google_requests.Request(),
-            audience=client_id,
-        )
-    except Exception as exc:  # noqa: BLE001 - surface as client error
-        raise ValidationError("Invalid Google token.") from exc
-
-    if not claim.get("email_verified"):
-        raise ValidationError("Google email is not verified.")
-
-    user = _service.oauth_login_or_register(
-        provider="google",
-        provider_user_id=str(claim.get("sub")),
-        email=str(claim.get("email")),
-        full_name=str(claim.get("name", "")),
-    )
-    access, raw_refresh = _service.issue_tokens(
-        user, ip_address=request.remote_addr
-    )
-    return success_response(
-        data=auth_tokens(access, raw_refresh, user),
-        message="Google login successful.",
-    )
 
 
 @bp.post("/change-password")

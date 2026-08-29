@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
 import { apiErrorMessage } from "@/api/errors";
@@ -38,7 +38,7 @@ export default function LoginPage() {
       <main className="flex min-h-screen items-center justify-center bg-navy-50 px-4 dark:bg-navy-950">
         <div className="flex items-center gap-3 text-navy-600 dark:text-navy-300">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-navy-800 border-t-transparent dark:border-navy-200 dark:border-t-transparent" />
-          <span>Loading…</span>
+          <span>Loading...</span>
         </div>
       </main>
     );
@@ -72,7 +72,7 @@ export default function LoginPage() {
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="you@school.edu"
+              placeholder="you@college.edu"
               {...register("email")}
             />
             {errors.email && (
@@ -108,10 +108,7 @@ export default function LoginPage() {
           </Button>
         </form>
         <p className="mt-6 text-center text-sm text-navy-500 dark:text-navy-300">
-          Don&apos;t have an account?{" "}
-          <Link to="/register" className="font-medium text-blue-700 hover:underline dark:text-blue-300">
-            Register
-          </Link>
+          Accounts are issued by the College administrator.
         </p>
       </Card>
     </main>

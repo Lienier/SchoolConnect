@@ -38,10 +38,12 @@ class RegistrationRepository:
             )
         )
 
-    def list_query(self, *, event_id=None, user_id=None, status=None):
+    def list_query(self, *, event_id=None, event_ids=None, user_id=None, status=None):
         stmt = select(Registration).where(Registration.deleted_at.is_(None))
         if event_id:
             stmt = stmt.where(Registration.event_id == event_id)
+        elif event_ids is not None:
+            stmt = stmt.where(Registration.event_id.in_(event_ids))
         if user_id:
             stmt = stmt.where(Registration.user_id == user_id)
         if status:

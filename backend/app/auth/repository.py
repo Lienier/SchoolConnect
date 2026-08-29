@@ -7,13 +7,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 
-from app.auth.model import (
-    EmailVerificationToken,
-    OAuthAccount,
-    PasswordResetToken,
-    RefreshToken,
-    User,
-)
+from app.auth.model import RefreshToken, User
 from app.extensions import db
 from app.repositories.base import BaseRepository
 
@@ -59,32 +53,4 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
         db.session.flush()
 
 
-class OAuthAccountRepository(BaseRepository[OAuthAccount]):
-    """Persistence operations for ``OAuthAccount``."""
-
-    def __init__(self) -> None:
-        super().__init__(OAuthAccount)
-
-    def get_by_provider(
-        self, provider: str, provider_user_id: str
-    ) -> OAuthAccount | None:
-        """Return a linked OAuth account by provider identity."""
-        stmt = select(OAuthAccount).where(
-            OAuthAccount.provider == provider,
-            OAuthAccount.provider_user_id == provider_user_id,
-        )
-        return db.session.scalar(stmt)
-
-
-class PasswordResetTokenRepository(BaseRepository[PasswordResetToken]):
-    """Persistence operations for ``PasswordResetToken``."""
-
-    def __init__(self) -> None:
-        super().__init__(PasswordResetToken)
-
-
-class EmailVerificationTokenRepository(BaseRepository[EmailVerificationToken]):
-    """Persistence operations for ``EmailVerificationToken``."""
-
-    def __init__(self) -> None:
-        super().__init__(EmailVerificationToken)
+__all__ = ["RefreshTokenRepository", "UserRepository"]

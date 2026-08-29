@@ -166,7 +166,7 @@ export default function AttendancePage() {
     <div className="space-y-6">
       <PageHeader
         title={isProfessor ? "Professor Attendance" : "Attendance"}
-        subtitle={isProfessor ? "Generate event-wide QR codes and record attendance for your events." : "Record and monitor attendance for approved school events."}
+        subtitle={isProfessor ? "Generate event-wide QR codes and record attendance for your events." : "Record and monitor attendance for approved college events."}
         actions={
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" disabled={!selectedEventId || !items.length} onClick={exportAttendance}>
@@ -196,7 +196,7 @@ export default function AttendancePage() {
         {events.isError && <p className="mt-3 text-sm text-red-600">Could not load events. <button className="font-semibold underline" onClick={() => events.refetch()}>Try again</button></p>}
         {!events.isLoading && !events.isError && !availableEvents.length && (
           <p className="mt-3 text-sm text-slate-500">
-            No approved or ongoing {isProfessor ? "events owned by you" : "events"} are available for QR generation yet. Pending events need admin approval first.
+            No approved or ongoing {isProfessor ? "events owned by you" : "events"} are available for QR generation yet.
           </p>
         )}
         {selectedEvent && (

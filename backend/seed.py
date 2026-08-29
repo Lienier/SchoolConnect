@@ -1,4 +1,4 @@
-"""Minimal idempotent seed script for roles, permissions, and baseline users.
+"""Idempotent seed script for RBAC and an optional first administrator.
 
 Run with:
     python -m seed
@@ -11,68 +11,11 @@ are meant to be created manually by the team.
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
 
 from app.app import create_app
 from app.extensions import db
 from app.permissions.constants import DEFAULT_ROLE_PERMISSIONS, PERMISSIONS
 from app.permissions.model import Permission, Role, RolePermission, UserRole
-
-
-@dataclass(frozen=True)
-class SeedAccount:
-    role: str
-    display_role: str
-    email_env: str
-    password_env: str
-    default_email: str
-    default_password: str
-    username: str
-    full_name: str
-
-
-BASELINE_ACCOUNTS = [
-    SeedAccount(
-        role="admin",
-        display_role="Administrator",
-        email_env="SEED_ADMIN_EMAIL",
-        password_env="SEED_ADMIN_PASSWORD",
-        default_email="admin@schoolconnect.example.com",
-        default_password="Admin123!",
-        username="admin",
-        full_name="School Administrator",
-    ),
-    SeedAccount(
-        role="teacher",
-        display_role="Professor",
-        email_env="SEED_PROFESSOR_EMAIL",
-        password_env="SEED_PROFESSOR_PASSWORD",
-        default_email="professor@schoolconnect.example.com",
-        default_password="Professor123!",
-        username="professor",
-        full_name="School Professor",
-    ),
-    SeedAccount(
-        role="student_council",
-        display_role="Student Council",
-        email_env="SEED_OFFICER_EMAIL",
-        password_env="SEED_OFFICER_PASSWORD",
-        default_email="officer@schoolconnect.example.com",
-        default_password="Officer123!",
-        username="student_council",
-        full_name="Student Council Officer",
-    ),
-    SeedAccount(
-        role="student",
-        display_role="Student",
-        email_env="SEED_STUDENT_EMAIL",
-        password_env="SEED_STUDENT_PASSWORD",
-        default_email="student@schoolconnect.example.com",
-        default_password="Student123!",
-        username="student",
-        full_name="School Student",
-    ),
-]
 
 
 def seed_rbac() -> None:
@@ -117,36 +60,38 @@ def seed_rbac() -> None:
     print("RBAC seed complete.")
 
 
-def seed_baseline_accounts() -> None:
-    """Create one clean login account for each user role."""
+def seed_initial_admin() -> None:
+    """Create the first administrator only when explicit credentials are supplied."""
     from app.auth.model import User
     from app.auth.service import AuthService
+    from app.users.model import AdministratorProfile
+
+    email = os.getenv("SEED_ADMIN_EMAIL", "").strip().lower()
+    password = os.getenv("SEED_ADMIN_PASSWORD", "")
+    if not email or not password:
+        print("Initial administrator seed skipped; explicit credentials were not supplied.")
+        return
+    if len(password) < 12:
+        raise RuntimeError("SEED_ADMIN_PASSWORD must contain at least 12 characters.")
+
+    existing = db.session.scalar(db.select(User).where(User.email == email))
+    if existing is not None:
+        print(f"Initial administrator already exists: {email}")
+        return
 
     service = AuthService()
-    for account in BASELINE_ACCOUNTS:
-        email = os.getenv(account.email_env, account.default_email).strip().lower()
-        password = os.getenv(account.password_env, account.default_password)
-
-        user = db.session.scalar(
-            db.select(User).where((User.email == email) | (User.username == account.username))
-        )
-        if user is None:
-            user = service.register(
-                email=email,
-                password=password,
-                full_name=account.full_name,
-                username=account.username,
-            )
-        else:
-            user.email = email
-            user.username = account.username
-            user.full_name = account.full_name
-            user.password_hash = service._hash_password(password)
-
-        user.status = "active"
-        user.email_verified = True
-        _set_user_roles(user, [account.role])
-        print(f"{account.display_role} account ready: {email}")
+    user = service.register(
+        email=email,
+        password=password,
+        full_name="College Administrator",
+        username=email.split("@", 1)[0],
+    )
+    user.email_verified = True
+    _set_user_roles(user, ["admin"])
+    if db.session.get(AdministratorProfile, user.id) is None:
+        db.session.add(AdministratorProfile(id=user.id))
+        db.session.commit()
+    print(f"Initial administrator created: {email}")
 
 
 def _set_user_roles(user, role_names: list[str]) -> None:
@@ -169,4 +114,4 @@ if __name__ == "__main__":
     app = create_app()
     with app.app_context():
         seed_rbac()
-        seed_baseline_accounts()
+        seed_initial_admin()

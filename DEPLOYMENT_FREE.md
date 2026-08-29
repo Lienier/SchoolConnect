@@ -97,7 +97,7 @@ The included `frontend/vercel.json` keeps React Router pages working on refresh.
 ## 5. Baseline Accounts
 
 The seed script creates only one clean baseline account per role. It does not
-seed school structure, announcements, events, registrations, attendance,
+seed college structure, announcements, events, registrations, attendance,
 notifications, or audit records.
 
 ```txt
@@ -125,4 +125,4 @@ After Render and Vercel finish deploying:
 - Render Free services sleep after inactivity.
 - Supabase Free can pause after inactivity and has limited storage.
 - Cloudinary Free has usage limits.
-- This setup is for MVP/demo use, not production school operations.
+- This setup is for MVP/demo use, not production college operations.

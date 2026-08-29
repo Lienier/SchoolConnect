@@ -39,22 +39,18 @@ export const announcementsApi = {
     summary?: string;
     category_id?: string;
     priority: string;
-    submit_for_approval: boolean;
   }): Promise<Announcement> {
     const { data } = await apiClient.post("/announcements", payload);
     return data.data;
   },
 
-  async update(id: string, payload: Partial<Pick<Announcement, "title" | "body" | "summary" | "priority" | "status" | "is_pinned" | "is_emergency" | "target_audience">> & { category_id?: string | null }): Promise<Announcement> {
-    const { data } = await apiClient.patch(`/announcements/${id}`, payload);
+  async archive(id: string): Promise<Announcement> {
+    const { data } = await apiClient.post(`/announcements/${id}/archive`);
     return data.data;
   },
 
-  async approve(id: string, decision: "approved" | "rejected" | "returned", comment?: string) {
-    const { data } = await apiClient.post(`/announcements/${id}/approve`, {
-      decision,
-      comment,
-    });
+  async update(id: string, payload: Partial<Pick<Announcement, "title" | "body" | "summary" | "priority" | "status" | "is_pinned" | "is_emergency" | "target_audience">> & { category_id?: string | null }): Promise<Announcement> {
+    const { data } = await apiClient.patch(`/announcements/${id}`, payload);
     return data.data;
   },
 

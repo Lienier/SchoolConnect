@@ -1,4 +1,4 @@
-"""Serialization helpers for school-structure entities."""
+"""Serialization helpers for college-structure entities."""
 
 from __future__ import annotations
 

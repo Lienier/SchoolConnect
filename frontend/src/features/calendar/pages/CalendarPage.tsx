@@ -94,7 +94,7 @@ export default function CalendarPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="School Calendar"
+        title="College Calendar"
         subtitle="Browse events, schedules, and registration deadlines."
         actions={null}
       />
@@ -130,7 +130,7 @@ export default function CalendarPage() {
         {events.isError && <p className="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-700">Unable to load the calendar right now. <button className="font-semibold underline" onClick={() => events.refetch()}>Try again</button></p>}
         <CalendarErrorBoundary>
           <div className="school-calendar relative overflow-x-auto">
-            {events.isLoading && <div className="absolute inset-0 z-10 flex items-start justify-center bg-white/70 pt-20 text-sm text-slate-500">Loading calendar…</div>}
+            {events.isLoading && <div className="absolute inset-0 z-10 flex items-start justify-center bg-white/70 pt-20 text-sm text-slate-500">Loading calendar...</div>}
             <FullCalendar
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"

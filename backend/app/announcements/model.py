@@ -1,7 +1,7 @@
 """SQLAlchemy models for the announcements module.
 
-Includes announcement categories, announcements (with draft/approval workflow),
-approvals history and attachments. Attachments reference uploaded files, keeping
+Includes announcement categories, direct-published announcements and attachments.
+Attachments reference uploaded files, keeping
 the polymorphic upload strategy consistent with the rest of the system.
 """
 
@@ -43,7 +43,7 @@ class AnnouncementCategory(db.Model):
 
 
 class Announcement(db.Model):
-    """A school announcement authored by a staff member."""
+    """A college announcement authored by a staff member."""
 
     __tablename__ = "announcements"
     __table_args__ = (
@@ -51,7 +51,7 @@ class Announcement(db.Model):
             "priority IN ('normal','important','urgent')", name="ck_announcements_priority"
         ),
         CheckConstraint(
-            "status IN ('draft','pending_approval','published','archived')",
+            "status IN ('published','archived')",
             name="ck_announcements_status",
         ),
         CheckConstraint(
@@ -76,7 +76,7 @@ class Announcement(db.Model):
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
     )
     priority: Mapped[str] = mapped_column(String(20), default="normal", nullable=False)
-    status: Mapped[str] = mapped_column(String(20), default="draft", nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="published", nullable=False, index=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     target_audience: Mapped[list[str] | None] = mapped_column(
@@ -103,9 +103,6 @@ class Announcement(db.Model):
         "AnnouncementCategory", lazy="joined"
     )
     author: Mapped["User"] = relationship("User", foreign_keys=[author_id], lazy="joined")
-    approvals: Mapped[list["AnnouncementApproval"]] = relationship(
-        back_populates="announcement", cascade="all, delete-orphan"
-    )
     attachments: Mapped[list["AnnouncementAttachment"]] = relationship(
         back_populates="announcement", cascade="all, delete-orphan", lazy="selectin"
     )
@@ -117,7 +114,7 @@ class Announcement(db.Model):
     def soft_delete(self) -> None:
         self.deleted_at = utcnow()
 
-    def to_dict(self, include_approvals: bool = False) -> dict:
+    def to_dict(self) -> dict:
         """Return a plain dict representation."""
         data = {
             "id": str(self.id),
@@ -145,17 +142,6 @@ class Announcement(db.Model):
             "attachments": [attachment.to_dict() for attachment in self.attachments],
             "banner_url": self.banner_url,
         }
-        if include_approvals:
-            data["approvals"] = [
-                {
-                    "id": str(a.id),
-                    "reviewer_id": str(a.reviewer_id),
-                    "decision": a.decision,
-                    "comment": a.comment,
-                    "decided_at": a.decided_at.isoformat() if a.decided_at else None,
-                }
-                for a in self.approvals
-            ]
         return data
 
     @property
@@ -166,33 +152,6 @@ class Announcement(db.Model):
             if file and file.content_type.startswith("image/"):
                 return file.url
         return None
-
-
-class AnnouncementApproval(db.Model):
-    """Approval decision record for an announcement (history is append-only)."""
-
-    __tablename__ = "announcement_approvals"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    announcement_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("announcements.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    reviewer_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
-    )
-    decision: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
-    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
-    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utcnow, server_default=func.now(), nullable=False
-    )
-
-    announcement: Mapped[Announcement] = relationship(back_populates="approvals")
 
 
 class UploadedFile(db.Model):
@@ -266,7 +225,6 @@ class AnnouncementAttachment(db.Model):
 __all__ = [
     "AnnouncementCategory",
     "Announcement",
-    "AnnouncementApproval",
     "AnnouncementAttachment",
     "UploadedFile",
 ]

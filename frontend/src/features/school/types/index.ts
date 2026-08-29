@@ -1,4 +1,4 @@
-/** School structure types matching the backend API. */
+/** College structure types matching the backend API. */
 import type { ApiResponse, PaginationMeta } from "@/types/api";
 
 export interface Department {

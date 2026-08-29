@@ -1,7 +1,7 @@
 """Business logic for the registration module.
 
 Enforces registration rules: no duplicate registration, capacity limits with
-automatic waitlisting, team formation, approval workflow and cancellation.
+automatic waitlisting, team formation, registration review and cancellation.
 """
 
 from __future__ import annotations
@@ -48,11 +48,17 @@ class RegistrationService:
         self.events = EventRepository()
 
     def _get_open_event(self, event_id: uuid.UUID):
-        event = self.events.get_by_id(event_id)
+        event = db.session.scalar(
+            select(Event)
+            .where(Event.id == event_id, Event.deleted_at.is_(None))
+            .with_for_update()
+        )
         if event is None:
             raise NotFoundError("Event not found.")
-        if event.status not in {"approved", "ongoing"}:
+        if event.status != "approved":
             raise ValidationError("Registration is not open for this event.")
+        if utcnow() >= _as_aware_utc(event.start_time):
+            raise ValidationError("Registration closes when the event starts.")
         if event.registration_deadline and utcnow() > _as_aware_utc(event.registration_deadline):
             raise ValidationError("The registration deadline has passed.")
         return event
@@ -98,8 +104,14 @@ class RegistrationService:
                     raise ValidationError("You do not meet the eligibility requirements for this event.")
 
     def _validate_participant(self, user_id: uuid.UUID, event: Event) -> None:
-        if db.session.get(User, user_id) is None:
+        user = db.session.get(User, user_id)
+        if user is None or user.status != "active" or user.deleted_at is not None:
             raise ValidationError("One or more selected team members do not exist.")
+        profile = db.session.get(StudentProfile, user_id)
+        if profile is None or not profile.profile_completed:
+            raise ValidationError(
+                "Complete your college profile before registering for events."
+            )
         self._check_schedule_conflict(user_id, event)
         self._check_eligibility(user_id, event.id)
 
@@ -344,9 +356,10 @@ class RegistrationService:
         return registration
 
     # --- read -------------------------------------------------------------
-    def list_registrations(self, *, event_id=None, user_id=None, status=None):
+    def list_registrations(self, *, event_id=None, event_ids=None, user_id=None, status=None):
         return self.registrations.list_query(
             event_id=uuid.UUID(event_id) if event_id else None,
+            event_ids=event_ids,
             user_id=uuid.UUID(user_id) if user_id else None,
             status=status,
         )
@@ -374,6 +387,8 @@ class RegistrationService:
         if decision == "rejected":
             self._set_waitlist_state(event_id=reg.event_id, user_id=reg.user_id, waitlisted=False)
         self.registrations.commit()
+        if decision == "rejected":
+            self._promote_waitlist(reg.event_id)
         event = self.events.get_by_id(reg.event_id)
         if event:
             self._notify(reg.user_id, f"Registration {decision}", f"Your registration for '{event.title}' was {decision}.", event.id)
@@ -383,16 +398,18 @@ class RegistrationService:
         reg = self.get_registration(registration_id)
 
         # A registration may only be cancelled by its owner, its team leader,
-        # or a staff member with the explicit registrations.manage permission.
+        # or a manager of the associated event.
         is_owner = reg.user_id == actor_id
         is_team_leader = False
         if reg.team_id is not None:
             team = db.session.get(Team, reg.team_id)
             is_team_leader = team is not None and team.leader_id == actor_id
-        if not (is_owner or is_team_leader or has_permission(actor_id, "registrations.manage")):
-            raise AuthorizationError("You can only cancel your own registration.")
-        
+        from app.events.access import can_manage_event
         event = self.events.get_by_id(reg.event_id)
+        is_event_manager = event is not None and can_manage_event(actor_id, event)
+        if not (is_owner or is_team_leader or is_event_manager):
+            raise AuthorizationError("You can only cancel your own registration.")
+
         if event and event.registration_deadline and utcnow() > _as_aware_utc(event.registration_deadline):
             raise ValidationError("Cancellations are locked after the registration deadline.")
             
@@ -431,27 +448,34 @@ class RegistrationService:
         reg.deleted_at = utcnow()
         self._set_waitlist_state(event_id=reg.event_id, user_id=reg.user_id, waitlisted=False)
         self.registrations.commit()
+        self._promote_waitlist(reg.event_id)
 
     def _promote_waitlist(self, event_id: uuid.UUID) -> None:
         event = self.events.get_by_id(event_id)
-        if event is None or event.capacity is None:
+        if event is None:
             return
         active = self.registrations.count_active(event_id)
-        if active >= event.capacity:
+        if event.capacity is not None and active >= event.capacity:
             return
         for entry in self.waitlists.list_for_event(event_id):
+            if event.capacity is not None and active >= event.capacity:
+                break
             reg = self.registrations.get_for_user_event(entry.user_id, event_id)
             if reg and reg.status == "waitlisted":
                 reg.status = "pending" if event.approval_required else "approved"
                 entry.promoted = True
                 self.registrations.commit()
+                active += 1
                 self._notify(
                     reg.user_id,
                     f"Registration {reg.status}",
                     f"You were moved from the waitlist for '{event.title}'.",
                     event.id,
                 )
-                break
+
+    def fill_waitlist(self, event_id: uuid.UUID) -> None:
+        """Fill every newly available seat after a capacity change."""
+        self._promote_waitlist(event_id)
 
 
 __all__ = ["RegistrationService"]

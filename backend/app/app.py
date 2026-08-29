@@ -12,7 +12,7 @@ from flask import Flask
 from app.common.registry import register_blueprints
 from app.common.responses import success_response
 from app.config import get_config, validate_security_config
-from app.extensions import cache, cors, db, jwt, limiter, mail, migrate, socketio
+from app.extensions import cors, db, jwt, limiter, migrate, socketio
 from app.middleware import (
     configure_logging,
     register_error_handlers,
@@ -50,8 +50,6 @@ def _init_extensions(app: Flask) -> None:
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    mail.init_app(app)
-    cache.init_app(app)
     limiter.init_app(app)
     cors.init_app(
         app,
@@ -95,7 +93,7 @@ def _configure_jwt() -> None:
 
     @jwt.token_in_blocklist_loader
     def check_blocklist(_jwt_header, jwt_data):
-        """Reject access tokens for soft-deleted users."""
+        """Reject tokens for deleted, inactive, or suspended users."""
         identity = jwt_data.get("sub")
         if not identity:
             return True
@@ -104,7 +102,11 @@ def _configure_jwt() -> None:
         except (ValueError, TypeError):
             return True
         user = db.session.get(User, user_id)
-        return user is None or user.deleted_at is not None
+        return (
+            user is None
+            or user.deleted_at is not None
+            or user.status != "active"
+        )
 
 
 def _register_healthcheck(app: Flask) -> None:
@@ -128,6 +130,19 @@ def _register_healthcheck(app: Flask) -> None:
         return success_response(
             data={"status": "ok", "service": app.config.get("APP_NAME")},
             message="Service is healthy.",
+        )
+
+    @app.get("/ready")
+    def ready():
+        """Return readiness only when the database is reachable."""
+        from sqlalchemy import text
+
+        from app.extensions import db
+
+        db.session.execute(text("SELECT 1"))
+        return success_response(
+            data={"status": "ready", "service": app.config.get("APP_NAME")},
+            message="Service is ready.",
         )
 
 

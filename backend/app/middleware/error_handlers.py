@@ -46,6 +46,15 @@ def register_error_handlers(app: Flask) -> None:
             error_code="validation_error",
         )
 
+    @app.errorhandler(ValueError)
+    def handle_value_error(_error: ValueError):
+        """Treat malformed identifiers and primitive values as request errors."""
+        return error_response(
+            message="Invalid identifier or value.",
+            status_code=422,
+            error_code="validation_error",
+        )
+
     @app.errorhandler(HTTPException)
     def handle_http_exception(error: HTTPException):
         """Convert Werkzeug HTTP exceptions into standardized responses."""

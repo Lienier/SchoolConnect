@@ -1,4 +1,4 @@
-/** Form to create a new announcement (draft or submit for approval). */
+/** Form to create and publish a new announcement. */
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileText, Image as ImageIcon, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Checkbox } from "@/components/ui/Checkbox";
 import { announcementSchema, type AnnouncementFormValues } from "@/features/announcements/validators";
 import type { AnnouncementCategory } from "@/features/announcements/types";
 
@@ -18,7 +17,6 @@ interface Props {
   categories: AnnouncementCategory[];
   onSubmit: (values: AnnouncementFormValues, files: File[]) => Promise<void>;
   isSubmitting: boolean;
-  showApprovalOption?: boolean;
   submitLabel?: string;
 }
 
@@ -26,7 +24,6 @@ export function CreateAnnouncementForm({
   categories,
   onSubmit,
   isSubmitting,
-  showApprovalOption = true,
   submitLabel = "Create Announcement",
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
@@ -36,7 +33,7 @@ export function CreateAnnouncementForm({
     formState: { errors },
   } = useForm<AnnouncementFormValues>({
     resolver: zodResolver(announcementSchema),
-    defaultValues: { priority: "normal", submit_for_approval: false },
+    defaultValues: { priority: "normal" },
   });
   const accept = "image/png,image/jpeg,image/jpg,image/gif,application/pdf,.docx,.xlsx";
   const totalSize = useMemo(
@@ -159,7 +156,6 @@ export function CreateAnnouncementForm({
             </div>
           )}
         </div>
-        {showApprovalOption && <Checkbox {...register("submit_for_approval")} label="Submit for approval" />}
         <Button type="submit" isLoading={isSubmitting} className="w-full">
           {submitLabel}
         </Button>

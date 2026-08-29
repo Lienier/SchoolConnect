@@ -1,36 +1,28 @@
 """Business logic for the auth module.
 
-Handles password hashing, JWT issuance/rotation, refresh-token storage,
-password reset, email verification and Google OAuth linkage. Services raise
-domain exceptions; routes translate them into standardized responses.
+Handles password hashing, JWT issuance/rotation, refresh-token storage, and
+authenticated password changes.
 """
 
 from __future__ import annotations
 
 import uuid
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import bcrypt
 from flask_jwt_extended import create_access_token
 
-from app.auth.constants import OAUTH_PROVIDERS
-from app.auth.model import OAuthAccount, RefreshToken, User
+from app.auth.model import RefreshToken, User
 from app.auth.repository import (
-    EmailVerificationTokenRepository,
-    OAuthAccountRepository,
-    PasswordResetTokenRepository,
     RefreshTokenRepository,
     UserRepository,
 )
-from app.common.exceptions import AuthenticationError, ConflictError, NotFoundError, ValidationError
-from app.permissions.model import Role, UserRole
+from app.common.exceptions import AuthenticationError, ValidationError
 from app.utils.security import generate_random_token
 
 # Token lifetime mirrors JWT config but is enforced on the hashed refresh row.
 REFRESH_TOKEN_BYTES = 48
-RESET_TOKEN_TTL_HOURS = 1
-VERIFY_TOKEN_TTL_HOURS = 24
 
 
 class AuthService:
@@ -39,9 +31,6 @@ class AuthService:
     def __init__(self) -> None:
         self.users = UserRepository()
         self.refresh_tokens = RefreshTokenRepository()
-        self.oauth = OAuthAccountRepository()
-        self.resets = PasswordResetTokenRepository()
-        self.verifications = EmailVerificationTokenRepository()
 
     # --- password helpers -------------------------------------------------
     @staticmethod
@@ -59,51 +48,6 @@ class AuthService:
         """Return the hex SHA-256 digest of a raw token (store hash only)."""
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
-    # --- registration -----------------------------------------------------
-    def register(
-        self, *, email: str, password: str, full_name: str, first_name=None,
-        last_name=None, username=None,
-    ) -> User:
-        """Create a new user with the default ``student`` role."""
-        if self.users.get_by_email(email):
-            raise ConflictError("An account with this email already exists.")
-        if username and self.users.get_by_username(username):
-            raise ConflictError("This username is already taken.")
-
-        user = User(
-            email=email,
-            password_hash=self._hash_password(password),
-            full_name=full_name,
-            first_name=first_name,
-            last_name=last_name,
-            username=username,
-            status="active",
-        )
-        self.users.add(user)
-        self.users.flush()
-        self._assign_default_role(user)
-        self.users.commit()
-        return user
-
-    def _assign_default_role(self, user: User) -> None:
-        """Assign the default ``student`` role to a new user."""
-        role = self._get_role_by_name("student")
-        link = UserRole(user_id=user.id, role_id=role.id)
-        from app.extensions import db
-
-        db.session.add(link)
-        db.session.flush()
-
-    @staticmethod
-    def _get_role_by_name(name: str) -> Role:
-        from app.extensions import db
-        from sqlalchemy import select
-
-        role = db.session.scalar(select(Role).where(Role.name == name))
-        if role is None:
-            raise NotFoundError(f"Default role '{name}' not found. Run seed first.")
-        return role
-
     # --- login ------------------------------------------------------------
     def authenticate(self, *, email: str, password: str) -> User:
         """Validate credentials and return the active user."""
@@ -112,7 +56,7 @@ class AuthService:
             raise AuthenticationError("Invalid email or password.")
         if not self._verify_password(password, user.password_hash):
             raise AuthenticationError("Invalid email or password.")
-        if user.status not in ("active", "invited"):
+        if user.status != "active":
             raise AuthenticationError("This account is not active.")
         return user
 
@@ -165,7 +109,7 @@ class AuthService:
         if row.expires_at < datetime.now(timezone.utc):
             raise AuthenticationError("Refresh token expired.")
         user = self.users.get_by_id(row.user_id)
-        if user is None or user.status not in ("active", "invited"):
+        if user is None or user.status != "active":
             raise AuthenticationError("User is no longer active.")
         row.revoked_at = datetime.now(timezone.utc)
         self.refresh_tokens.commit()
@@ -186,116 +130,6 @@ class AuthService:
             if row is not None:
                 row.revoked_at = datetime.now(timezone.utc)
                 self.refresh_tokens.commit()
-
-    # --- password reset ---------------------------------------------------
-    def create_password_reset(self, email: str) -> str | None:
-        """Generate a reset token; returns raw token or None if no user."""
-        from app.auth.model import PasswordResetToken
-
-        user = self.users.get_by_email(email)
-        if user is None:
-            return None
-        raw = generate_random_token(REFRESH_TOKEN_BYTES)
-        row = PasswordResetToken(
-            user_id=user.id,
-            token_hash=self._sha256(raw),
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(hours=RESET_TOKEN_TTL_HOURS),
-        )
-        self.resets.add(row)
-        self.resets.commit()
-        return raw
-
-    def reset_password(self, token: str, new_password: str) -> None:
-        """Consume a reset token and set a new password."""
-        from sqlalchemy import select
-        from app.auth.model import PasswordResetToken
-        from app.extensions import db
-
-        row = db.session.scalar(
-            select(PasswordResetToken).where(
-                PasswordResetToken.token_hash == self._sha256(token)
-            )
-        )
-        if row is None or row.consumed_at is not None:
-            raise ValidationError("Invalid or expired reset token.")
-        if row.expires_at < datetime.now(timezone.utc):
-            raise ValidationError("Invalid or expired reset token.")
-        user = self.users.get_by_id(row.user_id)
-        if user is None:
-            raise NotFoundError("User not found.")
-        user.password_hash = self._hash_password(new_password)
-        row.consumed_at = datetime.now(timezone.utc)
-        self.refresh_tokens.revoke_all_for_user(user.id)
-        self.users.commit()
-
-    # --- email verification ----------------------------------------------
-    def create_email_verification(self, user: User) -> str:
-        """Generate an email verification token for ``user``."""
-        from app.auth.model import EmailVerificationToken
-
-        raw = generate_random_token(REFRESH_TOKEN_BYTES)
-        row = EmailVerificationToken(
-            user_id=user.id,
-            token_hash=self._sha256(raw),
-            expires_at=datetime.now(timezone.utc)
-            + timedelta(hours=VERIFY_TOKEN_TTL_HOURS),
-        )
-        self.verifications.add(row)
-        self.verifications.commit()
-        return raw
-
-    def verify_email(self, token: str) -> None:
-        """Mark a user's email as verified using the token."""
-        from sqlalchemy import select
-        from app.auth.model import EmailVerificationToken
-        from app.extensions import db
-
-        row = db.session.scalar(
-            select(EmailVerificationToken).where(
-                EmailVerificationToken.token_hash == self._sha256(token)
-            )
-        )
-        if row is None or row.verified_at is not None:
-            raise ValidationError("Invalid verification token.")
-        if row.expires_at < datetime.now(timezone.utc):
-            raise ValidationError("Verification token expired.")
-        user = self.users.get_by_id(row.user_id)
-        if user is None:
-            raise NotFoundError("User not found.")
-        user.email_verified = True
-        row.verified_at = datetime.now(timezone.utc)
-        self.users.commit()
-
-    # --- OAuth ------------------------------------------------------------
-    def oauth_login_or_register(
-        self, *, provider: str, provider_user_id: str, email: str,
-        full_name: str,
-    ) -> User:
-        """Find or create a user from an external OAuth identity."""
-        if provider not in OAUTH_PROVIDERS:
-            raise ValidationError("Unsupported OAuth provider.")
-        account = self.oauth.get_by_provider(provider, provider_user_id)
-        if account is not None:
-            return self.users.get_by_id(account.user_id)
-
-        user = self.users.get_by_email(email)
-        if user is None:
-            user = User(
-                email=email,
-                full_name=full_name,
-                status="active",
-                email_verified=True,
-            )
-            self.users.add(user)
-            self.users.flush()
-            self._assign_default_role(user)
-        account = OAuthAccount(
-            user_id=user.id, provider=provider, provider_user_id=provider_user_id
-        )
-        self.oauth.add(account)
-        self.users.commit()
-        return user
 
     def change_password(
         self, user: User, *, current_password: str, new_password: str

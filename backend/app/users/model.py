@@ -1,7 +1,7 @@
 """SQLAlchemy models for the users module.
 
 Includes user profile sub-types (student, teacher, administrator, officer)
-sharing the primary key with ``users`` (strict 1:1), plus school-structure
+sharing the primary key with ``users`` (strict 1:1), plus college-structure
 entities: departments, courses, sections, organizations, academic years and
 semesters.
 """
@@ -46,11 +46,15 @@ class StudentProfile(db.Model):
     department_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("departments.id"), nullable=True, index=True
     )
+    course_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("courses.id"), nullable=True, index=True
+    )
     section_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("sections.id"), nullable=True
     )
     year_level: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     birth_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
+    profile_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     __table_args__ = (
         CheckConstraint("year_level IS NULL OR year_level > 0", name="ck_student_year_level"),
@@ -102,7 +106,7 @@ class OfficerProfile(db.Model):
 
 
 # --------------------------------------------------------------------------
-# School structure
+# College structure
 # --------------------------------------------------------------------------
 class Department(db.Model):
     """Academic department."""

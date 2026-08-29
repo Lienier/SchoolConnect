@@ -12,7 +12,7 @@ import { BulletinFeed } from "@/features/announcements/components/BulletinFeed";
 import { announcementsApi } from "@/features/announcements/services/announcementsApi";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/providers/ToastProvider";
-import { CheckCircle2, Plus, RotateCcw, Trash2, X } from "lucide-react";
+import { Archive, Plus, Trash2 } from "lucide-react";
 import type { Announcement } from "@/features/announcements/types";
 import { useAuth } from "@/features/auth/context/AuthContext";
 
@@ -28,9 +28,9 @@ export default function AnnouncementsPage() {
     confirmLabel: string;
     variant?: "primary" | "danger" | "secondary";
     successMessage: string;
-    action: () => Promise<void>;
+    action: () => Promise<unknown>;
   } | null>(null);
-  const canManage = can("announcements.approve") || can("announcements.delete") || can("announcements.update");
+  const canManage = can("announcements.delete") || can("announcements.update");
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
 
   const management = useQuery({
@@ -55,17 +55,11 @@ export default function AnnouncementsPage() {
     message: string,
     confirmLabel: string,
     successMessage: string,
-    action: () => Promise<void>,
+    action: () => Promise<unknown>,
     variant: "primary" | "danger" | "secondary" = "primary",
   ) => setPendingAction({ title, message, itemName: announcement.title, confirmLabel, successMessage, action, variant });
-  const runAction = (announcement: Announcement, decision: "approved" | "rejected" | "returned") => {
-    if (decision === "approved") return announcementsApi.approve(announcement.id, decision);
-    return announcementsApi.approve(announcement.id, decision, decision === "returned" ? "Returned for revision." : "Rejected.");
-  };
-  const statusTone = (status: string) => status === "published" ? "success" : status === "pending_approval" ? "warning" : status === "archived" ? "neutral" : "info";
+  const statusTone = (status: string) => status === "published" ? "success" : "neutral";
   const items = (management.data?.data ?? []).filter((item) => !isProfessor || item.author_id === user?.id);
-  const lastReview = (announcement: Announcement) =>
-    announcement.approvals?.filter((approval) => approval.decision !== "approved").at(-1);
 
   return (
     <div className="space-y-8">
@@ -74,7 +68,7 @@ export default function AnnouncementsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
             <div>
               <h2 className="font-bold text-[#102858]">{isProfessor ? "My Professor Announcements" : "Announcement Management"}</h2>
-              <p className="text-sm text-slate-500">{isProfessor ? "Track drafts, pending submissions, returned notes, and published posts." : "Review, publish, return, or remove announcements."}</p>
+              <p className="text-sm text-slate-500">{isProfessor ? "Track your posted announcements." : "Hide, archive, or remove announcements."}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Link to="/announcements/new">
@@ -91,7 +85,6 @@ export default function AnnouncementsPage() {
                   <tr key={item.id}>
                     <td className="font-semibold text-[#102858]">
                       {item.title}
-                      {lastReview(item)?.comment && <p className="mt-1 text-xs font-normal text-amber-700">{lastReview(item)?.comment}</p>}
                     </td>
                     <td>{item.author_name ?? "Unknown"}</td>
                     <td className="capitalize">{item.priority}</td>
@@ -99,9 +92,7 @@ export default function AnnouncementsPage() {
                     <td>{new Date(item.created_at).toLocaleDateString()}</td>
                     <td>
                       <div className="flex flex-wrap gap-2">
-                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" onClick={() => confirm(item, "Approve announcement", "This will publish the announcement to the school feed for its selected audience.", "Approve", "Announcement approved.", () => runAction(item, "approved"))}><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Approve</Button>}
-                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" variant="secondary" onClick={() => confirm(item, "Return announcement", "This will send the announcement back for revision instead of publishing it.", "Return", "Announcement returned for revision.", () => runAction(item, "returned"), "secondary")}><RotateCcw className="mr-1.5 h-3.5 w-3.5" />Return</Button>}
-                        {!isProfessor && can("announcements.approve") && item.status === "pending_approval" && <Button size="sm" variant="danger" onClick={() => confirm(item, "Reject announcement", "This will reject the announcement and keep it out of the school feed.", "Reject", "Announcement rejected.", () => runAction(item, "rejected"), "danger")}><X className="mr-1.5 h-3.5 w-3.5" />Reject</Button>}
+                        {can("announcements.update") && item.status !== "archived" && <Button size="sm" variant="secondary" onClick={() => confirm(item, "Archive announcement", "This will hide the announcement from the college feed without deleting its record.", "Archive", "Announcement archived.", () => announcementsApi.archive(item.id), "secondary")}><Archive className="mr-1.5 h-3.5 w-3.5" />Archive</Button>}
                         {can("announcements.delete") && <Button size="sm" variant="danger" onClick={() => confirm(item, "Delete announcement", "This will remove the announcement from management views and the feed.", "Delete", "Announcement deleted.", () => announcementsApi.remove(item.id), "danger")}><Trash2 className="mr-1.5 h-3.5 w-3.5" />Delete</Button>}
                       </div>
                     </td>
@@ -117,7 +108,7 @@ export default function AnnouncementsPage() {
 
       <BulletinFeed
         title="Announcements"
-        description="Use the tabs to focus on school announcements, upcoming events, or pinned notices."
+        description="Use the tabs to focus on college announcements, upcoming events, or pinned notices."
         defaultTab="all"
         showHeader={false}
       />

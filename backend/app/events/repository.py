@@ -9,7 +9,6 @@ from sqlalchemy import select, or_
 from app.events.model import (
     CalendarEvent,
     Event,
-    EventApproval,
     EventAttachment,
     EventCategory,
     EventRequirement,
@@ -80,19 +79,11 @@ class EventCategoryRepository:
         db.session.commit()
 
 
-class EventApprovalRepository:
-    """Persistence operations for ``EventApproval``."""
-
-    def add(self, entity: EventApproval) -> EventApproval:
-        db.session.add(entity)
-        return entity
-
-    def commit(self) -> None:
-        db.session.commit()
-
-
 class CalendarEventRepository:
     """Persistence operations for ``CalendarEvent``."""
+
+    def get_for_event(self, event_id: uuid.UUID) -> CalendarEvent | None:
+        return db.session.scalar(select(CalendarEvent).where(CalendarEvent.event_id == event_id))
 
     def add(self, entity: CalendarEvent) -> CalendarEvent:
         db.session.add(entity)

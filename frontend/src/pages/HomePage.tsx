@@ -91,7 +91,7 @@ export default function HomePage() {
                 Stay informed. Get involved. Be connected.
               </h1>
               <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 dark:text-navy-300 sm:text-lg">
-                A focused platform for school announcements, upcoming events, registration,
+                A focused platform for college announcements, upcoming events, registration,
                 attendance, and community updates.
               </p>
 
@@ -115,7 +115,7 @@ export default function HomePage() {
         </section>
 
         <section id="features" className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
-          <FeatureCard title="Latest Announcements" text="Read official updates and notices from the school." to="#announcements" />
+          <FeatureCard title="Latest Announcements" text="Read official updates and notices from the college." to="#announcements" />
           <FeatureCard title="Upcoming Events" text="Browse activities, deadlines, venues, and schedules." to="#events" />
           <FeatureCard title="Easy Registration" text="Register for approved events with guided status updates." to="/events" />
           <FeatureCard title="Connected Community" text="Keep students, professors, officers, and admins aligned." to="/announcements" />
@@ -168,7 +168,7 @@ export default function HomePage() {
               <p className="text-lg font-bold">School<span className="text-blue-200">Connect</span></p>
             </div>
             <p className="mt-4 max-w-md text-sm leading-6 text-blue-50/80">
-              A centralized school bulletin and event registration platform for students,
+              A centralized college bulletin and event registration platform for students,
               professors, student leaders, and administrators.
             </p>
           </div>

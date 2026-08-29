@@ -1,4 +1,4 @@
-"""Pydantic request validators for school-structure entities."""
+"""Pydantic request validators for college-structure entities."""
 
 from __future__ import annotations
 

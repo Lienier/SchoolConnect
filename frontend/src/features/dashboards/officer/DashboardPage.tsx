@@ -1,4 +1,4 @@
-/** Student Council Officer dashboard: proposals, drafts, pending approvals. */
+/** Student Council Officer dashboard: events, announcements, and activity. */
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, ClipboardList, Megaphone, Plus } from "lucide-react";
@@ -12,7 +12,7 @@ import { dashboardApi } from "@/features/dashboard/services/dashboardApi";
 export default function OfficerDashboardPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard", "stats", "officer"],
-    queryFn: () => dashboardApi.stats(["my_events", "pending_approvals", "draft_announcements"]),
+    queryFn: () => dashboardApi.stats(["officer_proposals", "open_registrations", "total_announcements"]),
   });
 
   return (
@@ -25,13 +25,13 @@ export default function OfficerDashboardPage() {
               Council workspace
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-navy-300">
-              Propose events, draft announcements, and follow submissions through school review.
+              Create events, post announcements, and keep college activities organized.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link to="/events/new">
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
-                  Propose event
+                  New event
                 </Button>
               </Link>
               <Link to="/announcements">
@@ -43,17 +43,17 @@ export default function OfficerDashboardPage() {
             </div>
           </div>
           <div className="grid grid-cols-3 border-t border-slate-200 bg-slate-50 dark:border-navy-800 dark:bg-navy-900 lg:border-l lg:border-t-0">
-            <Metric label="My Events" value={isLoading ? "..." : (stats?.my_events ?? 0)} />
-            <Metric label="Pending" value={isLoading ? "..." : (stats?.pending_approvals ?? 0)} />
-            <Metric label="Drafts" value={isLoading ? "..." : (stats?.draft_announcements ?? 0)} />
+            <Metric label="My Events" value={isLoading ? "..." : (stats?.officer_proposals ?? 0)} />
+            <Metric label="Registrations" value={isLoading ? "..." : (stats?.open_registrations ?? 0)} />
+            <Metric label="Announcements" value={isLoading ? "..." : (stats?.total_announcements ?? 0)} />
           </div>
         </div>
       </section>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <IconStat label="My Events" value={isLoading ? "..." : (stats?.my_events ?? 0)} icon={CalendarDays} />
-        <IconStat label="Pending Approvals" value={isLoading ? "..." : (stats?.pending_approvals ?? 0)} icon={ClipboardList} tone="warning" />
-        <IconStat label="Draft Announcements" value={isLoading ? "..." : (stats?.draft_announcements ?? 0)} icon={Megaphone} tone="info" />
+        <IconStat label="My Events" value={isLoading ? "..." : (stats?.officer_proposals ?? 0)} icon={CalendarDays} />
+        <IconStat label="Open Registrations" value={isLoading ? "..." : (stats?.open_registrations ?? 0)} icon={ClipboardList} tone="warning" />
+        <IconStat label="Announcements" value={isLoading ? "..." : (stats?.total_announcements ?? 0)} icon={Megaphone} tone="info" />
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -61,13 +61,13 @@ export default function OfficerDashboardPage() {
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold text-[#102858] dark:text-white">Planning</h2>
             <Link to="/events/new" className="text-xs font-semibold text-blue-700 hover:underline dark:text-blue-300">
-              Propose event
+              New event
             </Link>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <ActionLink icon={Plus} label="Propose Event" to="/events/new" />
+            <ActionLink icon={Plus} label="New Event" to="/events/new" />
             <ActionLink icon={CalendarDays} label="My Events" to="/events" />
-            <ActionLink icon={Megaphone} label="Draft Announcements" to="/announcements" />
+            <ActionLink icon={Megaphone} label="Announcements" to="/announcements" />
             <ActionLink icon={ClipboardList} label="My Registrations" to="/registrations/mine" />
           </div>
         </Card>
@@ -83,7 +83,7 @@ export default function OfficerDashboardPage() {
 
       <BulletinFeed
         title="Council bulletin"
-        description="A feed-style view of updates, approvals, and upcoming school events."
+        description="A feed-style view of updates and upcoming college events."
         compact
         showHero={false}
         showHeader={false}

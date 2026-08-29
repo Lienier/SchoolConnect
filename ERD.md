@@ -429,7 +429,7 @@ erDiagram
     ROLES }|--o{ ROLE_PERMISSIONS : "has"
     PERMISSIONS }|--o{ ROLE_PERMISSIONS : "granted_to"
 
-    %% School Structure
+    %% College Structure
     DEPARTMENTS ||--o{ COURSES : "offers"
     COURSES ||--o{ SECTIONS : "has"
     SEMESTERS ||--o{ SECTIONS : "contains"

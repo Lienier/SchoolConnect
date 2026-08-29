@@ -7,7 +7,6 @@ export const announcementSchema = z.object({
   summary: z.string().max(300, "Summary is too long.").optional().or(z.literal("")),
   category_id: z.string().optional().or(z.literal("")),
   priority: z.enum(["normal", "important", "urgent"]),
-  submit_for_approval: z.boolean().default(false),
 });
 
 export type AnnouncementFormValues = z.infer<typeof announcementSchema>;

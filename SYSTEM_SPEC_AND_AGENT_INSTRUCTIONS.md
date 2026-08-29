@@ -1,6 +1,6 @@
 # SchoolConnect: Detailed System Requirement Specification & AI Execution Manual
 
-> **Project Target:** SchoolConnect — School Bulletin and Event Registration System  
+> **Project Target:** SchoolConnect — College Bulletin and Event Registration System
 > **Status:** ~65–70% Complete. Core models, RBAC, database schema, and endpoints exist. Fine-grained algorithms, approval workflows, schedule conflict checks, eligibility matching, and role-specific UI views require full implementation.
 
 ---
@@ -109,7 +109,7 @@ To replace static landing pages, the application root (`/`) and student bulletin
    - Add `team_code` string generator (e.g. `SC-8X92`) in `backend/app/registrations/model.py` and a `join_by_code()` service endpoint.
 
 # SchoolConnect: System Requirement Specification & AI Agent Execution Guide
-> **Project Target:** SchoolConnect — School Bulletin and Event Registration System  
+> **Project Target:** SchoolConnect — College Bulletin and Event Registration System
 > **Status:** Partially Reflected (~65–70% Complete). Core models, RBAC, database schema, and endpoints exist. Fine-grained algorithms, approval workflows, schedule conflict checks, eligibility matching, and role-specific UI views require full implementation.
 ---
 ## 1. Project Alignment Overview

@@ -1,8 +1,6 @@
 """SQLAlchemy models for authentication and account security.
 
-Includes ``User`` plus the token/identity tables used for refresh tokens,
-OAuth linkage, password resets and email verification. All token tables store
-only hashes of the sensitive value, never the raw token.
+Includes ``User`` and hashed refresh-token rows for authenticated sessions.
 """
 
 from __future__ import annotations
@@ -17,7 +15,6 @@ from sqlalchemy import (
     Boolean,
     Text,
     CheckConstraint,
-    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, CITEXT, INET
@@ -43,6 +40,7 @@ class User(db.Model):
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
     first_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    middle_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
     last_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), default="invited", nullable=False
@@ -79,9 +77,6 @@ class User(db.Model):
     refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
-    oauth_accounts: Mapped[list["OAuthAccount"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
 
     __table_args__ = (
         CheckConstraint(
@@ -107,6 +102,7 @@ class User(db.Model):
             "username": self.username,
             "full_name": self.full_name,
             "first_name": self.first_name,
+            "middle_name": self.middle_name,
             "last_name": self.last_name,
             "status": self.status,
             "email_verified": self.email_verified,
@@ -148,85 +144,7 @@ class RefreshToken(db.Model):
     user: Mapped[User] = relationship(back_populates="refresh_tokens")
 
 
-class OAuthAccount(db.Model):
-    """External OAuth identity linked to a local user."""
-
-    __tablename__ = "oauth_accounts"
-    __table_args__ = (
-        UniqueConstraint(
-            "provider", "provider_user_id", name="uq_oauth_provider_user"
-        ),
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    provider: Mapped[str] = mapped_column(String(30), nullable=False)
-    provider_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    access_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
-    refresh_token_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow, server_default=func.now(), nullable=False
-    )
-
-    user: Mapped[User] = relationship(back_populates="oauth_accounts")
-
-
-class PasswordResetToken(db.Model):
-    """Single-use password reset token (hash only)."""
-
-    __tablename__ = "password_reset_tokens"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    token_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow, server_default=func.now(), nullable=False
-    )
-
-
-class EmailVerificationToken(db.Model):
-    """Email verification token (hash only)."""
-
-    __tablename__ = "email_verification_tokens"
-
-    id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    token_hash: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow, server_default=func.now(), nullable=False
-    )
-
-
 __all__ = [
     "User",
     "RefreshToken",
-    "OAuthAccount",
-    "PasswordResetToken",
-    "EmailVerificationToken",
 ]

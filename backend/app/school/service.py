@@ -1,4 +1,4 @@
-"""Business logic for the school-structure module.
+"""Business logic for the college-structure module.
 
 Each entity type gets create/get/update/delete operations with referential and
 uniqueness validation. Delete operations guard against orphaning dependent rows
@@ -35,7 +35,7 @@ def _as_uuid(value: str | None) -> uuid.UUID | None:
 
 
 class SchoolStructureService:
-    """Coordinates CRUD across the school-structure entities."""
+    """Coordinates CRUD across the college-structure entities."""
 
     def __init__(self) -> None:
         self.departments = StructureRepository(Department)
