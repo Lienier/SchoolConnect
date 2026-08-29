@@ -7,7 +7,7 @@ from typing import List, Optional
 
 
 class AnnouncementCreateRequest(BaseModel):
-    """Payload to create a draft announcement."""
+    """Payload to publish an announcement."""
 
     title: str = Field(min_length=1, max_length=200)
     body: str = Field(min_length=1)

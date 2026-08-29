@@ -899,6 +899,38 @@ def test_professor_http_event_attendance_and_announcement_workflows(app_ctx):
     assert db.session.get(Announcement, uuid.UUID(created_announcement_id)).status == "published"
 
 
+def test_admin_created_announcement_is_published_immediately(app_ctx):
+    admin_role = _role(
+        "admin",
+        ["announcements.create", "announcements.view", "announcements.update"],
+    )
+    admin = _user("announcement.admin@example.com", admin_role)
+    client = app_ctx.test_client()
+    login = client.post(
+        "/api/auth/login",
+        json={"email": admin.email, "password": "Password123!"},
+    )
+    headers = {"Authorization": f"Bearer {login.get_json()['data']['access_token']}"}
+
+    response = client.post(
+        "/api/announcements",
+        json={
+            "title": "Campus reminder",
+            "body": "Bring your school ID for campus services.",
+            "priority": "normal",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 201
+    data = response.get_json()["data"]
+    assert data["status"] == "published"
+    assert data["published_at"] is not None
+    stored = db.session.get(Announcement, uuid.UUID(data["id"]))
+    assert stored is not None
+    assert stored.status == "published"
+
+
 def test_social_feed_includes_events_and_announcement_attachments(app_ctx):
     role = _role(
         "admin",
