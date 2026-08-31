@@ -1,7 +1,7 @@
 /** Dedicated council membership management for Student Council and department leaders. */
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Plus, Trash2, Users } from "lucide-react";
+import { Crown, Plus, Search, Trash2, Users } from "lucide-react";
 
 import { apiErrorMessage } from "@/api/errors";
 import { Badge } from "@/components/ui/Badge";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/AdminPrimitives";
 import { schoolApi } from "@/features/school/services/schoolApi";
-import type { CouncilMember, Department, Organization } from "@/features/school/types";
+import type { CouncilCandidate, CouncilMember, Department, Organization } from "@/features/school/types";
 import { useToast } from "@/providers/ToastProvider";
 
 const STUDENT_COUNCIL_POSITIONS = ["President", "Vice President", "Secretary", "Treasurer", "Auditor", "PIO", "Representative"];
@@ -28,6 +28,7 @@ export default function CouncilMembersPage() {
   const qc = useQueryClient();
   const [selectedCouncilId, setSelectedCouncilId] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [candidateSearch, setCandidateSearch] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
   const [setupDepartmentId, setSetupDepartmentId] = useState("");
   const [draftMembers, setDraftMembers] = useState<DraftMember[] | null>(null);
@@ -98,6 +99,7 @@ export default function CouncilMembersPage() {
     setSelectedCouncilId(org.id);
     setDraftMembers(null);
     setSelectedUserId("");
+    setCandidateSearch("");
     setSelectedPosition("");
   };
 
@@ -116,6 +118,7 @@ export default function CouncilMembersPage() {
       },
     ]);
     setSelectedUserId("");
+    setCandidateSearch("");
     setSelectedPosition("");
   };
 
@@ -212,15 +215,20 @@ export default function CouncilMembersPage() {
                 </Button>
               </div>
 
-              <div className="grid gap-2 md:grid-cols-[1fr_220px_auto]">
-                <select value={selectedUserId} onChange={(event) => setSelectedUserId(event.target.value)} className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100">
-                  <option value="">Select student</option>
-                  {availableCandidates.map((candidate) => (
-                    <option key={candidate.user_id} value={candidate.user_id}>
-                      {candidate.full_name} {candidate.student_number ? `(${candidate.student_number})` : ""}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid gap-2 md:grid-cols-[minmax(360px,1fr)_220px_auto]">
+                <StudentCandidateSearch
+                  candidates={availableCandidates}
+                  selectedUserId={selectedUserId}
+                  search={candidateSearch}
+                  setSearch={(value) => {
+                    setCandidateSearch(value);
+                    setSelectedUserId("");
+                  }}
+                  onSelect={(candidate) => {
+                    setSelectedUserId(candidate.user_id);
+                    setCandidateSearch(candidateLabel(candidate));
+                  }}
+                />
                 <div className="space-y-1.5">
                   <select
                     value={selectedPosition}
@@ -292,6 +300,78 @@ function memberToDraft(member: CouncilMember): DraftMember {
     position: member.position ?? "",
     student_number: member.student_number,
   };
+}
+
+function StudentCandidateSearch({
+  candidates,
+  selectedUserId,
+  search,
+  setSearch,
+  onSelect,
+}: {
+  candidates: CouncilCandidate[];
+  selectedUserId: string;
+  search: string;
+  setSearch: (value: string) => void;
+  onSelect: (candidate: CouncilCandidate) => void;
+}) {
+  const selected = candidates.find((candidate) => candidate.user_id === selectedUserId);
+  const term = search.trim().toLowerCase();
+  const results = term
+    ? candidates.filter((candidate) => candidateSearchText(candidate).includes(term)).slice(0, 8)
+    : [];
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-navy-400" />
+        <input
+          value={search}
+          placeholder="Search student ID, first name, last name, email, username"
+          onChange={(event) => setSearch(event.target.value)}
+          className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-navy-900 outline-none transition focus:ring-2 focus:ring-navy-400 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 dark:focus:ring-blue-700"
+        />
+      </div>
+      {selected && (
+        <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-300">
+          Selected: {candidateLabel(selected)}
+        </p>
+      )}
+      {term && !selected && (
+        <div className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg dark:border-navy-800 dark:bg-navy-950">
+          {results.map((candidate) => (
+            <button
+              key={candidate.user_id}
+              type="button"
+              onClick={() => onSelect(candidate)}
+              className="block w-full px-3 py-2 text-left text-sm text-navy-900 hover:bg-blue-50 dark:text-navy-100 dark:hover:bg-navy-900"
+            >
+              <span className="block font-semibold">{candidate.full_name}</span>
+              <span className="mt-0.5 block text-xs text-slate-500 dark:text-navy-400">
+                {[candidate.student_number, candidate.username, candidate.email].filter(Boolean).join(" | ")}
+              </span>
+            </button>
+          ))}
+          {results.length === 0 && (
+            <div className="px-3 py-3 text-sm text-slate-500 dark:text-navy-400">No matching students.</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function candidateSearchText(candidate: CouncilCandidate) {
+  return [
+    candidate.full_name,
+    candidate.student_number,
+    candidate.email,
+    candidate.username,
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function candidateLabel(candidate: CouncilCandidate) {
+  return `${candidate.full_name}${candidate.student_number ? ` (${candidate.student_number})` : ""}`;
 }
 
 function departmentLabel(org: Organization, departments: Department[]) {
