@@ -88,7 +88,8 @@ class OrganizationCreateRequest(_Base):
 
     @model_validator(mode="after")
     def validate_positions(self):
-        if self.organization_type in {"student_council", "department_student_leaders"}:
+        organization_type = "department_organization" if self.organization_type == "department_student_leaders" else self.organization_type
+        if organization_type in {"student_council", "department_organization"}:
             if not [position for position in self.positions if position.strip()]:
                 raise ValueError("Council roles or positions are required.")
         return self

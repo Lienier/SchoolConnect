@@ -392,7 +392,7 @@ class UserService:
         if "student_council" in role_names:
             self._ensure_organization_position(self._student_council_organization(), officer_position)
         if "department_student_leader" in role_names:
-            self._ensure_organization_position(self._department_student_leaders_for(department_uuid), officer_position)
+            self._ensure_organization_position(self._department_organization_for(department_uuid), officer_position)
 
     def _create_role_profiles(
         self, user: User, *, role_names: set[str], student_number=None,
@@ -422,7 +422,7 @@ class UserService:
             organization = (
                 self._student_council_organization()
                 if "student_council" in role_names
-                else self._department_student_leaders_for(department_uuid)
+                else self._department_organization_for(department_uuid)
             )
             db.session.add(
                 OfficerProfile(
@@ -521,7 +521,7 @@ class UserService:
             organization = (
                 self._student_council_organization()
                 if "student_council" in role_names
-                else self._department_student_leaders_for(student_profile.department_id)
+                else self._department_organization_for(student_profile.department_id)
             )
             if organization is None:
                 raise ValidationError("Create the matching council organization in College Structure before assigning this role.")
@@ -555,18 +555,18 @@ class UserService:
         return council
 
     @staticmethod
-    def _department_student_leaders_for(department_id: uuid.UUID | None) -> Organization | None:
+    def _department_organization_for(department_id: uuid.UUID | None) -> Organization | None:
         if department_id is None:
             return None
-        leaders = db.session.scalar(
+        organization = db.session.scalar(
             select(Organization).where(
                 Organization.department_id == department_id,
-                Organization.organization_type == "department_student_leaders",
+                Organization.organization_type == "department_organization",
             )
         )
-        if leaders is None:
-            raise ValidationError("Create the department student leaders organization before assigning department student leaders.")
-        return leaders
+        if organization is None:
+            raise ValidationError("Create the department organization before assigning department student leaders.")
+        return organization
 
     @staticmethod
     def _ensure_organization_position(organization: Organization, position: str | None) -> None:

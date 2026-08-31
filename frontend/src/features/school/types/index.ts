@@ -29,7 +29,7 @@ export interface Organization {
   name: string;
   description: string | null;
   category: string | null;
-  organization_type: "college_wide" | "student_council" | "department_organization" | "department_student_leaders";
+  organization_type: "college_wide" | "student_council" | "department_organization";
   positions: string[];
   department_id: string | null;
   adviser_id: string | null;

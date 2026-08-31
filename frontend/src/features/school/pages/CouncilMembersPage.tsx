@@ -35,7 +35,7 @@ export default function CouncilMembersPage() {
   const departments = useQuery({ queryKey: ["college-structure", "departments", "all"], queryFn: () => schoolApi.listDepartments({ page_size: 250 }) });
   const organizations = useQuery({ queryKey: ["college-structure", "organizations", "councils"], queryFn: () => schoolApi.listOrganizations({ page_size: 500 }) });
   const councils = useMemo(
-    () => (organizations.data?.data ?? []).filter((org) => ["student_council", "department_student_leaders"].includes(org.organization_type)),
+    () => (organizations.data?.data ?? []).filter((org) => ["student_council", "department_organization"].includes(org.organization_type)),
     [organizations.data?.data],
   );
   const selectedCouncil = councils.find((org) => org.id === selectedCouncilId) ?? councils[0];
@@ -55,7 +55,7 @@ export default function CouncilMembersPage() {
   const availableCandidates = (candidates.data ?? []).filter((candidate) => !visibleMembers.some((member) => member.user_id === candidate.user_id));
   const hasStudentCouncil = councils.some((org) => org.organization_type === "student_council");
   const departmentsWithoutLeaders = (departments.data?.data ?? []).filter(
-    (department) => !councils.some((org) => org.organization_type === "department_student_leaders" && org.department_id === department.id),
+    (department) => !councils.some((org) => org.organization_type === "department_organization" && org.department_id === department.id),
   );
 
   const saveMembers = useMutation({
@@ -75,12 +75,12 @@ export default function CouncilMembersPage() {
       return schoolApi.createOrganization({
         organization_type: payload.organization_type,
         department_id: payload.department_id,
-        name: isStudentCouncil ? "Student Council" : `${department?.code ?? "Department"} Student Leaders`,
-        category: isStudentCouncil ? "Student Council" : "Department Student Leaders",
+        name: isStudentCouncil ? "Student Council" : `${department?.code ?? "Department"} Organization`,
+        category: isStudentCouncil ? "Student Council" : "Department Organization",
         positions: isStudentCouncil ? STUDENT_COUNCIL_POSITIONS : DEPARTMENT_LEADER_POSITIONS,
         description: isStudentCouncil
           ? "College-wide student council."
-          : `Student leaders for ${department?.name ?? "the selected department"}.`,
+          : `Department organization for ${department?.name ?? "the selected department"}.`,
       });
     },
     onSuccess: (created) => {
@@ -186,10 +186,10 @@ export default function CouncilMembersPage() {
                 className="w-full justify-start"
                 disabled={!setupDepartmentId || createCouncil.isPending}
                 isLoading={createCouncil.isPending}
-                onClick={() => createCouncil.mutate({ organization_type: "department_student_leaders", department_id: setupDepartmentId })}
+                onClick={() => createCouncil.mutate({ organization_type: "department_organization", department_id: setupDepartmentId })}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Create Department Leaders
+                Create Department Organization
               </Button>
             </div>
           </div>
@@ -296,5 +296,5 @@ function memberToDraft(member: CouncilMember): DraftMember {
 
 function departmentLabel(org: Organization, departments: Department[]) {
   const department = departments.find((item) => item.id === org.department_id);
-  return department ? `${department.code} - ${department.name}` : "Department Student Leaders";
+  return department ? `${department.code} - ${department.name}` : "Department Organization";
 }

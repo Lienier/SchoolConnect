@@ -72,9 +72,9 @@ class AssignRolesRequest(BaseModel):
                 raise ValueError("Officer position is required.")
         if "department_student_leader" in role_names:
             if not self.department_id:
-                raise ValueError("Department is required for Department Student Leaders.")
+                raise ValueError("Department is required for the Department Student Leader role.")
             if not self.course_id:
-                raise ValueError("Course is required for Department Student Leaders.")
+                raise ValueError("Course is required for the Department Student Leader role.")
         return self
 
 

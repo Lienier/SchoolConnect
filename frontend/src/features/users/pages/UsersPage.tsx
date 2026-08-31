@@ -386,7 +386,7 @@ function CreateUserForm({
   const filteredCourses = courses.filter((course) => !form.department_id || course.department_id === form.department_id);
   const filteredSections = sections.filter((section) => !form.course_id || section.course_id === form.course_id);
   const studentCouncil = organizations.find((organization) => organization.organization_type === "student_council");
-  const departmentLeaders = organizations.find((organization) => organization.department_id === form.department_id && organization.organization_type === "department_student_leaders");
+  const departmentLeaders = organizations.find((organization) => organization.department_id === form.department_id && organization.organization_type === "department_organization");
   const positionOptions = (form.role === "student_council" ? studentCouncil?.positions : departmentLeaders?.positions) ?? [];
   const setRole = (roleName: SystemRole) => {
     setForm({
@@ -472,8 +472,8 @@ function CreateUserForm({
               : form.department_id
                 ? departmentLeaders
                   ? `Department student leaders: ${departmentLeaders.name}`
-                  : "Create this department's Student Leaders organization in College Structure before saving this account."
-                : "Select a department to connect this account to its department student leaders."}
+                  : "Create this department's organization in College Structure before saving this account."
+                : "Select a department to connect this account to its department organization."}
           </p>
         </div>
       )}
@@ -579,7 +579,7 @@ function isCreateFormValid(form: typeof emptyForm, organizations: Organization[]
     if (!council?.positions.includes(form.officer_position.trim())) return false;
   }
   if (form.role === "department_student_leader") {
-    const council = organizations.find((organization) => organization.department_id === form.department_id && organization.organization_type === "department_student_leaders");
+    const council = organizations.find((organization) => organization.department_id === form.department_id && organization.organization_type === "department_organization");
     if (!council?.positions.includes(form.officer_position.trim())) return false;
   }
   return true;
@@ -611,7 +611,7 @@ function RoleAssignmentFields({
   const filteredCourses = courses.filter((course) => !details.department_id || course.department_id === details.department_id);
   const filteredSections = sections.filter((section) => !details.course_id || section.course_id === details.course_id);
   const studentCouncil = organizations.find((organization) => organization.organization_type === "student_council");
-  const departmentLeaders = organizations.find((organization) => organization.department_id === details.department_id && organization.organization_type === "department_student_leaders");
+  const departmentLeaders = organizations.find((organization) => organization.department_id === details.department_id && organization.organization_type === "department_organization");
   const positionOptions = (officerRole === "student_council" ? studentCouncil?.positions : departmentLeaders?.positions) ?? [];
 
   const setDepartment = (department_id: string) => {
@@ -695,8 +695,8 @@ function RoleAssignmentFields({
               : details.department_id
                 ? departmentLeaders
                   ? `Department student leaders: ${departmentLeaders.name}`
-                  : "Create this department's Student Leaders organization in College Structure before assigning this role."
-                : "Select a department to connect this member to the correct department student leaders."}
+                  : "Create this department's organization in College Structure before assigning this role."
+                : "Select a department to connect this member to the correct department organization."}
           </p>
         </div>
       )}
@@ -715,7 +715,7 @@ function canUpdateRoles(selectedRoles: string[], details: typeof emptyRoleDetail
     const council = organizations.find((organization) => organization.organization_type === "student_council");
     return !!council?.positions.includes(details.officer_position.trim());
   }
-  const council = organizations.find((organization) => organization.department_id === details.department_id && organization.organization_type === "department_student_leaders");
+  const council = organizations.find((organization) => organization.department_id === details.department_id && organization.organization_type === "department_organization");
   return !!council?.positions.includes(details.officer_position.trim());
 }
 

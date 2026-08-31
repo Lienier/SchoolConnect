@@ -145,7 +145,7 @@ export default function SchoolPage() {
 function StructureGuide() {
   const steps = [
     { icon: Building2, label: "Department", detail: "Create the college unit first, for example CICS or CTE." },
-    { icon: GitBranch, label: "Councils and Leaders", detail: "Create the college Student Council and each department's student leaders." },
+    { icon: GitBranch, label: "Organizations and Leaders", detail: "Create the Student Council and one department organization per department, then define elected positions." },
     { icon: BookOpen, label: "Course", detail: "Attach each course or program to exactly one department." },
     { icon: CalendarDays, label: "Academic Year and Semester", detail: "Create the period where sections will exist." },
     { icon: Users, label: "Section", detail: "Attach the saved section to a course and semester." },
@@ -383,10 +383,10 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
   const setOrganizationType = (value: string) => {
     set("organization_type", value);
     if (["college_wide", "student_council"].includes(value)) set("department_id", "");
-    if (["student_council", "department_student_leaders"].includes(value) && !Array.isArray(form.positions)) {
+    if (["student_council", "department_organization"].includes(value) && !Array.isArray(form.positions)) {
       set("positions", defaultPositionsFor(value as OrganizationType));
     }
-    if (!["student_council", "department_student_leaders"].includes(value)) {
+    if (!["student_council", "department_organization"].includes(value)) {
       set("positions", []);
     }
   };
@@ -419,7 +419,6 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
                 <SelectItem value="college_wide">College-wide organization</SelectItem>
                 <SelectItem value="student_council">Student Council</SelectItem>
                 <SelectItem value="department_organization">Department organization</SelectItem>
-                <SelectItem value="department_student_leaders">Department Student Leaders</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -434,7 +433,7 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
         textField("name", "Name"),
         textField("category", "Category"),
         textField("description", "Description"),
-        ["student_council", "department_student_leaders"].includes(String(form.organization_type ?? "college_wide")) && (
+        ["student_council", "department_organization"].includes(String(form.organization_type ?? "college_wide")) && (
           <OrganizationPositionsEditor
             key="positions"
             positions={Array.isArray(form.positions) ? form.positions.map(String) : defaultPositionsFor(String(form.organization_type ?? "college_wide") as OrganizationType)}
@@ -479,7 +478,7 @@ function helperText(entity: EntityKey) {
     departments: "Top-level academic units. Courses belong to departments.",
     courses: "Programs or courses offered by a department. Choose the department before saving.",
     sections: "Student groups under a course and semester. Choose the course and semester before saving.",
-    organizations: "College-wide groups, department organizations, and department councils.",
+    organizations: "College-wide groups, the Student Council, and each department's organization with elected positions.",
     academic_years: "The college year used to organize semesters.",
     semesters: "Terms inside an academic year. Sections are connected to semesters.",
   }[entity];
@@ -526,7 +525,7 @@ function formIsValid(entity: EntityKey, form: SchoolRecord) {
     case "organizations":
       return !!form.name
         && (["college_wide", "student_council"].includes(String(form.organization_type ?? "college_wide")) || !!form.department_id)
-        && (!["student_council", "department_student_leaders"].includes(String(form.organization_type ?? "college_wide")) || cleanPositions(form.positions).length > 0);
+        && (!["student_council", "department_organization"].includes(String(form.organization_type ?? "college_wide")) || cleanPositions(form.positions).length > 0);
     case "academic_years": return !!form.name && !!form.start_date && !!form.end_date;
     case "semesters": return !!form.academic_year_id && !!form.name && !!form.start_date && !!form.end_date;
   }
@@ -558,7 +557,6 @@ function organizationTypeLabel(type: OrganizationType) {
     college_wide: "College-wide Organization",
     student_council: "Student Council",
     department_organization: "Department Organization",
-    department_student_leaders: "Department Student Leaders",
   }[type];
 }
 
@@ -635,6 +633,6 @@ function cleanPositions(value: unknown) {
 
 function defaultPositionsFor(type: OrganizationType) {
   if (type === "student_council") return STUDENT_COUNCIL_POSITIONS;
-  if (type === "department_student_leaders") return DEPARTMENT_LEADER_POSITIONS;
+  if (type === "department_organization") return DEPARTMENT_LEADER_POSITIONS;
   return [];
 }

@@ -110,9 +110,9 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
     )
     department_leaders = Organization(
         department_id=department.id,
-        organization_type="department_student_leaders",
-        name="CCS Student Leaders",
-        category="Department Student Leaders",
+        organization_type="department_organization",
+        name="CCS Organization",
+        category="Department Organization",
     )
     db.session.add_all([section, student_council, department_leaders])
     student_council.positions.append(OrganizationPosition(name="President", sort_order=0))
@@ -263,9 +263,9 @@ def test_assign_council_role_requires_details_and_creates_profiles(app_ctx):
     section = Section(course_id=course.id, semester_id=semester.id, name="BSIT 3A")
     leaders = Organization(
         department_id=department.id,
-        organization_type="department_student_leaders",
-        name="CCS Student Leaders",
-        category="Department Student Leaders",
+        organization_type="department_organization",
+        name="CCS Organization",
+        category="Department Organization",
     )
     db.session.add_all([section, leaders])
     leaders.positions.append(OrganizationPosition(name="Governor", sort_order=0))
@@ -345,9 +345,9 @@ def test_organization_positions_drive_council_assignment(app_ctx):
     created = client.post(
         "/api/school/organizations",
         json={
-            "name": "CBA Student Leaders",
-            "category": "Department Student Leaders",
-            "organization_type": "department_student_leaders",
+            "name": "CBA Organization",
+            "category": "Department Organization",
+            "organization_type": "department_organization",
             "department_id": str(department.id),
             "positions": ["Governor", "Business Manager"],
         },
@@ -437,9 +437,9 @@ def test_admin_can_manage_council_membership_separately(app_ctx):
     db.session.add_all([department, other_department])
     db.session.flush()
     organization = Organization(
-        name="COE Student Leaders",
-        category="Department Student Leaders",
-        organization_type="department_student_leaders",
+        name="COE Organization",
+        category="Department Organization",
+        organization_type="department_organization",
         department_id=department.id,
     )
     db.session.add_all(

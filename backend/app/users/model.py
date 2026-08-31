@@ -184,7 +184,7 @@ class Organization(db.Model):
     __table_args__ = (
         UniqueConstraint("department_id", "organization_type", name="uq_organizations_department_type"),
         CheckConstraint(
-            "organization_type IN ('college_wide','student_council','department_organization','department_student_leaders')",
+            "organization_type IN ('college_wide','student_council','department_organization')",
             name="ck_organizations_type",
         ),
     )

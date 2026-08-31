@@ -41,11 +41,12 @@ def _as_uuid(value: str | None) -> uuid.UUID | None:
 
 def _normalize_organization_type(value: str | None) -> str:
     organization_type = (value or "college_wide").strip()
+    if organization_type == "department_student_leaders":
+        organization_type = "department_organization"
     allowed = {
         "college_wide",
         "student_council",
         "department_organization",
-        "department_student_leaders",
     }
     if organization_type not in allowed:
         raise ValidationError("Invalid organization type.")
@@ -305,7 +306,7 @@ class SchoolStructureService:
             .where(User.deleted_at.is_(None), User.status == "active")
             .order_by(User.full_name)
         )
-        if org.organization_type == "department_student_leaders":
+        if org.organization_type == "department_organization":
             stmt = stmt.where(StudentProfile.department_id == org.department_id)
         rows = db.session.execute(stmt).all()
         return [
@@ -367,8 +368,8 @@ class SchoolStructureService:
             student = db.session.get(StudentProfile, user_id)
             if student is None:
                 raise ValidationError("Council members must have a student profile.")
-            if org.organization_type == "department_student_leaders" and student.department_id != org.department_id:
-                raise ValidationError("Department Student Leader members must belong to the same department.")
+            if org.organization_type == "department_organization" and student.department_id != org.department_id:
+                raise ValidationError("Department organization leaders must belong to the same department.")
 
             for role_id in other_role_ids:
                 self._remove_role(user_id, role_id)
@@ -392,7 +393,7 @@ class SchoolStructureService:
         if organization_type in {"college_wide", "student_council"}:
             return None
         if dept_id is None:
-            raise ValidationError("Department is required for department organizations and department student leaders.")
+            raise ValidationError("Department is required for department organizations.")
         self.get_department(dept_id)
         return dept_id
 
@@ -409,8 +410,7 @@ class SchoolStructureService:
         if exclude_id is not None:
             filters.append(Organization.id != exclude_id)
         if self.organizations.exists_where(*filters):
-            label = "student leaders" if organization_type == "department_student_leaders" else "organization"
-            raise ConflictError(f"This department already has department {label}.")
+            raise ConflictError("This department already has a department organization.")
 
     def _ensure_student_council_slot(
         self, organization_type: str, exclude_id: uuid.UUID | None = None
@@ -425,7 +425,7 @@ class SchoolStructureService:
 
     @staticmethod
     def _is_council_type(organization_type: str) -> bool:
-        return organization_type in {"student_council", "department_student_leaders"}
+        return organization_type in {"student_council", "department_organization"}
 
     @staticmethod
     def _normalize_positions(positions) -> list[str]:
@@ -472,9 +472,9 @@ class SchoolStructureService:
     def _role_for_council(org: Organization) -> str:
         if org.organization_type == "student_council":
             return "student_council"
-        if org.organization_type == "department_student_leaders":
+        if org.organization_type == "department_organization":
             return "department_student_leader"
-        raise ValidationError("Only Student Council and Department Student Leaders support members.")
+        raise ValidationError("Only Student Council and Department Organizations support leaders.")
 
     @staticmethod
     def _ensure_role(user_id: uuid.UUID, role_id: uuid.UUID) -> None:
