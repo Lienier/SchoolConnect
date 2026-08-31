@@ -2,6 +2,8 @@
 import { apiClient } from "@/api/client";
 import type {
   AcademicYear,
+  CouncilCandidate,
+  CouncilMember,
   Course,
   Department,
   Organization,
@@ -52,6 +54,12 @@ export const schoolApi = {
   updateOrganization: (id: string, p: Partial<Organization>) =>
     apiClient.patch<SchoolListResponse<Organization>>(`/school/organizations/${id}`, p).then((r) => r.data.data),
   deleteOrganization: (id: string) => apiClient.delete(`/school/organizations/${id}`),
+  listCouncilMembers: (id: string) =>
+    apiClient.get<SchoolListResponse<CouncilMember>>(`/school/organizations/${id}/members`).then((r) => r.data.data),
+  listCouncilCandidates: (id: string) =>
+    apiClient.get<SchoolListResponse<CouncilCandidate>>(`/school/organizations/${id}/candidates`).then((r) => r.data.data),
+  updateCouncilMembers: (id: string, members: { user_id: string; position: string }[]) =>
+    apiClient.put<SchoolListResponse<CouncilMember>>(`/school/organizations/${id}/members`, { members }).then((r) => r.data.data),
 
   // Academic Years
   listAcademicYears: listEndpoint<AcademicYear>("/school/academic-years"),

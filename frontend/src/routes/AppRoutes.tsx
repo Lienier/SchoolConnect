@@ -36,6 +36,7 @@ const MyRegistrationsPage = lazy(
 );
 const RolesPage = lazy(() => import("@/features/roles/pages/RolesPage"));
 const SchoolPage = lazy(() => import("@/features/school/pages/SchoolPage"));
+const CouncilMembersPage = lazy(() => import("@/features/school/pages/CouncilMembersPage"));
 const UsersPage = lazy(() => import("@/features/users/pages/UsersPage"));
 const StudentProfilePage = lazy(() => import("@/features/users/pages/StudentProfilePage"));
 const ReportsPage = lazy(() => import("@/features/admin/pages/AdminSupportPages").then((module) => ({ default: module.ReportsPage })));
@@ -95,6 +96,7 @@ export function AppRoutes() {
           <Route path="/profile" element={<StudentProfilePage />} />
           <Route path="/roles" element={<ProtectedRoute requiredPermission="roles.view"><RolesPage /></ProtectedRoute>} />
           <Route path="/school" element={<ProtectedRoute requiredPermission="departments.view"><SchoolPage /></ProtectedRoute>} />
+          <Route path="/councils" element={<ProtectedRoute requiredPermission="organizations.manage"><CouncilMembersPage /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><ReportsPage /></ProtectedRoute>} />
           <Route path="/audit/logs" element={<ProtectedRoute requiredPermission="audit.view"><ActivityLogsPage /></ProtectedRoute>} />
           <Route path="/registrations" element={<ProtectedRoute allowedRoles={["admin", "teacher", "student_council", "department_student_leader"]}><AdminRegistrationsPage /></ProtectedRoute>} />

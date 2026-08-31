@@ -97,6 +97,19 @@ class OrganizationUpdateRequest(_Base):
     adviser_id: str | None = None
 
 
+class CouncilMemberRequest(_Base):
+    """One council membership row."""
+
+    user_id: str
+    position: str = Field(min_length=1, max_length=100)
+
+
+class CouncilMembersUpdateRequest(_Base):
+    """Replace council members for an organization."""
+
+    members: list[CouncilMemberRequest] = Field(default_factory=list)
+
+
 # --------------------------------------------------------------------------
 # Academic Years
 # --------------------------------------------------------------------------

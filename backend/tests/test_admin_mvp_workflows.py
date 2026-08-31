@@ -283,6 +283,72 @@ def test_obsolete_content_approval_endpoints_are_removed(app_ctx):
     assert announcement_approval.status_code == 404
 
 
+def test_admin_can_manage_council_membership_separately(app_ctx):
+    admin_role = _role("admin", ["organizations.view", "organizations.manage"])
+    student_role = _role("student", [])
+    leader_role = _role("department_student_leader", [])
+    admin = _user("council.admin@example.com", admin_role)
+    student = _user("leader.student@example.com", student_role)
+    other_student = _user("other.student@example.com", student_role)
+    department = Department(name="Engineering", code="COE")
+    other_department = Department(name="Education", code="CED")
+    db.session.add_all([department, other_department])
+    db.session.flush()
+    organization = Organization(
+        name="COE Student Leaders",
+        category="Department Student Leaders",
+        organization_type="department_student_leaders",
+        department_id=department.id,
+    )
+    db.session.add_all(
+        [
+            organization,
+            StudentProfile(id=student.id, student_number="2026-1001", department_id=department.id),
+            StudentProfile(id=other_student.id, student_number="2026-2001", department_id=other_department.id),
+        ]
+    )
+    db.session.commit()
+
+    client = app_ctx.test_client()
+    login = client.post("/api/auth/login", json={"email": admin.email, "password": "Password123!"})
+    headers = {"Authorization": f"Bearer {login.get_json()['data']['access_token']}"}
+
+    candidates = client.get(f"/api/school/organizations/{organization.id}/candidates", headers=headers)
+    assert candidates.status_code == 200
+    candidate_ids = {item["user_id"] for item in candidates.get_json()["data"]}
+    assert str(student.id) in candidate_ids
+    assert str(other_student.id) not in candidate_ids
+
+    saved = client.put(
+        f"/api/school/organizations/{organization.id}/members",
+        json={"members": [{"user_id": str(student.id), "position": "Governor"}]},
+        headers=headers,
+    )
+    assert saved.status_code == 200
+    assert saved.get_json()["data"][0]["position"] == "Governor"
+    officer = db.session.get(OfficerProfile, student.id)
+    assert officer.organization_id == organization.id
+    assert officer.position == "Governor"
+    assert db.session.scalar(
+        db.select(UserRole)
+        .join(Role, Role.id == UserRole.role_id)
+        .where(UserRole.user_id == student.id, Role.name == leader_role.name)
+    )
+
+    removed = client.put(
+        f"/api/school/organizations/{organization.id}/members",
+        json={"members": []},
+        headers=headers,
+    )
+    assert removed.status_code == 200
+    assert db.session.get(OfficerProfile, student.id) is None
+    assert db.session.scalar(
+        db.select(UserRole)
+        .join(Role, Role.id == UserRole.role_id)
+        .where(UserRole.user_id == student.id, Role.name == leader_role.name)
+    ) is None
+
+
 def test_content_creation_rejects_yesterday_but_allows_today(app_ctx):
     role = _role(
         "teacher",

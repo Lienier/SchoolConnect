@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   ClipboardList,
+  Crown,
   Gauge,
   Megaphone,
   Settings,
@@ -23,6 +24,7 @@ export const adminNav: NavSection[] = [
     title: "Management",
     items: [
       { label: "User Management", to: "/users", perm: "users.view", icon: Users },
+      { label: "Council Members", to: "/councils", perm: "organizations.manage", icon: Crown },
       { label: "Roles & Permissions", to: "/roles", perm: "roles.view", icon: ShieldCheck },
       { label: "College Structure", to: "/school", perm: "departments.view", icon: ClipboardList },
     ],

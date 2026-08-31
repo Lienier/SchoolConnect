@@ -35,6 +35,23 @@ export interface Organization {
   created_at: string;
   updated_at: string;
 }
+export interface CouncilMember {
+  user_id: string;
+  full_name: string;
+  email: string;
+  username: string | null;
+  position: string | null;
+  student_number: string | null;
+  department_id: string | null;
+}
+export interface CouncilCandidate {
+  user_id: string;
+  full_name: string;
+  email: string;
+  username: string | null;
+  student_number: string | null;
+  department_id: string | null;
+}
 export interface AcademicYear {
   id: string;
   name: string;

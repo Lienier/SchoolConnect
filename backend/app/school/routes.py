@@ -11,8 +11,9 @@ from __future__ import annotations
 import uuid
 
 from flask import Blueprint, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from app.audit.service import AuditService
 from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.query import apply_filters, apply_search, apply_sort
@@ -35,6 +36,7 @@ from app.school.validators import (
     DepartmentCreateRequest,
     DepartmentUpdateRequest,
     OrganizationCreateRequest,
+    CouncilMembersUpdateRequest,
     OrganizationUpdateRequest,
     SectionCreateRequest,
     SectionUpdateRequest,
@@ -52,6 +54,7 @@ from app.users.model import (
 
 bp = Blueprint("school", __name__, url_prefix="/school")
 _service = SchoolStructureService()
+_audit = AuditService()
 
 
 def _body() -> dict:
@@ -317,6 +320,44 @@ def delete_organization(org_id: str):
     """Delete an organization."""
     _service.delete_organization(uuid.UUID(org_id))
     return success_response(message="Organization deleted.")
+
+
+@bp.get("/organizations/<org_id>/members")
+@jwt_required()
+@require_permission("organizations.view")
+def list_organization_members(org_id: str):
+    """List members for a council-style organization."""
+    return success_response(data=_service.list_council_members(uuid.UUID(org_id)))
+
+
+@bp.get("/organizations/<org_id>/candidates")
+@jwt_required()
+@require_permission("organizations.view")
+def list_organization_candidates(org_id: str):
+    """List active student accounts eligible for a council-style organization."""
+    return success_response(data=_service.list_council_candidates(uuid.UUID(org_id)))
+
+
+@bp.put("/organizations/<org_id>/members")
+@jwt_required()
+@require_permission("organizations.manage")
+def update_organization_members(org_id: str):
+    """Replace members for a council-style organization."""
+    payload = CouncilMembersUpdateRequest(**_body())
+    members = _service.replace_council_members(
+        uuid.UUID(org_id),
+        [member.model_dump() for member in payload.members],
+    )
+    _audit.record_audit(
+        action="organization.members_updated",
+        entity_type="organization",
+        entity_id=uuid.UUID(org_id),
+        actor_id=uuid.UUID(get_jwt_identity()),
+        changes={"members": [member.model_dump() for member in payload.members]},
+        ip_address=request.remote_addr,
+        user_agent=request.user_agent.string,
+    )
+    return success_response(data=members, message="Council members updated.")
 
 
 # --------------------------------------------------------------------------

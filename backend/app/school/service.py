@@ -11,16 +11,20 @@ import uuid
 
 from sqlalchemy import Select, func, select
 
+from app.auth.model import User
 from app.common.exceptions import ConflictError, NotFoundError, ValidationError
 from app.extensions import db
+from app.permissions.model import Role, UserRole
 from app.school.repository import StructureRepository
 from app.users.model import (
     AcademicYear,
     Course,
     Department,
+    OfficerProfile,
     Organization,
     Section,
     Semester,
+    StudentProfile,
 )
 
 
@@ -254,6 +258,116 @@ class SchoolStructureService:
         self.organizations.delete(org)
         db.session.commit()
 
+    def list_council_members(self, org_id) -> list[dict]:
+        org = self.get_organization(org_id)
+        self._role_for_council(org)
+        rows = db.session.execute(
+            select(User, OfficerProfile, StudentProfile)
+            .join(OfficerProfile, OfficerProfile.id == User.id)
+            .outerjoin(StudentProfile, StudentProfile.id == User.id)
+            .where(OfficerProfile.organization_id == org.id, User.deleted_at.is_(None))
+            .order_by(OfficerProfile.position, User.full_name)
+        ).all()
+        return [
+            {
+                "user_id": str(user.id),
+                "full_name": user.full_name,
+                "email": user.email,
+                "username": user.username,
+                "position": officer.position,
+                "student_number": student.student_number if student else None,
+                "department_id": str(student.department_id) if student and student.department_id else None,
+            }
+            for user, officer, student in rows
+        ]
+
+    def list_council_candidates(self, org_id) -> list[dict]:
+        org = self.get_organization(org_id)
+        self._role_for_council(org)
+        stmt = (
+            select(User, StudentProfile)
+            .join(StudentProfile, StudentProfile.id == User.id)
+            .where(User.deleted_at.is_(None), User.status == "active")
+            .order_by(User.full_name)
+        )
+        if org.organization_type == "department_student_leaders":
+            stmt = stmt.where(StudentProfile.department_id == org.department_id)
+        rows = db.session.execute(stmt).all()
+        return [
+            {
+                "user_id": str(user.id),
+                "full_name": user.full_name,
+                "email": user.email,
+                "username": user.username,
+                "student_number": student.student_number,
+                "department_id": str(student.department_id) if student.department_id else None,
+            }
+            for user, student in rows
+        ]
+
+    def replace_council_members(self, org_id, members: list[dict]) -> list[dict]:
+        org = self.get_organization(org_id)
+        target_role_name = self._role_for_council(org)
+        target_role = db.session.scalar(select(Role).where(Role.name == target_role_name))
+        student_role = db.session.scalar(select(Role).where(Role.name == "student"))
+        if target_role is None or student_role is None:
+            raise ValidationError("Required system roles have not been seeded.")
+
+        normalized: dict[uuid.UUID, str] = {}
+        for row in members:
+            user_id = _as_uuid(row.get("user_id"))
+            position = (row.get("position") or "").strip()
+            if user_id is None or not position:
+                raise ValidationError("Member and position are required.")
+            if user_id in normalized:
+                raise ValidationError("A council member can only appear once.")
+            normalized[user_id] = position
+
+        current_profiles = db.session.scalars(
+            select(OfficerProfile).where(OfficerProfile.organization_id == org.id)
+        ).all()
+        target_ids = set(normalized)
+        for profile in current_profiles:
+            if profile.id in target_ids:
+                continue
+            self._remove_role(profile.id, target_role.id)
+            db.session.delete(profile)
+
+        other_officer_roles = db.session.scalars(
+            select(Role).where(
+                Role.name.in_(["student_council", "department_student_leader"]),
+                Role.name != target_role_name,
+            )
+        ).all()
+        other_role_ids = [role.id for role in other_officer_roles]
+
+        for user_id, position in normalized.items():
+            user = db.session.get(User, user_id)
+            if user is None or user.deleted_at is not None:
+                raise ValidationError("Selected user was not found.")
+            if user.status != "active":
+                raise ValidationError("Only active students can be assigned to a council.")
+            student = db.session.get(StudentProfile, user_id)
+            if student is None:
+                raise ValidationError("Council members must have a student profile.")
+            if org.organization_type == "department_student_leaders" and student.department_id != org.department_id:
+                raise ValidationError("Department Student Leader members must belong to the same department.")
+
+            for role_id in other_role_ids:
+                self._remove_role(user_id, role_id)
+            self._ensure_role(user_id, student_role.id)
+            self._ensure_role(user_id, target_role.id)
+
+            profile = db.session.get(OfficerProfile, user_id)
+            if profile is None:
+                profile = OfficerProfile(id=user_id)
+                db.session.add(profile)
+            profile.organization_id = org.id
+            profile.position = position
+
+        db.session.commit()
+        return self.list_council_members(org.id)
+
     def _validate_organization_department(
         self, organization_type: str, department_id
     ) -> uuid.UUID | None:
@@ -291,6 +405,26 @@ class SchoolStructureService:
             filters.append(Organization.id != exclude_id)
         if self.organizations.exists_where(*filters):
             raise ConflictError("The college-wide Student Council organization already exists.")
+
+    @staticmethod
+    def _role_for_council(org: Organization) -> str:
+        if org.organization_type == "student_council":
+            return "student_council"
+        if org.organization_type == "department_student_leaders":
+            return "department_student_leader"
+        raise ValidationError("Only Student Council and Department Student Leaders support members.")
+
+    @staticmethod
+    def _ensure_role(user_id: uuid.UUID, role_id: uuid.UUID) -> None:
+        exists = db.session.get(UserRole, {"user_id": user_id, "role_id": role_id})
+        if exists is None:
+            db.session.add(UserRole(user_id=user_id, role_id=role_id))
+
+    @staticmethod
+    def _remove_role(user_id: uuid.UUID, role_id: uuid.UUID) -> None:
+        link = db.session.get(UserRole, {"user_id": user_id, "role_id": role_id})
+        if link is not None:
+            db.session.delete(link)
 
     # ---- Academic Years --------------------------------------------------
     def list_academic_years_query(self) -> Select:
