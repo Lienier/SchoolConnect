@@ -29,6 +29,7 @@ export default function CouncilMembersPage() {
   const [selectedCouncilId, setSelectedCouncilId] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
+  const [setupDepartmentId, setSetupDepartmentId] = useState("");
   const [draftMembers, setDraftMembers] = useState<DraftMember[] | null>(null);
 
   const departments = useQuery({ queryKey: ["college-structure", "departments", "all"], queryFn: () => schoolApi.listDepartments({ page_size: 250 }) });
@@ -52,6 +53,10 @@ export default function CouncilMembersPage() {
   const visibleMembers = draftMembers ?? (members.data ?? []).map(memberToDraft);
   const positions = selectedCouncil?.organization_type === "student_council" ? STUDENT_COUNCIL_POSITIONS : DEPARTMENT_LEADER_POSITIONS;
   const availableCandidates = (candidates.data ?? []).filter((candidate) => !visibleMembers.some((member) => member.user_id === candidate.user_id));
+  const hasStudentCouncil = councils.some((org) => org.organization_type === "student_council");
+  const departmentsWithoutLeaders = (departments.data?.data ?? []).filter(
+    (department) => !councils.some((org) => org.organization_type === "department_student_leaders" && org.department_id === department.id),
+  );
 
   const saveMembers = useMutation({
     mutationFn: () => schoolApi.updateCouncilMembers(activeCouncilId, visibleMembers.map(({ user_id, position }) => ({ user_id, position }))),
@@ -62,6 +67,30 @@ export default function CouncilMembersPage() {
       qc.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error) => toast(apiErrorMessage(error, "Could not update council members."), "error"),
+  });
+  const createCouncil = useMutation({
+    mutationFn: async (payload: { organization_type: Organization["organization_type"]; department_id?: string }) => {
+      const department = departments.data?.data.find((item) => item.id === payload.department_id);
+      const isStudentCouncil = payload.organization_type === "student_council";
+      return schoolApi.createOrganization({
+        organization_type: payload.organization_type,
+        department_id: payload.department_id,
+        name: isStudentCouncil ? "Student Council" : `${department?.code ?? "Department"} Student Leaders`,
+        category: isStudentCouncil ? "Student Council" : "Department Student Leaders",
+        description: isStudentCouncil
+          ? "College-wide student council."
+          : `Student leaders for ${department?.name ?? "the selected department"}.`,
+      });
+    },
+    onSuccess: (created) => {
+      toast("Council created.", "success");
+      setSelectedCouncilId(created.id);
+      setSetupDepartmentId("");
+      setDraftMembers(null);
+      qc.invalidateQueries({ queryKey: ["college-structure", "organizations"] });
+      qc.invalidateQueries({ queryKey: ["college-structure", "organizations", "councils"] });
+    },
+    onError: (error) => toast(apiErrorMessage(error, "Could not create council."), "error"),
   });
 
   const selectCouncil = (org: Organization) => {
@@ -122,9 +151,45 @@ export default function CouncilMembersPage() {
             ))}
             {!organizations.isLoading && councils.length === 0 && (
               <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-                Create a Student Council or Department Student Leaders organization in College Structure first.
+                No councils have been created yet.
               </p>
             )}
+          </div>
+          <div className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-navy-800">
+            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-navy-400">Quick setup</p>
+            <Button
+              variant="secondary"
+              className="w-full justify-start"
+              disabled={hasStudentCouncil || createCouncil.isPending}
+              isLoading={createCouncil.isPending}
+              onClick={() => createCouncil.mutate({ organization_type: "student_council" })}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {hasStudentCouncil ? "Student Council exists" : "Create Student Council"}
+            </Button>
+            <div className="space-y-2">
+              <select
+                value={setupDepartmentId}
+                onChange={(event) => setSetupDepartmentId(event.target.value)}
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
+                disabled={!departmentsWithoutLeaders.length}
+              >
+                <option value="">Select department</option>
+                {departmentsWithoutLeaders.map((department) => (
+                  <option key={department.id} value={department.id}>{department.code} - {department.name}</option>
+                ))}
+              </select>
+              <Button
+                variant="secondary"
+                className="w-full justify-start"
+                disabled={!setupDepartmentId || createCouncil.isPending}
+                isLoading={createCouncil.isPending}
+                onClick={() => createCouncil.mutate({ organization_type: "department_student_leaders", department_id: setupDepartmentId })}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Department Leaders
+              </Button>
+            </div>
           </div>
         </Card>
 
