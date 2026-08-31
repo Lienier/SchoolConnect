@@ -34,6 +34,14 @@ def _as_uuid(value: str | None) -> uuid.UUID | None:
         raise ValidationError("Invalid identifier format.") from exc
 
 
+def _normalize_organization_type(value: str | None) -> str:
+    organization_type = (value or "college_wide").strip()
+    allowed = {"college_wide", "department_organization", "department_council"}
+    if organization_type not in allowed:
+        raise ValidationError("Invalid organization type.")
+    return organization_type
+
+
 class SchoolStructureService:
     """Coordinates CRUD across the college-structure entities."""
 
@@ -189,23 +197,46 @@ class SchoolStructureService:
     def get_organization(self, org_id: uuid.UUID) -> Organization:
         return self._require(self.organizations.get_by_id(org_id), "Organization")
 
-    def create_organization(self, *, name, description, category, adviser_id) -> Organization:
+    def create_organization(
+        self, *, name, description, category, organization_type, department_id, adviser_id
+    ) -> Organization:
+        org_type = _normalize_organization_type(organization_type)
+        dept_id = self._validate_organization_department(org_type, department_id)
+        self._ensure_department_organization_slot(dept_id, org_type)
         org = Organization(
             name=name, description=description, category=category,
-            adviser_id=_as_uuid(adviser_id),
+            organization_type=org_type, department_id=dept_id, adviser_id=_as_uuid(adviser_id),
         )
         self.organizations.add(org)
         db.session.commit()
         return org
 
-    def update_organization(self, org_id, *, name=None, description=None, category=None, adviser_id=...) -> Organization:
+    def update_organization(
+        self, org_id, *, name=None, description=None, category=None,
+        organization_type=None, department_id=..., adviser_id=...,
+    ) -> Organization:
         org = self.get_organization(org_id)
+        next_type = _normalize_organization_type(organization_type or org.organization_type)
+        next_dept_id = org.department_id
+        if department_id is not ...:
+            next_dept_id = self._validate_organization_department(next_type, department_id)
+        elif organization_type is not None:
+            next_dept_id = self._validate_organization_department(next_type, org.department_id)
+        if (
+            (next_type != org.organization_type or next_dept_id != org.department_id)
+            and next_dept_id is not None
+        ):
+            self._ensure_department_organization_slot(next_dept_id, next_type, exclude_id=org.id)
         if name is not None:
             org.name = name
         if description is not None:
             org.description = description
         if category is not None:
             org.category = category
+        if organization_type is not None:
+            org.organization_type = next_type
+        if department_id is not ...:
+            org.department_id = next_dept_id
         if adviser_id is not ...:
             org.adviser_id = _as_uuid(adviser_id)
         db.session.commit()
@@ -215,6 +246,33 @@ class SchoolStructureService:
         org = self.get_organization(org_id)
         self.organizations.delete(org)
         db.session.commit()
+
+    def _validate_organization_department(
+        self, organization_type: str, department_id
+    ) -> uuid.UUID | None:
+        dept_id = _as_uuid(str(department_id) if department_id is not None else None)
+        if organization_type == "college_wide":
+            return None
+        if dept_id is None:
+            raise ValidationError("Department is required for department organizations and councils.")
+        self.get_department(dept_id)
+        return dept_id
+
+    def _ensure_department_organization_slot(
+        self, department_id: uuid.UUID | None, organization_type: str,
+        exclude_id: uuid.UUID | None = None,
+    ) -> None:
+        if department_id is None or organization_type == "college_wide":
+            return
+        filters = [
+            Organization.department_id == department_id,
+            Organization.organization_type == organization_type,
+        ]
+        if exclude_id is not None:
+            filters.append(Organization.id != exclude_id)
+        if self.organizations.exists_where(*filters):
+            label = "council" if organization_type == "department_council" else "organization"
+            raise ConflictError(f"This department already has a department {label}.")
 
     # ---- Academic Years --------------------------------------------------
     def list_academic_years_query(self) -> Select:

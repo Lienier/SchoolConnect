@@ -59,6 +59,8 @@ def organization_to_dict(o: Organization) -> dict:
         "name": o.name,
         "description": o.description,
         "category": o.category,
+        "organization_type": o.organization_type,
+        "department_id": str(o.department_id) if o.department_id else None,
         "adviser_id": str(o.adviser_id) if o.adviser_id else None,
         "created_at": _iso(o.created_at),
         "updated_at": _iso(o.updated_at),

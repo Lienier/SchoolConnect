@@ -22,6 +22,7 @@ from app.users.model import (
     Course,
     Department,
     OfficerProfile,
+    Organization,
     Section,
     StudentProfile,
     TeacherProfile,
@@ -344,6 +345,10 @@ class UserService:
         course_uuid = self._uuid_or_none(course_id)
         section_uuid = self._uuid_or_none(section_id)
 
+        if role_names & {"student", "student_council"} and department_uuid is None:
+            raise ValidationError("Department is required for students.")
+        if role_names & {"student", "student_council"} and course_uuid is None:
+            raise ValidationError("Course is required for students.")
         if "teacher" in role_names and department_uuid is None:
             raise ValidationError("Department is required for professors.")
         if "student_council" in role_names and not officer_position:
@@ -362,6 +367,8 @@ class UserService:
                 raise ValidationError("Section not found.")
             if course_uuid and section.course_id != course_uuid:
                 raise ValidationError("Section does not belong to the selected course.")
+        if "student_council" in role_names and department_uuid:
+            self._department_council_for(department_uuid)
 
     def _create_role_profiles(
         self, user: User, *, role_names: set[str], student_number=None,
@@ -387,9 +394,30 @@ class UserService:
         if "teacher" in role_names:
             db.session.add(TeacherProfile(id=user.id, department_id=department_uuid))
         if "student_council" in role_names:
-            db.session.add(OfficerProfile(id=user.id, position=officer_position))
+            council = self._department_council_for(department_uuid)
+            db.session.add(
+                OfficerProfile(
+                    id=user.id,
+                    organization_id=council.id if council else None,
+                    position=officer_position,
+                )
+            )
         if "admin" in role_names:
             db.session.add(AdministratorProfile(id=user.id))
+
+    @staticmethod
+    def _department_council_for(department_id: uuid.UUID | None) -> Organization | None:
+        if department_id is None:
+            return None
+        council = db.session.scalar(
+            select(Organization).where(
+                Organization.department_id == department_id,
+                Organization.organization_type == "department_council",
+            )
+        )
+        if council is None:
+            raise ValidationError("Create the department council organization before assigning Student Council officers.")
+        return council
 
     @staticmethod
     def _sync_role_profiles(user_id: uuid.UUID, role_names: set[str]) -> None:

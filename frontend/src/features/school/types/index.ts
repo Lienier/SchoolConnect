@@ -29,6 +29,8 @@ export interface Organization {
   name: string;
   description: string | null;
   category: string | null;
+  organization_type: "college_wide" | "department_organization" | "department_council";
+  department_id: string | null;
   adviser_id: string | null;
   created_at: string;
   updated_at: string;

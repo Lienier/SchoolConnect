@@ -178,9 +178,16 @@ class Section(db.Model):
 
 
 class Organization(db.Model):
-    """Club, committee or team."""
+    """College-wide or department-owned organization/council."""
 
     __tablename__ = "organizations"
+    __table_args__ = (
+        UniqueConstraint("department_id", "organization_type", name="uq_organizations_department_type"),
+        CheckConstraint(
+            "organization_type IN ('college_wide','department_organization','department_council')",
+            name="ck_organizations_type",
+        ),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -188,6 +195,12 @@ class Organization(db.Model):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    organization_type: Mapped[str] = mapped_column(
+        String(40), default="college_wide", server_default="college_wide", nullable=False
+    )
+    department_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("departments.id"), nullable=True, index=True
+    )
     adviser_id: Mapped[uuid.UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )

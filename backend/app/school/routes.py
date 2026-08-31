@@ -251,7 +251,15 @@ def list_organizations():
     params = PaginationParams.from_request()
     stmt = _service.list_organizations_query()
     stmt = apply_search(stmt, request.args.get("search"), [Organization.name, Organization.category])
-    stmt = apply_filters(stmt, {"category": Organization.category}, request.args)
+    stmt = apply_filters(
+        stmt,
+        {
+            "category": Organization.category,
+            "organization_type": Organization.organization_type,
+            "department_id": Organization.department_id,
+        },
+        request.args,
+    )
     stmt = apply_sort(
         stmt, request.args.get("sort"),
         {"name": Organization.name, "created_at": Organization.created_at},
@@ -275,7 +283,14 @@ def get_organization(org_id: str):
 def create_organization():
     """Create an organization."""
     p = OrganizationCreateRequest(**_body())
-    org = _service.create_organization(name=p.name, description=p.description, category=p.category, adviser_id=p.adviser_id)
+    org = _service.create_organization(
+        name=p.name,
+        description=p.description,
+        category=p.category,
+        organization_type=p.organization_type,
+        department_id=p.department_id,
+        adviser_id=p.adviser_id,
+    )
     return success_response(data=organization_to_dict(org), message="Organization created.", status_code=201)
 
 
@@ -288,6 +303,8 @@ def update_organization(org_id: str):
     p = OrganizationUpdateRequest(**_body())
     org = _service.update_organization(
         uuid.UUID(org_id), name=p.name, description=p.description, category=p.category,
+        organization_type=p.organization_type,
+        department_id=p.department_id if "department_id" in body else ...,
         adviser_id=p.adviser_id if "adviser_id" in body else ...,
     )
     return success_response(data=organization_to_dict(org), message="Organization updated.")

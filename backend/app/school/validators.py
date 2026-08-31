@@ -81,6 +81,8 @@ class OrganizationCreateRequest(_Base):
     name: str = Field(min_length=2, max_length=150)
     description: str | None = Field(default=None, max_length=4000)
     category: str | None = Field(default=None, max_length=50)
+    organization_type: str = Field(default="college_wide", max_length=40)
+    department_id: str | None = None
     adviser_id: str | None = None
 
 
@@ -90,6 +92,8 @@ class OrganizationUpdateRequest(_Base):
     name: str | None = Field(default=None, min_length=2, max_length=150)
     description: str | None = Field(default=None, max_length=4000)
     category: str | None = Field(default=None, max_length=50)
+    organization_type: str | None = Field(default=None, max_length=40)
+    department_id: str | None = None
     adviser_id: str | None = None
 
 

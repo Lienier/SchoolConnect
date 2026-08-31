@@ -27,6 +27,7 @@ import type {
   Course,
   Department,
   EntityKey,
+  Organization,
   SchoolListResponse,
   Section,
   Semester,
@@ -38,9 +39,12 @@ type RelationMaps = {
   departments: Department[];
   courses: Course[];
   sections: Section[];
+  organizations: Organization[];
   academicYears: AcademicYear[];
   semesters: Semester[];
 };
+
+type OrganizationType = Organization["organization_type"];
 
 const TABS: { key: EntityKey; label: string; managePerm: string }[] = [
   { key: "departments", label: "Departments", managePerm: "departments.manage" },
@@ -99,6 +103,7 @@ export default function SchoolPage() {
   const departmentsQuery = useQuery({ queryKey: ["college-structure", "departments", "all"], queryFn: () => schoolApi.listDepartments({ page_size: 250 }) });
   const coursesQuery = useQuery({ queryKey: ["college-structure", "courses", "all"], queryFn: () => schoolApi.listCourses({ page_size: 500 }) });
   const sectionsQuery = useQuery({ queryKey: ["college-structure", "sections", "all"], queryFn: () => schoolApi.listSections({ page_size: 500 }) });
+  const organizationsQuery = useQuery({ queryKey: ["college-structure", "organizations", "all"], queryFn: () => schoolApi.listOrganizations({ page_size: 500 }) });
   const academicYearsQuery = useQuery({ queryKey: ["college-structure", "academic-years", "all"], queryFn: () => schoolApi.listAcademicYears({ page_size: 100 }) });
   const semestersQuery = useQuery({ queryKey: ["college-structure", "semesters", "all"], queryFn: () => schoolApi.listSemesters({ page_size: 250 }) });
 
@@ -106,9 +111,10 @@ export default function SchoolPage() {
     departments: departmentsQuery.data?.data ?? [],
     courses: coursesQuery.data?.data ?? [],
     sections: sectionsQuery.data?.data ?? [],
+    organizations: organizationsQuery.data?.data ?? [],
     academicYears: academicYearsQuery.data?.data ?? [],
     semesters: semestersQuery.data?.data ?? [],
-  }), [academicYearsQuery.data?.data, coursesQuery.data?.data, departmentsQuery.data?.data, sectionsQuery.data?.data, semestersQuery.data?.data]);
+  }), [academicYearsQuery.data?.data, coursesQuery.data?.data, departmentsQuery.data?.data, organizationsQuery.data?.data, sectionsQuery.data?.data, semestersQuery.data?.data]);
 
   return (
     <div className="space-y-6">
@@ -136,12 +142,13 @@ export default function SchoolPage() {
 function StructureGuide() {
   const steps = [
     { icon: Building2, label: "Department", detail: "Create the college unit first, for example CICS or CTE." },
+    { icon: GitBranch, label: "Department Organization", detail: "Create the department organization and council for that department." },
     { icon: BookOpen, label: "Course", detail: "Attach each course or program to exactly one department." },
     { icon: CalendarDays, label: "Academic Year and Semester", detail: "Create the period where sections will exist." },
     { icon: Users, label: "Section", detail: "Attach the saved section to a course and semester." },
   ];
   return (
-    <div className="grid gap-3 md:grid-cols-4">
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
       {steps.map((step, index) => {
         const Icon = step.icon;
         return (
@@ -324,11 +331,12 @@ function EntityForm({
 }
 
 function RelationshipHint({ entity, form, relations }: { entity: EntityKey; form: SchoolRecord; relations: RelationMaps }) {
-  if (!["courses", "sections", "semesters"].includes(entity)) return null;
+  if (!["courses", "sections", "organizations", "semesters"].includes(entity)) return null;
   const department = findById(relations.departments, String(form.department_id ?? ""));
   const course = findById(relations.courses, String(form.course_id ?? ""));
   const semester = findById(relations.semesters, String(form.semester_id ?? ""));
   const academicYear = findById(relations.academicYears, String(form.academic_year_id ?? ""));
+  const orgType = String(form.organization_type ?? "college_wide") as OrganizationType;
   return (
     <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-100">
       <div className="flex items-start gap-2">
@@ -336,6 +344,8 @@ function RelationshipHint({ entity, form, relations }: { entity: EntityKey; form
         <span>
           {entity === "courses" && <>This course will be connected under {department ? <strong>{labelDepartment(department)}</strong> : "the selected department"}.</>}
           {entity === "sections" && <>This section will be connected under {course ? <strong>{labelCourse(course, relations)}</strong> : "the selected course"} and {semester ? <strong>{labelSemester(semester, relations)}</strong> : "the selected semester"}.</>}
+          {entity === "organizations" && orgType === "college_wide" && <>This organization is college-wide and is not tied to one department.</>}
+          {entity === "organizations" && orgType !== "college_wide" && <>This {organizationTypeLabel(orgType).toLowerCase()} will be connected under {department ? <strong>{labelDepartment(department)}</strong> : "the selected department"}.</>}
           {entity === "semesters" && <>This semester will be connected under {academicYear ? <strong>{academicYear.name}</strong> : "the selected academic year"}.</>}
         </span>
       </div>
@@ -363,6 +373,10 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
       </Select>
     </div>
   );
+  const setOrganizationType = (value: string) => {
+    set("organization_type", value);
+    if (value === "college_wide") set("department_id", "");
+  };
 
   switch (entity) {
     case "departments":
@@ -380,7 +394,33 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
         textField("name", "Section name"),
       ];
     case "organizations":
-      return [textField("name", "Name"), textField("category", "Category"), textField("description", "Description")];
+      return [
+        (
+          <div key="organization_type">
+            <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">Organization type</label>
+            <Select value={String(form.organization_type ?? "college_wide")} onValueChange={setOrganizationType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select organization type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="college_wide">College-wide organization</SelectItem>
+                <SelectItem value="department_organization">Department organization</SelectItem>
+                <SelectItem value="department_council">Department council</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        ),
+        selectField(
+          "department_id",
+          "Department",
+          "Select department",
+          relations.departments.map((department) => ({ value: department.id, label: labelDepartment(department) })),
+          String(form.organization_type ?? "college_wide") === "college_wide",
+        ),
+        textField("name", "Name"),
+        textField("category", "Category"),
+        textField("description", "Description"),
+      ];
     case "academic_years":
       return [
         textField("name", "Name, for example 2026-2027"),
@@ -417,7 +457,7 @@ function helperText(entity: EntityKey) {
     departments: "Top-level academic units. Courses belong to departments.",
     courses: "Programs or courses offered by a department. Choose the department before saving.",
     sections: "Student groups under a course and semester. Choose the course and semester before saving.",
-    organizations: "College groups such as Student Council or clubs.",
+    organizations: "College-wide groups, department organizations, and department councils.",
     academic_years: "The college year used to organize semesters.",
     semesters: "Terms inside an academic year. Sections are connected to semesters.",
   }[entity];
@@ -433,7 +473,7 @@ function columnsFor(entity: EntityKey): string[] {
     case "departments": return ["Code", "Name", "Description", ""];
     case "courses": return ["Code", "Name", "Department", ""];
     case "sections": return ["Name", "Course", "Semester", ""];
-    case "organizations": return ["Name", "Category", ""];
+    case "organizations": return ["Name", "Type", "Department", "Category", ""];
     case "academic_years": return ["Name", "Range", "Current", ""];
     case "semesters": return ["Name", "Academic Year", "Range", ""];
   }
@@ -444,7 +484,12 @@ function cellsFor(entity: EntityKey, item: SchoolRecord, relations: RelationMaps
     case "departments": return [item.code, item.name, item.description ?? "-"];
     case "courses": return [item.code, item.name, labelDepartment(findById(relations.departments, String(item.department_id ?? "")))];
     case "sections": return [item.name, labelCourse(findById(relations.courses, String(item.course_id ?? "")), relations), labelSemester(findById(relations.semesters, String(item.semester_id ?? "")), relations)];
-    case "organizations": return [item.name, item.category ?? "-"];
+    case "organizations": return [
+      item.name,
+      organizationTypeLabel(String(item.organization_type ?? "college_wide") as OrganizationType),
+      String(item.organization_type ?? "college_wide") === "college_wide" ? "College-wide" : labelDepartment(findById(relations.departments, String(item.department_id ?? ""))),
+      item.category ?? "-",
+    ];
     case "academic_years": return [item.name, `${item.start_date} - ${item.end_date}`, item.is_current ? <Badge tone="success">current</Badge> : "-"];
     case "semesters": return [item.name, findById(relations.academicYears, String(item.academic_year_id ?? ""))?.name ?? "Unknown academic year", `${item.start_date} - ${item.end_date}`];
   }
@@ -455,7 +500,8 @@ function formIsValid(entity: EntityKey, form: SchoolRecord) {
     case "departments": return !!form.code && !!form.name;
     case "courses": return !!form.department_id && !!form.code && !!form.name;
     case "sections": return !!form.course_id && !!form.semester_id && !!form.name;
-    case "organizations": return !!form.name;
+    case "organizations":
+      return !!form.name && (String(form.organization_type ?? "college_wide") === "college_wide" || !!form.department_id);
     case "academic_years": return !!form.name && !!form.start_date && !!form.end_date;
     case "semesters": return !!form.academic_year_id && !!form.name && !!form.start_date && !!form.end_date;
   }

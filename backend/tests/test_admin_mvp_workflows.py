@@ -25,6 +25,7 @@ from app.users.model import (
     Course,
     Department,
     OfficerProfile,
+    Organization,
     Section,
     Semester,
     StudentProfile,
@@ -100,7 +101,13 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
     db.session.add_all([semester, course])
     db.session.flush()
     section = Section(course_id=course.id, semester_id=semester.id, name="BSIT 3A")
-    db.session.add(section)
+    council = Organization(
+        department_id=department.id,
+        organization_type="department_council",
+        name="CCS Student Council",
+        category="Student Council",
+    )
+    db.session.add_all([section, council])
     db.session.commit()
 
     client = app_ctx.test_client()
@@ -157,6 +164,7 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
     assert db.session.get(StudentProfile, officer_id) is not None
     assert db.session.get(StudentProfile, officer_id).profile_completed is True
     assert db.session.get(OfficerProfile, officer_id).position == "President"
+    assert db.session.get(OfficerProfile, officer_id).organization_id == council.id
 
     professor_response = client.post(
         "/api/users",

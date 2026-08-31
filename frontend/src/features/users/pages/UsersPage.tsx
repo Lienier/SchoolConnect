@@ -15,7 +15,7 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/Table";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/providers/ToastProvider";
 import { schoolApi } from "@/features/school/services/schoolApi";
-import type { Course, Department, Section } from "@/features/school/types";
+import type { Course, Department, Organization, Section } from "@/features/school/types";
 import { usersApi } from "@/features/users/services/usersApi";
 import type { SystemRole, UserListItem, UserStatus } from "@/features/users/types";
 
@@ -79,6 +79,7 @@ export default function UsersPage() {
   const departmentsQuery = useQuery({ queryKey: ["school", "departments", "all"], queryFn: () => schoolApi.listDepartments({ page_size: 100 }), enabled: createOpen });
   const coursesQuery = useQuery({ queryKey: ["school", "courses", "all"], queryFn: () => schoolApi.listCourses({ page_size: 100 }), enabled: createOpen });
   const sectionsQuery = useQuery({ queryKey: ["school", "sections", "all"], queryFn: () => schoolApi.listSections({ page_size: 100 }), enabled: createOpen });
+  const organizationsQuery = useQuery({ queryKey: ["school", "organizations", "all"], queryFn: () => schoolApi.listOrganizations({ page_size: 250 }), enabled: createOpen });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["users"] });
   const roleOptions = rolesQuery.data?.map((r) => r.name) ?? SYSTEM_ROLES;
@@ -144,6 +145,7 @@ export default function UsersPage() {
   const departments = departmentsQuery.data?.data ?? [];
   const courses = coursesQuery.data?.data ?? [];
   const sections = sectionsQuery.data?.data ?? [];
+  const organizations = organizationsQuery.data?.data ?? [];
   const openCreate = () => {
     setEditTarget(null);
     setForm(emptyForm);
@@ -192,7 +194,7 @@ export default function UsersPage() {
       officer_position: form.role === "student_council" ? form.officer_position : undefined,
     };
   };
-  const canCreate = isCreateFormValid(form);
+  const canCreate = isCreateFormValid(form, organizations);
 
   return (
     <div className="space-y-6">
@@ -267,7 +269,8 @@ export default function UsersPage() {
           departments={departments}
           courses={courses}
           sections={sections}
-          loadingSchoolStructure={departmentsQuery.isLoading || coursesQuery.isLoading || sectionsQuery.isLoading}
+          organizations={organizations}
+          loadingSchoolStructure={departmentsQuery.isLoading || coursesQuery.isLoading || sectionsQuery.isLoading || organizationsQuery.isLoading}
         />
       </Modal>
 
@@ -342,6 +345,7 @@ function CreateUserForm({
   departments,
   courses,
   sections,
+  organizations,
   loadingSchoolStructure,
 }: {
   form: typeof emptyForm;
@@ -349,10 +353,12 @@ function CreateUserForm({
   departments: Department[];
   courses: Course[];
   sections: Section[];
+  organizations: Organization[];
   loadingSchoolStructure: boolean;
 }) {
   const filteredCourses = courses.filter((course) => !form.department_id || course.department_id === form.department_id);
   const filteredSections = sections.filter((section) => !form.course_id || section.course_id === form.course_id);
+  const departmentCouncil = organizations.find((organization) => organization.department_id === form.department_id && organization.organization_type === "department_council");
   const setRole = (roleName: SystemRole) => {
     setForm({
       ...form,
@@ -421,12 +427,21 @@ function CreateUserForm({
       )}
 
       {form.role === "student_council" && (
-        <Select value={form.officer_position} onValueChange={(value) => setForm({ ...form, officer_position: value })}>
-          <SelectTrigger><SelectValue placeholder="Student Council role" /></SelectTrigger>
-          <SelectContent>
-            {SC_POSITIONS.map((position) => <SelectItem key={position} value={position}>{position}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <Select value={form.officer_position} onValueChange={(value) => setForm({ ...form, officer_position: value })}>
+            <SelectTrigger><SelectValue placeholder="Student Council role" /></SelectTrigger>
+            <SelectContent>
+              {SC_POSITIONS.map((position) => <SelectItem key={position} value={position}>{position}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className={departmentCouncil ? "text-xs text-emerald-600" : "text-xs text-amber-600"}>
+            {form.department_id
+              ? departmentCouncil
+                ? `Council: ${departmentCouncil.name}`
+                : "Create this department's council in College Structure before saving this officer."
+              : "Select a department to connect this officer to its council."}
+          </p>
+        </div>
       )}
 
       <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-300">
@@ -489,11 +504,13 @@ function maskedEmail(email: string) {
   return `${localPart.slice(0, 3)}***@${domain}`;
 }
 
-function isCreateFormValid(form: typeof emptyForm) {
+function isCreateFormValid(form: typeof emptyForm, organizations: Organization[] = []) {
   if (!form.email.trim() || !form.first_name.trim() || !form.last_name.trim() || form.password.length < 8) return false;
   if (needsStudentNumber(form.role) && !form.student_number.trim()) return false;
+  if ((form.role === "student" || form.role === "student_council") && (!form.department_id || !form.course_id)) return false;
   if (form.role === "teacher" && !form.department_id) return false;
   if (form.role === "student_council" && !form.officer_position) return false;
+  if (form.role === "student_council" && !organizations.some((organization) => organization.department_id === form.department_id && organization.organization_type === "department_council")) return false;
   return true;
 }
 
