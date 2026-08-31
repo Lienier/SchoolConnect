@@ -33,6 +33,7 @@ from app.users.model import (
     TeacherProfile,
 )
 from app.utils.datetime import utcnow
+from seed import seed_initial_admin
 
 
 @pytest.fixture()
@@ -1355,3 +1356,29 @@ def test_removed_auth_workflows_and_invalid_uuid_are_client_errors(app_ctx):
     )
     assert invalid.status_code == 422
     assert invalid.get_json()["error_code"] == "validation_error"
+
+
+def test_initial_admin_seed_can_explicitly_recover_existing_account(app_ctx, monkeypatch):
+    _role("admin", [])
+    student_role = _role("student", [])
+    existing = _user("recover.admin@example.com", student_role)
+    existing.password_hash = AuthService()._hash_password("OldPassword123!")
+    existing.status = "inactive"
+    existing.email_verified = False
+    db.session.commit()
+
+    monkeypatch.setenv("SEED_ADMIN_EMAIL", existing.email)
+    monkeypatch.setenv("SEED_ADMIN_PASSWORD", "RecoveredPass123!")
+    monkeypatch.setenv("SEED_ADMIN_RESET_EXISTING", "true")
+
+    seed_initial_admin()
+
+    recovered = AuthService().authenticate(
+        email=existing.email,
+        password="RecoveredPass123!",
+    )
+    role_names = {role.name for role in recovered.roles}
+    assert recovered.status == "active"
+    assert recovered.email_verified is True
+    assert role_names == {"admin"}
+    assert db.session.get(AdministratorProfile, recovered.id) is not None

@@ -18,6 +18,10 @@ from app.permissions.constants import DEFAULT_ROLE_PERMISSIONS, PERMISSIONS
 from app.permissions.model import Permission, Role, RolePermission, UserRole
 
 
+def _env_flag(key: str) -> bool:
+    return os.getenv(key, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def seed_rbac() -> None:
     """Create permissions and system roles if they do not already exist."""
     all_perms = {perm for perms in PERMISSIONS.values() for perm in perms}
@@ -68,6 +72,7 @@ def seed_initial_admin() -> None:
 
     email = os.getenv("SEED_ADMIN_EMAIL", "").strip().lower()
     password = os.getenv("SEED_ADMIN_PASSWORD", "")
+    reset_existing = _env_flag("SEED_ADMIN_RESET_EXISTING")
     if not email or not password:
         print("Initial administrator seed skipped; explicit credentials were not supplied.")
         return
@@ -76,7 +81,19 @@ def seed_initial_admin() -> None:
 
     existing = db.session.scalar(db.select(User).where(User.email == email))
     if existing is not None:
-        print(f"Initial administrator already exists: {email}")
+        if not reset_existing:
+            print(f"Initial administrator already exists: {email}")
+            return
+
+        service = AuthService()
+        existing.password_hash = service._hash_password(password)
+        existing.status = "active"
+        existing.email_verified = True
+        _set_user_roles(existing, ["admin"])
+        if db.session.get(AdministratorProfile, existing.id) is None:
+            db.session.add(AdministratorProfile(id=existing.id))
+            db.session.commit()
+        print(f"Initial administrator password reset: {email}")
         return
 
     service = AuthService()

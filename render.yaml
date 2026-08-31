@@ -33,5 +33,7 @@ services:
         value: admin@schoolconnect.example.com
       - key: SEED_ADMIN_PASSWORD
         sync: false
+      - key: SEED_ADMIN_RESET_EXISTING
+        value: "false"
       - key: RATELIMIT_STORAGE_URI
         value: memory://
