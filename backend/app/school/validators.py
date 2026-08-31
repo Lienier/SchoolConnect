@@ -84,6 +84,14 @@ class OrganizationCreateRequest(_Base):
     organization_type: str = Field(default="college_wide", max_length=40)
     department_id: str | None = None
     adviser_id: str | None = None
+    positions: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_positions(self):
+        if self.organization_type in {"student_council", "department_student_leaders"}:
+            if not [position for position in self.positions if position.strip()]:
+                raise ValueError("Council roles or positions are required.")
+        return self
 
 
 class OrganizationUpdateRequest(_Base):
@@ -95,6 +103,7 @@ class OrganizationUpdateRequest(_Base):
     organization_type: str | None = Field(default=None, max_length=40)
     department_id: str | None = None
     adviser_id: str | None = None
+    positions: list[str] | None = None
 
 
 class CouncilMemberRequest(_Base):

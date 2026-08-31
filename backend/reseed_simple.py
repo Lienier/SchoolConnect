@@ -49,6 +49,7 @@ from app.users.model import (
     Department,
     OfficerProfile,
     Organization,
+    OrganizationPosition,
     Section,
     Semester,
     StudentProfile,
@@ -171,7 +172,7 @@ def _ensure_profile_rows(
             profile = OfficerProfile(id=officer.id)
             db.session.add(profile)
         profile.organization_id = organization.id
-        profile.position = profile.position or "Council Officer"
+        profile.position = profile.position or "Representative"
         profile.term_start = date(2026, 8, 1)
         profile.term_end = date(2027, 5, 31)
 
@@ -227,10 +228,22 @@ def _seed_school_structure(admin: User | None, professor: User | None) -> tuple[
         name="Student Council",
         description="Official student representative organization.",
         category="student_government",
+        organization_type="student_council",
         adviser_id=professor.id if professor else None,
     )
     db.session.add_all([course, organization])
     db.session.flush()
+    organization.positions.extend(
+        [
+            OrganizationPosition(name="President", sort_order=0),
+            OrganizationPosition(name="Vice President", sort_order=1),
+            OrganizationPosition(name="Secretary", sort_order=2),
+            OrganizationPosition(name="Treasurer", sort_order=3),
+            OrganizationPosition(name="Auditor", sort_order=4),
+            OrganizationPosition(name="PIO", sort_order=5),
+            OrganizationPosition(name="Representative", sort_order=6),
+        ]
+    )
 
     section = Section(course_id=course.id, semester_id=semester.id, name="3A")
     db.session.add(section)

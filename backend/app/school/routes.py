@@ -293,6 +293,7 @@ def create_organization():
         organization_type=p.organization_type,
         department_id=p.department_id,
         adviser_id=p.adviser_id,
+        positions=p.positions,
     )
     return success_response(data=organization_to_dict(org), message="Organization created.", status_code=201)
 
@@ -309,6 +310,7 @@ def update_organization(org_id: str):
         organization_type=p.organization_type,
         department_id=p.department_id if "department_id" in body else ...,
         adviser_id=p.adviser_id if "adviser_id" in body else ...,
+        positions=p.positions if "positions" in body else ...,
     )
     return success_response(data=organization_to_dict(org), message="Organization updated.")
 

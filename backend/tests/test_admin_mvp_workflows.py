@@ -26,6 +26,7 @@ from app.users.model import (
     Department,
     OfficerProfile,
     Organization,
+    OrganizationPosition,
     Section,
     Semester,
     StudentProfile,
@@ -114,6 +115,8 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
         category="Department Student Leaders",
     )
     db.session.add_all([section, student_council, department_leaders])
+    student_council.positions.append(OrganizationPosition(name="President", sort_order=0))
+    department_leaders.positions.append(OrganizationPosition(name="Governor", sort_order=0))
     db.session.commit()
 
     client = app_ctx.test_client()
@@ -265,6 +268,7 @@ def test_assign_council_role_requires_details_and_creates_profiles(app_ctx):
         category="Department Student Leaders",
     )
     db.session.add_all([section, leaders])
+    leaders.positions.append(OrganizationPosition(name="Governor", sort_order=0))
     db.session.commit()
 
     client = app_ctx.test_client()
@@ -320,6 +324,53 @@ def test_assign_council_role_requires_details_and_creates_profiles(app_ctx):
         headers=headers,
     )
     assert both_councils.status_code == 422
+
+
+def test_organization_positions_drive_council_assignment(app_ctx):
+    admin_role = _role("admin", ["organizations.manage", "organizations.view"])
+    student_role = _role("student", [])
+    _role("department_student_leader", [])
+    admin = _user("positions.admin@example.com", admin_role)
+    student = _user("positions.student@example.com", student_role)
+    department = Department(name="Business", code="CBA")
+    db.session.add(department)
+    db.session.flush()
+    db.session.add(StudentProfile(id=student.id, student_number="2026-7001", department_id=department.id))
+    db.session.commit()
+
+    client = app_ctx.test_client()
+    login = client.post("/api/auth/login", json={"email": admin.email, "password": "Password123!"})
+    headers = {"Authorization": f"Bearer {login.get_json()['data']['access_token']}"}
+
+    created = client.post(
+        "/api/school/organizations",
+        json={
+            "name": "CBA Student Leaders",
+            "category": "Department Student Leaders",
+            "organization_type": "department_student_leaders",
+            "department_id": str(department.id),
+            "positions": ["Governor", "Business Manager"],
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201
+    organization_id = created.get_json()["data"]["id"]
+    assert created.get_json()["data"]["positions"] == ["Governor", "Business Manager"]
+
+    unsaved_position = client.put(
+        f"/api/school/organizations/{organization_id}/members",
+        json={"members": [{"user_id": str(student.id), "position": "Secretary"}]},
+        headers=headers,
+    )
+    assert unsaved_position.status_code == 422
+
+    saved_position = client.put(
+        f"/api/school/organizations/{organization_id}/members",
+        json={"members": [{"user_id": str(student.id), "position": "Business Manager"}]},
+        headers=headers,
+    )
+    assert saved_position.status_code == 200
+    assert saved_position.get_json()["data"][0]["position"] == "Business Manager"
 
 
 def test_obsolete_content_approval_endpoints_are_removed(app_ctx):
@@ -398,6 +449,7 @@ def test_admin_can_manage_council_membership_separately(app_ctx):
             StudentProfile(id=other_student.id, student_number="2026-2001", department_id=other_department.id),
         ]
     )
+    organization.positions.append(OrganizationPosition(name="Governor", sort_order=0))
     db.session.commit()
 
     client = app_ctx.test_client()

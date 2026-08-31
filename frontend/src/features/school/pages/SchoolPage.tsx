@@ -46,6 +46,9 @@ type RelationMaps = {
 
 type OrganizationType = Organization["organization_type"];
 
+const STUDENT_COUNCIL_POSITIONS = ["President", "Vice President", "Secretary", "Treasurer", "Auditor", "PIO", "Representative"];
+const DEPARTMENT_LEADER_POSITIONS = ["Governor", "Vice Governor", "Secretary", "Treasurer", "Auditor", "PIO", "Representative"];
+
 const TABS: { key: EntityKey; label: string; managePerm: string }[] = [
   { key: "departments", label: "Departments", managePerm: "departments.manage" },
   { key: "courses", label: "Courses", managePerm: "courses.manage" },
@@ -318,13 +321,17 @@ function EntityForm({
   const [form, setForm] = useState<SchoolRecord>(item ?? {});
   const set = (key: string, value: unknown) => setForm((f) => ({ ...f, [key]: value }));
   const canSave = formIsValid(entity, form);
+  const submitPayload = () => {
+    if (entity !== "organizations") return form;
+    return { ...form, positions: cleanPositions(form.positions) };
+  };
 
   return (
     <div className="space-y-4">
       <RelationshipHint entity={entity} form={form} relations={relations} />
       {fieldsFor(entity, form, set, relations)}
       <div className="flex justify-end gap-2">
-        <Button onClick={() => onSubmit(form)} isLoading={submitting} disabled={!canSave}>Save</Button>
+        <Button onClick={() => onSubmit(submitPayload())} isLoading={submitting} disabled={!canSave}>Save</Button>
       </div>
     </div>
   );
@@ -376,6 +383,12 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
   const setOrganizationType = (value: string) => {
     set("organization_type", value);
     if (["college_wide", "student_council"].includes(value)) set("department_id", "");
+    if (["student_council", "department_student_leaders"].includes(value) && !Array.isArray(form.positions)) {
+      set("positions", defaultPositionsFor(value as OrganizationType));
+    }
+    if (!["student_council", "department_student_leaders"].includes(value)) {
+      set("positions", []);
+    }
   };
 
   switch (entity) {
@@ -421,6 +434,14 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
         textField("name", "Name"),
         textField("category", "Category"),
         textField("description", "Description"),
+        ["student_council", "department_student_leaders"].includes(String(form.organization_type ?? "college_wide")) && (
+          <OrganizationPositionsEditor
+            key="positions"
+            positions={Array.isArray(form.positions) ? form.positions.map(String) : defaultPositionsFor(String(form.organization_type ?? "college_wide") as OrganizationType)}
+            setPositions={(positions) => set("positions", positions)}
+            suggestions={defaultPositionsFor(String(form.organization_type ?? "college_wide") as OrganizationType)}
+          />
+        ),
       ];
     case "academic_years":
       return [
@@ -474,7 +495,7 @@ function columnsFor(entity: EntityKey): string[] {
     case "departments": return ["Code", "Name", "Description", ""];
     case "courses": return ["Code", "Name", "Department", ""];
     case "sections": return ["Name", "Course", "Semester", ""];
-    case "organizations": return ["Name", "Type", "Department", "Category", ""];
+    case "organizations": return ["Name", "Type", "Department", "Roles / Positions", "Category", ""];
     case "academic_years": return ["Name", "Range", "Current", ""];
     case "semesters": return ["Name", "Academic Year", "Range", ""];
   }
@@ -489,6 +510,7 @@ function cellsFor(entity: EntityKey, item: SchoolRecord, relations: RelationMaps
       item.name,
       organizationTypeLabel(String(item.organization_type ?? "college_wide") as OrganizationType),
       ["college_wide", "student_council"].includes(String(item.organization_type ?? "college_wide")) ? "College-wide" : labelDepartment(findById(relations.departments, String(item.department_id ?? ""))),
+      cleanPositions(item.positions).length ? cleanPositions(item.positions).join(", ") : "-",
       item.category ?? "-",
     ];
     case "academic_years": return [item.name, `${item.start_date} - ${item.end_date}`, item.is_current ? <Badge tone="success">current</Badge> : "-"];
@@ -502,7 +524,9 @@ function formIsValid(entity: EntityKey, form: SchoolRecord) {
     case "courses": return !!form.department_id && !!form.code && !!form.name;
     case "sections": return !!form.course_id && !!form.semester_id && !!form.name;
     case "organizations":
-      return !!form.name && (["college_wide", "student_council"].includes(String(form.organization_type ?? "college_wide")) || !!form.department_id);
+      return !!form.name
+        && (["college_wide", "student_council"].includes(String(form.organization_type ?? "college_wide")) || !!form.department_id)
+        && (!["student_council", "department_student_leaders"].includes(String(form.organization_type ?? "college_wide")) || cleanPositions(form.positions).length > 0);
     case "academic_years": return !!form.name && !!form.start_date && !!form.end_date;
     case "semesters": return !!form.academic_year_id && !!form.name && !!form.start_date && !!form.end_date;
   }
@@ -536,4 +560,81 @@ function organizationTypeLabel(type: OrganizationType) {
     department_organization: "Department Organization",
     department_student_leaders: "Department Student Leaders",
   }[type];
+}
+
+function OrganizationPositionsEditor({
+  positions,
+  setPositions,
+  suggestions,
+}: {
+  positions: string[];
+  setPositions: (positions: string[]) => void;
+  suggestions: string[];
+}) {
+  const visiblePositions = positions.length ? positions : [""];
+  const update = (index: number, value: string) => {
+    const next = [...visiblePositions];
+    next[index] = value;
+    setPositions(next);
+  };
+  const add = (value = "") => {
+    setPositions([...cleanPositions(visiblePositions), value]);
+  };
+  const remove = (index: number) => {
+    const next = visiblePositions.filter((_, itemIndex) => itemIndex !== index);
+    setPositions(next.length ? next : [""]);
+  };
+
+  return (
+    <div key="positions" className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-navy-800 dark:bg-navy-900/60">
+      <div>
+        <label className="block text-sm font-medium text-navy-700 dark:text-navy-200">Council roles / positions</label>
+        <p className="mt-1 text-xs text-slate-500 dark:text-navy-400">Create the positions here first, then assign students to these positions in Council Members.</p>
+      </div>
+      <div className="space-y-2">
+        {visiblePositions.map((position, index) => (
+          <div key={index} className="flex gap-2">
+            <Input value={position} placeholder="Position name" onChange={(event) => update(index, event.target.value)} />
+            <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {suggestions.filter((position) => !cleanPositions(visiblePositions).includes(position)).map((position) => (
+          <button
+            type="button"
+            key={position}
+            onClick={() => add(position)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-navy-600 transition hover:border-blue-300 hover:text-blue-700 dark:border-navy-700 dark:bg-navy-950 dark:text-navy-300"
+          >
+            + {position}
+          </button>
+        ))}
+        <Button type="button" variant="secondary" size="sm" onClick={() => add()}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Add position
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function cleanPositions(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  return value
+    .map((position) => String(position).trim())
+    .filter((position) => {
+      if (!position || seen.has(position.toLowerCase())) return false;
+      seen.add(position.toLowerCase());
+      return true;
+    });
+}
+
+function defaultPositionsFor(type: OrganizationType) {
+  if (type === "student_council") return STUDENT_COUNCIL_POSITIONS;
+  if (type === "department_student_leaders") return DEPARTMENT_LEADER_POSITIONS;
+  return [];
 }

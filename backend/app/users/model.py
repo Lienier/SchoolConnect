@@ -211,6 +211,34 @@ class Organization(db.Model):
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow,
         server_default=func.now(), nullable=False
     )
+    positions: Mapped[list["OrganizationPosition"]] = relationship(
+        back_populates="organization",
+        cascade="all, delete-orphan",
+        order_by="OrganizationPosition.sort_order",
+    )
+
+
+class OrganizationPosition(db.Model):
+    """Saved positions/office titles for council-style organizations."""
+
+    __tablename__ = "organization_positions"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "name", name="uq_organization_positions_org_name"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, server_default=func.now(), nullable=False
+    )
+    organization: Mapped[Organization] = relationship(back_populates="positions")
 
 
 class AcademicYear(db.Model):
@@ -267,6 +295,7 @@ __all__ = [
     "Course",
     "Section",
     "Organization",
+    "OrganizationPosition",
     "AcademicYear",
     "Semester",
 ]

@@ -51,7 +51,7 @@ export default function CouncilMembersPage() {
     enabled: Boolean(activeCouncilId),
   });
   const visibleMembers = draftMembers ?? (members.data ?? []).map(memberToDraft);
-  const positions = selectedCouncil?.organization_type === "student_council" ? STUDENT_COUNCIL_POSITIONS : DEPARTMENT_LEADER_POSITIONS;
+  const positions = selectedCouncil?.positions ?? [];
   const availableCandidates = (candidates.data ?? []).filter((candidate) => !visibleMembers.some((member) => member.user_id === candidate.user_id));
   const hasStudentCouncil = councils.some((org) => org.organization_type === "student_council");
   const departmentsWithoutLeaders = (departments.data?.data ?? []).filter(
@@ -77,6 +77,7 @@ export default function CouncilMembersPage() {
         department_id: payload.department_id,
         name: isStudentCouncil ? "Student Council" : `${department?.code ?? "Department"} Student Leaders`,
         category: isStudentCouncil ? "Student Council" : "Department Student Leaders",
+        positions: isStudentCouncil ? STUDENT_COUNCIL_POSITIONS : DEPARTMENT_LEADER_POSITIONS,
         description: isStudentCouncil
           ? "College-wide student council."
           : `Student leaders for ${department?.name ?? "the selected department"}.`,
@@ -103,7 +104,7 @@ export default function CouncilMembersPage() {
   const addMember = () => {
     const candidate = availableCandidates.find((item) => item.user_id === selectedUserId);
     const position = selectedPosition.trim();
-    if (!candidate || !position) return;
+    if (!candidate || !position || !positions.includes(position)) return;
     setDraftMembers([
       ...visibleMembers,
       {
@@ -206,7 +207,7 @@ export default function CouncilMembersPage() {
                       : departmentLabel(selectedCouncil, departments.data?.data ?? [])}
                   </p>
                 </div>
-                <Button isLoading={saveMembers.isPending} disabled={!activeCouncilId || visibleMembers.some((member) => !member.position.trim())} onClick={() => saveMembers.mutate()}>
+                <Button isLoading={saveMembers.isPending} disabled={!activeCouncilId || !positions.length || visibleMembers.some((member) => !positions.includes(member.position.trim()))} onClick={() => saveMembers.mutate()}>
                   Save Members
                 </Button>
               </div>
@@ -221,18 +222,17 @@ export default function CouncilMembersPage() {
                   ))}
                 </select>
                 <div className="space-y-1.5">
-                  <input
+                  <select
                     value={selectedPosition}
-                    list="new-council-position-suggestions"
-                    placeholder="Position"
                     onChange={(event) => setSelectedPosition(event.target.value)}
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 outline-none transition focus:ring-2 focus:ring-navy-400 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 dark:focus:ring-blue-700"
-                  />
-                  <datalist id="new-council-position-suggestions">
-                    {positions.map((position) => <option key={position} value={position} />)}
-                  </datalist>
+                    className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
+                    disabled={!positions.length}
+                  >
+                    <option value="">{positions.length ? "Position" : "Add positions in College Structure"}</option>
+                    {positions.map((position) => <option key={position} value={position}>{position}</option>)}
+                  </select>
                 </div>
-                <Button variant="secondary" disabled={!selectedUserId || !selectedPosition.trim()} onClick={addMember}>
+                <Button variant="secondary" disabled={!selectedUserId || !positions.includes(selectedPosition.trim())} onClick={addMember}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add
                 </Button>
@@ -250,16 +250,14 @@ export default function CouncilMembersPage() {
                       <p className="truncate font-semibold text-navy-900 dark:text-white">{member.full_name}</p>
                       <p className="truncate text-xs text-slate-500 dark:text-navy-400">{member.student_number ?? member.email}</p>
                     </div>
-                    <input
+                    <select
                       value={member.position}
-                      list={`${member.user_id}-position-suggestions`}
-                      placeholder="Position"
                       onChange={(event) => updatePosition(member.user_id, event.target.value)}
-                      className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm text-navy-900 outline-none transition focus:ring-2 focus:ring-navy-400 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 dark:focus:ring-blue-700"
-                    />
-                    <datalist id={`${member.user_id}-position-suggestions`}>
-                      {positions.map((position) => <option key={position} value={position} />)}
-                    </datalist>
+                      className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
+                    >
+                      {!positions.includes(member.position) && <option value={member.position}>{member.position || "Missing position"}</option>}
+                      {positions.map((position) => <option key={position} value={position}>{position}</option>)}
+                    </select>
                     <div className="text-right">
                       <Button size="sm" variant="danger" onClick={() => removeMember(member.user_id)}>
                         <Trash2 className="h-3.5 w-3.5" />
@@ -275,7 +273,7 @@ export default function CouncilMembersPage() {
                 )}
               </div>
 
-              <Badge tone="info">Saving replaces this council's member list.</Badge>
+              <Badge tone="info">Saving distributes this council's saved positions to selected members.</Badge>
             </div>
           ) : (
             <div className="py-12 text-center text-sm text-slate-500 dark:text-navy-400">Select a council to manage members.</div>

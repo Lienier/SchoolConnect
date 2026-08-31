@@ -22,6 +22,7 @@ from app.users.model import (
     Department,
     OfficerProfile,
     Organization,
+    OrganizationPosition,
     Section,
     Semester,
     StudentProfile,
@@ -207,23 +208,28 @@ class SchoolStructureService:
         return self._require(self.organizations.get_by_id(org_id), "Organization")
 
     def create_organization(
-        self, *, name, description, category, organization_type, department_id, adviser_id
+        self, *, name, description, category, organization_type, department_id, adviser_id,
+        positions=None,
     ) -> Organization:
         org_type = _normalize_organization_type(organization_type)
         dept_id = self._validate_organization_department(org_type, department_id)
         self._ensure_department_organization_slot(dept_id, org_type)
         self._ensure_student_council_slot(org_type)
+        position_names = self._normalize_positions(positions)
+        if self._is_council_type(org_type) and not position_names:
+            raise ValidationError("Council roles or positions are required.")
         org = Organization(
             name=name, description=description, category=category,
             organization_type=org_type, department_id=dept_id, adviser_id=_as_uuid(adviser_id),
         )
         self.organizations.add(org)
+        self._replace_organization_positions(org, position_names)
         db.session.commit()
         return org
 
     def update_organization(
         self, org_id, *, name=None, description=None, category=None,
-        organization_type=None, department_id=..., adviser_id=...,
+        organization_type=None, department_id=..., adviser_id=..., positions=...,
     ) -> Organization:
         org = self.get_organization(org_id)
         next_type = _normalize_organization_type(organization_type or org.organization_type)
@@ -250,6 +256,15 @@ class SchoolStructureService:
             org.department_id = next_dept_id
         if adviser_id is not ...:
             org.adviser_id = _as_uuid(adviser_id)
+        if positions is not ...:
+            position_names = self._normalize_positions(positions)
+            if self._is_council_type(next_type) and not position_names:
+                raise ValidationError("Council roles or positions are required.")
+            self._replace_organization_positions(org, position_names)
+        elif not self._is_council_type(next_type):
+            self._replace_organization_positions(org, [])
+        elif self._is_council_type(next_type) and not org.positions:
+            raise ValidationError("Council roles or positions are required.")
         db.session.commit()
         return org
 
@@ -319,6 +334,8 @@ class SchoolStructureService:
             position = (row.get("position") or "").strip()
             if user_id is None or not position:
                 raise ValidationError("Member and position are required.")
+            if org.positions and position not in {item.name for item in org.positions}:
+                raise ValidationError("Member position must be one of the roles saved on this council.")
             if user_id in normalized:
                 raise ValidationError("A council member can only appear once.")
             normalized[user_id] = position
@@ -405,6 +422,51 @@ class SchoolStructureService:
             filters.append(Organization.id != exclude_id)
         if self.organizations.exists_where(*filters):
             raise ConflictError("The college-wide Student Council organization already exists.")
+
+    @staticmethod
+    def _is_council_type(organization_type: str) -> bool:
+        return organization_type in {"student_council", "department_student_leaders"}
+
+    @staticmethod
+    def _normalize_positions(positions) -> list[str]:
+        if positions is None:
+            return []
+        seen = set()
+        normalized = []
+        for position in positions:
+            name = str(position).strip()
+            if not name:
+                continue
+            if len(name) > 100:
+                raise ValidationError("Council role or position names must be 100 characters or fewer.")
+            key = name.lower()
+            if key in seen:
+                raise ValidationError("Council role or position names must be unique.")
+            seen.add(key)
+            normalized.append(name)
+        return normalized
+
+    def _replace_organization_positions(self, org: Organization, positions: list[str]) -> None:
+        if not self._is_council_type(org.organization_type):
+            org.positions.clear()
+            return
+        active_positions = db.session.scalars(
+            select(OfficerProfile.position)
+            .where(OfficerProfile.organization_id == org.id)
+            .where(OfficerProfile.position.isnot(None))
+            .distinct()
+        ).all()
+        removed_positions = set(active_positions) - set(positions)
+        if removed_positions:
+            raise ValidationError("Remove or reassign members before deleting a council role or position.")
+        existing = {position.name: position for position in org.positions}
+        org.positions[:] = [
+            existing.get(name, OrganizationPosition(organization=org, name=name))
+            for name in positions
+        ]
+        for index, position in enumerate(org.positions):
+            position.name = positions[index]
+            position.sort_order = index
 
     @staticmethod
     def _role_for_council(org: Organization) -> str:

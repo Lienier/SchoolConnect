@@ -390,9 +390,9 @@ class UserService:
             if course_uuid and section.course_id != course_uuid:
                 raise ValidationError("Section does not belong to the selected course.")
         if "student_council" in role_names:
-            self._student_council_organization()
+            self._ensure_organization_position(self._student_council_organization(), officer_position)
         if "department_student_leader" in role_names:
-            self._department_student_leaders_for(department_uuid)
+            self._ensure_organization_position(self._department_student_leaders_for(department_uuid), officer_position)
 
     def _create_role_profiles(
         self, user: User, *, role_names: set[str], student_number=None,
@@ -525,6 +525,7 @@ class UserService:
             )
             if organization is None:
                 raise ValidationError("Create the matching council organization in College Structure before assigning this role.")
+            self._ensure_organization_position(organization, officer_position)
             officer = db.session.get(OfficerProfile, user_id)
             if officer is None:
                 officer = OfficerProfile(id=user_id)
@@ -566,6 +567,16 @@ class UserService:
         if leaders is None:
             raise ValidationError("Create the department student leaders organization before assigning department student leaders.")
         return leaders
+
+    @staticmethod
+    def _ensure_organization_position(organization: Organization, position: str | None) -> None:
+        if not position:
+            raise ValidationError("Officer position is required.")
+        saved_positions = {item.name for item in organization.positions}
+        if not saved_positions:
+            raise ValidationError("Add council roles or positions in College Structure before assigning members.")
+        if position not in saved_positions:
+            raise ValidationError("Officer position must be one of the roles saved on this council.")
 
     @staticmethod
     def _sync_role_profiles(user_id: uuid.UUID, role_names: set[str]) -> None:

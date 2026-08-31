@@ -60,6 +60,7 @@ def organization_to_dict(o: Organization) -> dict:
         "description": o.description,
         "category": o.category,
         "organization_type": o.organization_type,
+        "positions": [position.name for position in getattr(o, "positions", [])],
         "department_id": str(o.department_id) if o.department_id else None,
         "adviser_id": str(o.adviser_id) if o.adviser_id else None,
         "created_at": _iso(o.created_at),
