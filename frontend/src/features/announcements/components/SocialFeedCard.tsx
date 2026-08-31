@@ -34,6 +34,7 @@ const ROLE_LABELS: Record<string, string> = {
   admin: "Admin",
   teacher: "Professor",
   student_council: "Student Council",
+  department_student_leader: "Department Student Leader",
   student: "Student",
 };
 
@@ -41,6 +42,7 @@ const ROLE_BADGE: Record<string, "danger" | "info" | "warning" | "success"> = {
   admin: "danger",
   teacher: "info",
   student_council: "warning",
+  department_student_leader: "warning",
   student: "success",
 };
 

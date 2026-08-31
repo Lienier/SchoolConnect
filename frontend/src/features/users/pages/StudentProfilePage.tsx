@@ -21,7 +21,7 @@ export default function StudentProfilePage() {
     course_id: string;
     section_id: string;
   } | null>(null);
-  const isStudent = Boolean(authUser?.roles.some((role) => ["student", "student_council"].includes(role)));
+  const isStudent = Boolean(authUser?.roles.some((role) => ["student", "student_council", "department_student_leader"].includes(role)));
   const profile = useQuery({ queryKey: ["users", "me", "profile"], queryFn: usersApi.getMyProfile });
   const collegeProfile = useQuery({
     queryKey: ["users", "me", "student-profile"],

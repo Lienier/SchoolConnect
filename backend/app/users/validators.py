@@ -27,12 +27,12 @@ class UserCreateRequest(BaseModel):
     @model_validator(mode="after")
     def validate_role_profile_fields(self):
         role = self.role or (self.roles[0] if self.roles else "student")
-        if role in {"student", "student_council"} and not self.student_number:
+        if role in {"student", "student_council", "department_student_leader"} and not self.student_number:
             raise ValueError("Student ID number is required.")
         if role == "teacher" and not self.department_id:
             raise ValueError("Department is required for professors.")
-        if role == "student_council" and not self.officer_position:
-            raise ValueError("Student Council role is required.")
+        if role in {"student_council", "department_student_leader"} and not self.officer_position:
+            raise ValueError("Officer role is required.")
         return self
 
 

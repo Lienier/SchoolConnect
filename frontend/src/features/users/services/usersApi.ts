@@ -12,6 +12,7 @@ export const usersApi = {
       status?: UserStatus | "";
       role?: string;
       sort?: string;
+      page_size?: number;
     } = {},
   ): Promise<{ data: UserListResponse["data"]; meta?: UserListResponse["meta"] }> {
     const { data } = await apiClient.get<UserListResponse>("/users", { params });

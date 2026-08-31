@@ -5,6 +5,7 @@ const PRIORITY: Role[] = [
   ROLES.ADMIN,
   ROLES.TEACHER,
   ROLES.STUDENT_COUNCIL,
+  ROLES.DEPARTMENT_STUDENT_LEADER,
   ROLES.STUDENT,
 ];
 
@@ -12,6 +13,7 @@ const PATH: Record<Role, string> = {
   [ROLES.ADMIN]: "/admin",
   [ROLES.TEACHER]: "/professor",
   [ROLES.STUDENT_COUNCIL]: "/officer",
+  [ROLES.DEPARTMENT_STUDENT_LEADER]: "/officer",
   [ROLES.STUDENT]: "/student",
 };
 

@@ -1,6 +1,6 @@
 """System role definitions for RBAC.
 
-These are the four default seed roles. The permission-based design means new
+These are the default seed roles. The permission-based design means new
 roles can be created at runtime; this enum documents the canonical seed names
 used throughout the application and seed data.
 """
@@ -11,11 +11,12 @@ from enum import Enum
 
 
 class Role(str, Enum):
-    """The four default seed roles supported by SchoolConnect."""
+    """The default seed roles supported by SchoolConnect."""
 
     ADMIN = "admin"
     TEACHER = "teacher"
     STUDENT_COUNCIL = "student_council"
+    DEPARTMENT_STUDENT_LEADER = "department_student_leader"
     STUDENT = "student"
 
     @classmethod

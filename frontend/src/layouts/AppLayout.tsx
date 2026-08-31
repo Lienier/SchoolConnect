@@ -4,7 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { TopNav } from "./TopNav";
 import { cn } from "@/utils/cn";
 
-type Role = "admin" | "teacher" | "student_council" | "student";
+type Role = "admin" | "teacher" | "student_council" | "department_student_leader" | "student";
 
 export function AppLayout() {
   // Mocking the user role for now. In a real app, this comes from an auth context.

@@ -97,7 +97,7 @@ export function AppRoutes() {
           <Route path="/school" element={<ProtectedRoute requiredPermission="departments.view"><SchoolPage /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><ReportsPage /></ProtectedRoute>} />
           <Route path="/audit/logs" element={<ProtectedRoute requiredPermission="audit.view"><ActivityLogsPage /></ProtectedRoute>} />
-          <Route path="/registrations" element={<ProtectedRoute allowedRoles={["admin", "teacher", "student_council"]}><AdminRegistrationsPage /></ProtectedRoute>} />
+          <Route path="/registrations" element={<ProtectedRoute allowedRoles={["admin", "teacher", "student_council", "department_student_leader"]}><AdminRegistrationsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute allowedRoles={["admin"]}><SettingsPage /></ProtectedRoute>} />
           <Route path="/attendance" element={<ProtectedRoute requiredPermission="attendance.view"><AttendancePage /></ProtectedRoute>} />
           <Route path="/attendance/mine" element={<ProtectedRoute allowedRoles={["student"]}><StudentAttendancePage /></ProtectedRoute>} />

@@ -36,7 +36,12 @@ def _as_uuid(value: str | None) -> uuid.UUID | None:
 
 def _normalize_organization_type(value: str | None) -> str:
     organization_type = (value or "college_wide").strip()
-    allowed = {"college_wide", "department_organization", "department_council"}
+    allowed = {
+        "college_wide",
+        "student_council",
+        "department_organization",
+        "department_student_leaders",
+    }
     if organization_type not in allowed:
         raise ValidationError("Invalid organization type.")
     return organization_type
@@ -203,6 +208,7 @@ class SchoolStructureService:
         org_type = _normalize_organization_type(organization_type)
         dept_id = self._validate_organization_department(org_type, department_id)
         self._ensure_department_organization_slot(dept_id, org_type)
+        self._ensure_student_council_slot(org_type)
         org = Organization(
             name=name, description=description, category=category,
             organization_type=org_type, department_id=dept_id, adviser_id=_as_uuid(adviser_id),
@@ -224,9 +230,10 @@ class SchoolStructureService:
             next_dept_id = self._validate_organization_department(next_type, org.department_id)
         if (
             (next_type != org.organization_type or next_dept_id != org.department_id)
-            and next_dept_id is not None
+            and (next_dept_id is not None or next_type == "student_council")
         ):
             self._ensure_department_organization_slot(next_dept_id, next_type, exclude_id=org.id)
+            self._ensure_student_council_slot(next_type, exclude_id=org.id)
         if name is not None:
             org.name = name
         if description is not None:
@@ -251,10 +258,10 @@ class SchoolStructureService:
         self, organization_type: str, department_id
     ) -> uuid.UUID | None:
         dept_id = _as_uuid(str(department_id) if department_id is not None else None)
-        if organization_type == "college_wide":
+        if organization_type in {"college_wide", "student_council"}:
             return None
         if dept_id is None:
-            raise ValidationError("Department is required for department organizations and councils.")
+            raise ValidationError("Department is required for department organizations and department student leaders.")
         self.get_department(dept_id)
         return dept_id
 
@@ -262,7 +269,7 @@ class SchoolStructureService:
         self, department_id: uuid.UUID | None, organization_type: str,
         exclude_id: uuid.UUID | None = None,
     ) -> None:
-        if department_id is None or organization_type == "college_wide":
+        if department_id is None or organization_type in {"college_wide", "student_council"}:
             return
         filters = [
             Organization.department_id == department_id,
@@ -271,8 +278,19 @@ class SchoolStructureService:
         if exclude_id is not None:
             filters.append(Organization.id != exclude_id)
         if self.organizations.exists_where(*filters):
-            label = "council" if organization_type == "department_council" else "organization"
-            raise ConflictError(f"This department already has a department {label}.")
+            label = "student leaders" if organization_type == "department_student_leaders" else "organization"
+            raise ConflictError(f"This department already has department {label}.")
+
+    def _ensure_student_council_slot(
+        self, organization_type: str, exclude_id: uuid.UUID | None = None
+    ) -> None:
+        if organization_type != "student_council":
+            return
+        filters = [Organization.organization_type == "student_council"]
+        if exclude_id is not None:
+            filters.append(Organization.id != exclude_id)
+        if self.organizations.exists_where(*filters):
+            raise ConflictError("The college-wide Student Council organization already exists.")
 
     # ---- Academic Years --------------------------------------------------
     def list_academic_years_query(self) -> Select:

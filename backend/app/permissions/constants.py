@@ -75,7 +75,7 @@ PERMISSIONS: dict[str, list[str]] = {
     ],
 }
 
-# The four default system roles and the permissions they grant.
+# The default system roles and the permissions they grant.
 DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "admin": [
         perm
@@ -136,6 +136,26 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
         "academic_years.view",
         "semesters.view",
     ],
+    "department_student_leader": [
+        # Department student leaders are student officers scoped by assignment.
+        "announcements.view",
+        "announcements.create",
+        "events.view",
+        "events.create",
+        "events.update",
+        "registrations.view",
+        "registrations.manage",
+        "attendance.view",
+        "attendance.scan",
+        "notifications.view",
+        "reports.view",
+        "departments.view",
+        "courses.view",
+        "sections.view",
+        "organizations.view",
+        "academic_years.view",
+        "semesters.view",
+    ],
     "student": [
         "announcements.view",
         "events.view",
@@ -153,4 +173,10 @@ DEFAULT_ROLE_PERMISSIONS: dict[str, list[str]] = {
     ],
 }
 
-SYSTEM_ROLES: list[str] = ["admin", "teacher", "student_council", "student"]
+SYSTEM_ROLES: list[str] = [
+    "admin",
+    "teacher",
+    "student_council",
+    "department_student_leader",
+    "student",
+]

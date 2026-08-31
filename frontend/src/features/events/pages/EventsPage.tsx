@@ -43,7 +43,7 @@ export default function EventsPage() {
   const isStudent = Boolean(user?.roles?.includes("student"));
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
   const isAdmin = Boolean(user?.roles?.includes("admin"));
-  const canCreate = user?.roles?.some((r) => ["admin", "teacher", "student_council"].includes(r));
+  const canCreate = user?.roles?.some((r) => ["admin", "teacher", "student_council", "department_student_leader"].includes(r));
   const visibleStatusTabs = STATUS_TABS.filter((tab) => isStudent ? ["", "approved", "ongoing", "completed"].includes(tab.key) : true);
 
   const categories = useQuery({

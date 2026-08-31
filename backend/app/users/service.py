@@ -36,6 +36,8 @@ class UserService:
         self.users = UserRepository()
         self.roles = RoleRepository()
         self.user_roles = UserRoleRepository()
+        self.student_roles = {"student", "student_council", "department_student_leader"}
+        self.officer_roles = {"student_council", "department_student_leader"}
 
     # --- admin CRUD -------------------------------------------------------
     def list_users_query(self):
@@ -324,7 +326,7 @@ class UserService:
     def _generated_username(
         *, email: str, role_names: set[str], student_number: str | None
     ) -> str | None:
-        if role_names & {"student", "student_council"}:
+        if role_names & {"student", "student_council", "department_student_leader"}:
             return student_number.strip() if student_number else None
         return email.split("@", 1)[0].strip() or None
 
@@ -332,7 +334,7 @@ class UserService:
         self, *, role_names: set[str], student_number=None, department_id=None,
         course_id=None, section_id=None, officer_position=None,
     ) -> None:
-        if role_names & {"student", "student_council"}:
+        if role_names & self.student_roles:
             if not student_number:
                 raise ValidationError("Student ID number is required.")
             existing_student = db.session.scalar(
@@ -345,14 +347,14 @@ class UserService:
         course_uuid = self._uuid_or_none(course_id)
         section_uuid = self._uuid_or_none(section_id)
 
-        if role_names & {"student", "student_council"} and department_uuid is None:
+        if role_names & self.student_roles and department_uuid is None:
             raise ValidationError("Department is required for students.")
-        if role_names & {"student", "student_council"} and course_uuid is None:
+        if role_names & self.student_roles and course_uuid is None:
             raise ValidationError("Course is required for students.")
         if "teacher" in role_names and department_uuid is None:
             raise ValidationError("Department is required for professors.")
-        if "student_council" in role_names and not officer_position:
-            raise ValidationError("Student Council role is required.")
+        if role_names & self.officer_roles and not officer_position:
+            raise ValidationError("Officer role is required.")
         if department_uuid and db.session.get(Department, department_uuid) is None:
             raise ValidationError("Department not found.")
         if course_uuid:
@@ -367,8 +369,10 @@ class UserService:
                 raise ValidationError("Section not found.")
             if course_uuid and section.course_id != course_uuid:
                 raise ValidationError("Section does not belong to the selected course.")
-        if "student_council" in role_names and department_uuid:
-            self._department_council_for(department_uuid)
+        if "student_council" in role_names:
+            self._student_council_organization()
+        if "department_student_leader" in role_names:
+            self._department_student_leaders_for(department_uuid)
 
     def _create_role_profiles(
         self, user: User, *, role_names: set[str], student_number=None,
@@ -378,7 +382,7 @@ class UserService:
         course_uuid = self._uuid_or_none(course_id)
         section_uuid = self._uuid_or_none(section_id)
 
-        if role_names & {"student", "student_council"}:
+        if role_names & self.student_roles:
             db.session.add(
                 StudentProfile(
                     id=user.id,
@@ -393,12 +397,16 @@ class UserService:
             )
         if "teacher" in role_names:
             db.session.add(TeacherProfile(id=user.id, department_id=department_uuid))
-        if "student_council" in role_names:
-            council = self._department_council_for(department_uuid)
+        if role_names & self.officer_roles:
+            organization = (
+                self._student_council_organization()
+                if "student_council" in role_names
+                else self._department_student_leaders_for(department_uuid)
+            )
             db.session.add(
                 OfficerProfile(
                     id=user.id,
-                    organization_id=council.id if council else None,
+                    organization_id=organization.id if organization else None,
                     position=officer_position,
                 )
             )
@@ -406,26 +414,35 @@ class UserService:
             db.session.add(AdministratorProfile(id=user.id))
 
     @staticmethod
-    def _department_council_for(department_id: uuid.UUID | None) -> Organization | None:
-        if department_id is None:
-            return None
+    def _student_council_organization() -> Organization:
         council = db.session.scalar(
-            select(Organization).where(
-                Organization.department_id == department_id,
-                Organization.organization_type == "department_council",
-            )
+            select(Organization).where(Organization.organization_type == "student_council")
         )
         if council is None:
-            raise ValidationError("Create the department council organization before assigning Student Council officers.")
+            raise ValidationError("Create the college-wide Student Council organization before assigning Student Council officers.")
         return council
+
+    @staticmethod
+    def _department_student_leaders_for(department_id: uuid.UUID | None) -> Organization | None:
+        if department_id is None:
+            return None
+        leaders = db.session.scalar(
+            select(Organization).where(
+                Organization.department_id == department_id,
+                Organization.organization_type == "department_student_leaders",
+            )
+        )
+        if leaders is None:
+            raise ValidationError("Create the department student leaders organization before assigning department student leaders.")
+        return leaders
 
     @staticmethod
     def _sync_role_profiles(user_id: uuid.UUID, role_names: set[str]) -> None:
         """Keep system role links and one-to-one profile rows consistent."""
         desired = {
-            StudentProfile: bool(role_names & {"student", "student_council"}),
+            StudentProfile: bool(role_names & {"student", "student_council", "department_student_leader"}),
             TeacherProfile: "teacher" in role_names,
-            OfficerProfile: "student_council" in role_names,
+            OfficerProfile: bool(role_names & {"student_council", "department_student_leader"}),
             AdministratorProfile: "admin" in role_names,
         }
         for model, should_exist in desired.items():

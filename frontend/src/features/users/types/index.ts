@@ -22,7 +22,7 @@ export interface UserListResponse extends ApiResponse<UserListItem[]> {
 
 export type UserStatus = "active" | "inactive" | "suspended" | "invited";
 
-export type SystemRole = "admin" | "teacher" | "student_council" | "student";
+export type SystemRole = "admin" | "teacher" | "student_council" | "department_student_leader" | "student";
 
 export interface StudentCollegeProfile {
   student_number: string | null;

@@ -11,6 +11,7 @@ export const ROLES = {
   ADMIN: "admin",
   TEACHER: "teacher",
   STUDENT_COUNCIL: "student_council",
+  DEPARTMENT_STUDENT_LEADER: "department_student_leader",
   STUDENT: "student",
 } as const;
 

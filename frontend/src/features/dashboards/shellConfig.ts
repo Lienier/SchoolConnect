@@ -14,6 +14,7 @@ const SHELL_BY_ROLE: Record<string, DashboardShellConfig> = {
   admin: { title: "Administrator", nav: adminNav },
   teacher: { title: "Professor", nav: teacherNav },
   student_council: { title: "Student Council", nav: officerNav },
+  department_student_leader: { title: "Department Student Leader", nav: officerNav },
   student: { title: "Student", nav: studentNav },
 };
 
@@ -25,6 +26,7 @@ export function getDashboardShellConfig(roles: string[] | undefined): DashboardS
   if (roles.includes("admin")) return SHELL_BY_ROLE.admin;
   if (roles.includes("teacher")) return SHELL_BY_ROLE.teacher;
   if (roles.includes("student_council")) return SHELL_BY_ROLE.student_council;
+  if (roles.includes("department_student_leader")) return SHELL_BY_ROLE.department_student_leader;
   if (roles.includes("student")) return SHELL_BY_ROLE.student;
 
   return { title: "SchoolConnect", nav: [] };

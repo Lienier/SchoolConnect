@@ -40,7 +40,7 @@ def upgrade() -> None:
     op.create_check_constraint(
         "ck_organizations_type",
         "organizations",
-        "organization_type IN ('college_wide','department_organization','department_council')",
+            "organization_type IN ('college_wide','student_council','department_organization','department_student_leaders')",
     )
     op.create_unique_constraint(
         "uq_organizations_department_type",

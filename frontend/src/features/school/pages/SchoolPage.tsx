@@ -142,7 +142,7 @@ export default function SchoolPage() {
 function StructureGuide() {
   const steps = [
     { icon: Building2, label: "Department", detail: "Create the college unit first, for example CICS or CTE." },
-    { icon: GitBranch, label: "Department Organization", detail: "Create the department organization and council for that department." },
+    { icon: GitBranch, label: "Councils and Leaders", detail: "Create the college Student Council and each department's student leaders." },
     { icon: BookOpen, label: "Course", detail: "Attach each course or program to exactly one department." },
     { icon: CalendarDays, label: "Academic Year and Semester", detail: "Create the period where sections will exist." },
     { icon: Users, label: "Section", detail: "Attach the saved section to a course and semester." },
@@ -344,8 +344,8 @@ function RelationshipHint({ entity, form, relations }: { entity: EntityKey; form
         <span>
           {entity === "courses" && <>This course will be connected under {department ? <strong>{labelDepartment(department)}</strong> : "the selected department"}.</>}
           {entity === "sections" && <>This section will be connected under {course ? <strong>{labelCourse(course, relations)}</strong> : "the selected course"} and {semester ? <strong>{labelSemester(semester, relations)}</strong> : "the selected semester"}.</>}
-          {entity === "organizations" && orgType === "college_wide" && <>This organization is college-wide and is not tied to one department.</>}
-          {entity === "organizations" && orgType !== "college_wide" && <>This {organizationTypeLabel(orgType).toLowerCase()} will be connected under {department ? <strong>{labelDepartment(department)}</strong> : "the selected department"}.</>}
+          {entity === "organizations" && ["college_wide", "student_council"].includes(orgType) && <>This {organizationTypeLabel(orgType).toLowerCase()} is college-wide and is not tied to one department.</>}
+          {entity === "organizations" && !["college_wide", "student_council"].includes(orgType) && <>This {organizationTypeLabel(orgType).toLowerCase()} will be connected under {department ? <strong>{labelDepartment(department)}</strong> : "the selected department"}.</>}
           {entity === "semesters" && <>This semester will be connected under {academicYear ? <strong>{academicYear.name}</strong> : "the selected academic year"}.</>}
         </span>
       </div>
@@ -375,7 +375,7 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
   );
   const setOrganizationType = (value: string) => {
     set("organization_type", value);
-    if (value === "college_wide") set("department_id", "");
+    if (["college_wide", "student_council"].includes(value)) set("department_id", "");
   };
 
   switch (entity) {
@@ -404,8 +404,9 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="college_wide">College-wide organization</SelectItem>
+                <SelectItem value="student_council">Student Council</SelectItem>
                 <SelectItem value="department_organization">Department organization</SelectItem>
-                <SelectItem value="department_council">Department council</SelectItem>
+                <SelectItem value="department_student_leaders">Department Student Leaders</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -415,7 +416,7 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
           "Department",
           "Select department",
           relations.departments.map((department) => ({ value: department.id, label: labelDepartment(department) })),
-          String(form.organization_type ?? "college_wide") === "college_wide",
+          ["college_wide", "student_council"].includes(String(form.organization_type ?? "college_wide")),
         ),
         textField("name", "Name"),
         textField("category", "Category"),
@@ -487,7 +488,7 @@ function cellsFor(entity: EntityKey, item: SchoolRecord, relations: RelationMaps
     case "organizations": return [
       item.name,
       organizationTypeLabel(String(item.organization_type ?? "college_wide") as OrganizationType),
-      String(item.organization_type ?? "college_wide") === "college_wide" ? "College-wide" : labelDepartment(findById(relations.departments, String(item.department_id ?? ""))),
+      ["college_wide", "student_council"].includes(String(item.organization_type ?? "college_wide")) ? "College-wide" : labelDepartment(findById(relations.departments, String(item.department_id ?? ""))),
       item.category ?? "-",
     ];
     case "academic_years": return [item.name, `${item.start_date} - ${item.end_date}`, item.is_current ? <Badge tone="success">current</Badge> : "-"];
@@ -501,7 +502,7 @@ function formIsValid(entity: EntityKey, form: SchoolRecord) {
     case "courses": return !!form.department_id && !!form.code && !!form.name;
     case "sections": return !!form.course_id && !!form.semester_id && !!form.name;
     case "organizations":
-      return !!form.name && (String(form.organization_type ?? "college_wide") === "college_wide" || !!form.department_id);
+      return !!form.name && (["college_wide", "student_council"].includes(String(form.organization_type ?? "college_wide")) || !!form.department_id);
     case "academic_years": return !!form.name && !!form.start_date && !!form.end_date;
     case "semesters": return !!form.academic_year_id && !!form.name && !!form.start_date && !!form.end_date;
   }
@@ -526,4 +527,13 @@ function labelSemester(semester: Semester | undefined, relations: RelationMaps) 
   if (!semester) return "Unknown semester";
   const academicYear = findById(relations.academicYears, semester.academic_year_id);
   return `${semester.name}${academicYear ? `, ${academicYear.name}` : ""}`;
+}
+
+function organizationTypeLabel(type: OrganizationType) {
+  return {
+    college_wide: "College-wide Organization",
+    student_council: "Student Council",
+    department_organization: "Department Organization",
+    department_student_leaders: "Department Student Leaders",
+  }[type];
 }

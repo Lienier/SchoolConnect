@@ -172,9 +172,16 @@ export default function EventDetailPage() {
     queryFn: () => eventsApi.listOfficers(id),
     enabled: Boolean(id) && isAdmin,
   });
-  const councilUsers = useQuery({
-    queryKey: ["users", "student-council", "event-assignment"],
-    queryFn: () => usersApi.list({ role: "student_council" }),
+  const officerUsers = useQuery({
+    queryKey: ["users", "event-officers", "event-assignment"],
+    queryFn: async () => {
+      const [studentCouncil, departmentLeaders] = await Promise.all([
+        usersApi.list({ role: "student_council", page_size: 250 }),
+        usersApi.list({ role: "department_student_leader", page_size: 250 }),
+      ]);
+      const byId = new Map([...studentCouncil.data, ...departmentLeaders.data].map((officer) => [officer.id, officer]));
+      return Array.from(byId.values());
+    },
     enabled: isAdmin,
   });
   const detailImageUrl = useProtectedImage(event?.banner_url);
@@ -390,13 +397,13 @@ export default function EventDetailPage() {
         <Card className="p-6 dark:border-navy-800 dark:bg-navy-950">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-navy-800 dark:text-white">Student Council Assignments</h2>
-              <p className="mt-1 text-sm text-navy-500">Assigned officers can manage this event's registrations, attendance, results, uploads, and reports.</p>
+              <h2 className="text-lg font-semibold text-navy-800 dark:text-white">Officer Assignments</h2>
+              <p className="mt-1 text-sm text-navy-500">Assigned Student Council officers and Department Student Leaders can manage this event's registrations, attendance, results, uploads, and reports.</p>
             </div>
             <Button size="sm" onClick={saveOfficerAssignments}>Save Assignments</Button>
           </div>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {(councilUsers.data?.data ?? []).map((officer) => {
+            {(officerUsers.data ?? []).map((officer) => {
               const selected = selectedOfficerIds ?? officers.data ?? [];
               return (
                 <label key={officer.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm dark:border-navy-800">
@@ -411,7 +418,7 @@ export default function EventDetailPage() {
               );
             })}
           </div>
-          {!councilUsers.isLoading && !councilUsers.data?.data.length && <p className="mt-4 text-sm text-navy-500">No Student Council accounts are available.</p>}
+          {!officerUsers.isLoading && !officerUsers.data?.length && <p className="mt-4 text-sm text-navy-500">No officer accounts are available.</p>}
         </Card>
       )}
 

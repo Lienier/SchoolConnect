@@ -18,7 +18,7 @@ from app.auth.model import User
 
 bp = Blueprint("feed", __name__, url_prefix="/feed")
 
-_ROLE_ORDER = ("admin", "teacher", "student_council", "student")
+_ROLE_ORDER = ("admin", "teacher", "student_council", "department_student_leader", "student")
 
 
 def _primary_role(user: User | None) -> str | None:

@@ -266,11 +266,14 @@ def assign_event_officers(event_id: str):
         db.session.scalars(
             db.select(UserRole.user_id)
             .join(Role, Role.id == UserRole.role_id)
-            .where(Role.name == "student_council", UserRole.user_id.in_(officer_ids))
+            .where(
+                Role.name.in_(["student_council", "department_student_leader"]),
+                UserRole.user_id.in_(officer_ids),
+            )
         ).all()
     )
     if valid != set(officer_ids):
-        raise ValidationError("Every assigned user must have the Student Council role.")
+        raise ValidationError("Every assigned user must be a Student Council officer or Department Student Leader.")
     db.session.query(EventOfficerAssignment).filter(
         EventOfficerAssignment.event_id == event.id
     ).delete(synchronize_session=False)

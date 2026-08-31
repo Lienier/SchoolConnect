@@ -19,11 +19,12 @@ import type { Course, Department, Organization, Section } from "@/features/schoo
 import { usersApi } from "@/features/users/services/usersApi";
 import type { SystemRole, UserListItem, UserStatus } from "@/features/users/types";
 
-const SYSTEM_ROLES: SystemRole[] = ["admin", "teacher", "student_council", "student"];
+const SYSTEM_ROLES: SystemRole[] = ["admin", "teacher", "student_council", "department_student_leader", "student"];
 const roleLabel = (role: string) => {
   if (role === "admin") return "Admin";
   if (role === "teacher") return "Professor";
   if (role === "student_council") return "Student Council";
+  if (role === "department_student_leader") return "Department Student Leader";
   if (role === "student") return "Student";
   return role.replace("_", " ");
 };
@@ -35,6 +36,7 @@ const STATUS_TONE: Record<string, "success" | "warning" | "danger" | "neutral" |
 };
 
 const SC_POSITIONS = ["President", "Vice President", "Secretary", "Treasurer", "Auditor", "PIO", "Representative"];
+const DEPARTMENT_LEADER_POSITIONS = ["Governor", "Vice Governor", "Secretary", "Treasurer", "Auditor", "PIO", "Representative"];
 
 const emptyForm = {
   email: "",
@@ -191,7 +193,7 @@ export default function UsersPage() {
       department_id: form.department_id || undefined,
       course_id: form.course_id || undefined,
       section_id: form.section_id || undefined,
-      officer_position: form.role === "student_council" ? form.officer_position : undefined,
+      officer_position: isOfficerRole(form.role) ? form.officer_position : undefined,
     };
   };
   const canCreate = isCreateFormValid(form, organizations);
@@ -358,17 +360,18 @@ function CreateUserForm({
 }) {
   const filteredCourses = courses.filter((course) => !form.department_id || course.department_id === form.department_id);
   const filteredSections = sections.filter((section) => !form.course_id || section.course_id === form.course_id);
-  const departmentCouncil = organizations.find((organization) => organization.department_id === form.department_id && organization.organization_type === "department_council");
+  const studentCouncil = organizations.find((organization) => organization.organization_type === "student_council");
+  const departmentLeaders = organizations.find((organization) => organization.department_id === form.department_id && organization.organization_type === "department_student_leaders");
   const setRole = (roleName: SystemRole) => {
     setForm({
       ...form,
       role: roleName,
       roles: [roleName],
       student_number: needsStudentNumber(roleName) ? form.student_number : "",
-      department_id: roleName === "student" || roleName === "student_council" || roleName === "teacher" ? form.department_id : "",
-      course_id: roleName === "student" || roleName === "student_council" ? form.course_id : "",
-      section_id: roleName === "student" || roleName === "student_council" ? form.section_id : "",
-      officer_position: roleName === "student_council" ? form.officer_position : "",
+      department_id: roleName === "student" || isOfficerRole(roleName) || roleName === "teacher" ? form.department_id : "",
+      course_id: roleName === "student" || isOfficerRole(roleName) ? form.course_id : "",
+      section_id: roleName === "student" || isOfficerRole(roleName) ? form.section_id : "",
+      officer_position: isOfficerRole(roleName) ? form.officer_position : "",
     });
   };
   const setDepartment = (department_id: string) => {
@@ -400,7 +403,7 @@ function CreateUserForm({
         <FloatingInput label="Student ID number" value={form.student_number} onChange={(value) => setForm({ ...form, student_number: value, username: value })} />
       )}
 
-      {(form.role === "student" || form.role === "student_council" || form.role === "teacher") && (
+      {(form.role === "student" || isOfficerRole(form.role) || form.role === "teacher") && (
         <Select value={form.department_id} onValueChange={setDepartment} disabled={loadingSchoolStructure}>
           <SelectTrigger><SelectValue placeholder={loadingSchoolStructure ? "Loading departments..." : "Department"} /></SelectTrigger>
           <SelectContent>
@@ -409,7 +412,7 @@ function CreateUserForm({
         </Select>
       )}
 
-      {(form.role === "student" || form.role === "student_council") && (
+      {(form.role === "student" || isOfficerRole(form.role)) && (
         <div className="grid gap-3 sm:grid-cols-2">
           <Select value={form.course_id} onValueChange={setCourse} disabled={!form.department_id || loadingSchoolStructure}>
             <SelectTrigger><SelectValue placeholder={!form.department_id ? "Select department first" : "Course"} /></SelectTrigger>
@@ -426,20 +429,24 @@ function CreateUserForm({
         </div>
       )}
 
-      {form.role === "student_council" && (
+      {isOfficerRole(form.role) && (
         <div className="space-y-2">
           <Select value={form.officer_position} onValueChange={(value) => setForm({ ...form, officer_position: value })}>
-            <SelectTrigger><SelectValue placeholder="Student Council role" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={form.role === "student_council" ? "Student Council role" : "Department leader role"} /></SelectTrigger>
             <SelectContent>
-              {SC_POSITIONS.map((position) => <SelectItem key={position} value={position}>{position}</SelectItem>)}
+              {(form.role === "student_council" ? SC_POSITIONS : DEPARTMENT_LEADER_POSITIONS).map((position) => <SelectItem key={position} value={position}>{position}</SelectItem>)}
             </SelectContent>
           </Select>
-          <p className={departmentCouncil ? "text-xs text-emerald-600" : "text-xs text-amber-600"}>
-            {form.department_id
-              ? departmentCouncil
-                ? `Council: ${departmentCouncil.name}`
-                : "Create this department's council in College Structure before saving this officer."
-              : "Select a department to connect this officer to its council."}
+          <p className={(form.role === "student_council" ? studentCouncil : departmentLeaders) ? "text-xs text-emerald-600" : "text-xs text-amber-600"}>
+            {form.role === "student_council"
+              ? studentCouncil
+                ? `Council: ${studentCouncil.name}`
+                : "Create the college-wide Student Council organization in College Structure before saving this officer."
+              : form.department_id
+                ? departmentLeaders
+                  ? `Department student leaders: ${departmentLeaders.name}`
+                  : "Create this department's Student Leaders organization in College Structure before saving this account."
+                : "Select a department to connect this account to its department student leaders."}
           </p>
         </div>
       )}
@@ -490,7 +497,11 @@ function buildFullName(firstName: string, middleName: string, lastName: string) 
 }
 
 function needsStudentNumber(roleName: SystemRole) {
-  return roleName === "student" || roleName === "student_council";
+  return roleName === "student" || isOfficerRole(roleName);
+}
+
+function isOfficerRole(roleName: SystemRole) {
+  return roleName === "student_council" || roleName === "department_student_leader";
 }
 
 function generatedUsername(form: typeof emptyForm) {
@@ -507,10 +518,11 @@ function maskedEmail(email: string) {
 function isCreateFormValid(form: typeof emptyForm, organizations: Organization[] = []) {
   if (!form.email.trim() || !form.first_name.trim() || !form.last_name.trim() || form.password.length < 8) return false;
   if (needsStudentNumber(form.role) && !form.student_number.trim()) return false;
-  if ((form.role === "student" || form.role === "student_council") && (!form.department_id || !form.course_id)) return false;
+  if ((form.role === "student" || isOfficerRole(form.role)) && (!form.department_id || !form.course_id)) return false;
   if (form.role === "teacher" && !form.department_id) return false;
-  if (form.role === "student_council" && !form.officer_position) return false;
-  if (form.role === "student_council" && !organizations.some((organization) => organization.department_id === form.department_id && organization.organization_type === "department_council")) return false;
+  if (isOfficerRole(form.role) && !form.officer_position) return false;
+  if (form.role === "student_council" && !organizations.some((organization) => organization.organization_type === "student_council")) return false;
+  if (form.role === "department_student_leader" && !organizations.some((organization) => organization.department_id === form.department_id && organization.organization_type === "department_student_leaders")) return false;
   return true;
 }
 

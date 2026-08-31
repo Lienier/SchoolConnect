@@ -79,6 +79,7 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
     admin_role = _role("admin", ["users.create", "users.view"])
     _role("student", [])
     _role("student_council", [])
+    _role("department_student_leader", [])
     _role("teacher", [])
     admin = _user("creator@example.com", admin_role)
 
@@ -101,13 +102,18 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
     db.session.add_all([semester, course])
     db.session.flush()
     section = Section(course_id=course.id, semester_id=semester.id, name="BSIT 3A")
-    council = Organization(
-        department_id=department.id,
-        organization_type="department_council",
-        name="CCS Student Council",
+    student_council = Organization(
+        organization_type="student_council",
+        name="College Student Council",
         category="Student Council",
     )
-    db.session.add_all([section, council])
+    department_leaders = Organization(
+        department_id=department.id,
+        organization_type="department_student_leaders",
+        name="CCS Student Leaders",
+        category="Department Student Leaders",
+    )
+    db.session.add_all([section, student_council, department_leaders])
     db.session.commit()
 
     client = app_ctx.test_client()
@@ -164,7 +170,30 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
     assert db.session.get(StudentProfile, officer_id) is not None
     assert db.session.get(StudentProfile, officer_id).profile_completed is True
     assert db.session.get(OfficerProfile, officer_id).position == "President"
-    assert db.session.get(OfficerProfile, officer_id).organization_id == council.id
+    assert db.session.get(OfficerProfile, officer_id).organization_id == student_council.id
+
+    leader_response = client.post(
+        "/api/users",
+        json={
+            "email": "leader.create@example.com",
+            "first_name": "Lia",
+            "last_name": "Santos",
+            "full_name": "Lia Santos",
+            "password": "Password123!",
+            "role": "department_student_leader",
+            "student_number": "2026-0003",
+            "officer_position": "Governor",
+            "department_id": str(department.id),
+            "course_id": str(course.id),
+            "section_id": str(section.id),
+        },
+        headers=headers,
+    )
+    assert leader_response.status_code == 201
+    leader_id = uuid.UUID(leader_response.get_json()["data"]["id"])
+    assert db.session.get(StudentProfile, leader_id) is not None
+    assert db.session.get(OfficerProfile, leader_id).position == "Governor"
+    assert db.session.get(OfficerProfile, leader_id).organization_id == department_leaders.id
 
     professor_response = client.post(
         "/api/users",
