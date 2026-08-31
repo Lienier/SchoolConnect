@@ -59,7 +59,7 @@ export default function CouncilMembersPage() {
   );
 
   const saveMembers = useMutation({
-    mutationFn: () => schoolApi.updateCouncilMembers(activeCouncilId, visibleMembers.map(({ user_id, position }) => ({ user_id, position }))),
+    mutationFn: () => schoolApi.updateCouncilMembers(activeCouncilId, visibleMembers.map(({ user_id, position }) => ({ user_id, position: position.trim() }))),
     onSuccess: (saved) => {
       toast("Council members updated.", "success");
       setDraftMembers(saved.map(memberToDraft));
@@ -102,14 +102,15 @@ export default function CouncilMembersPage() {
 
   const addMember = () => {
     const candidate = availableCandidates.find((item) => item.user_id === selectedUserId);
-    if (!candidate || !selectedPosition) return;
+    const position = selectedPosition.trim();
+    if (!candidate || !position) return;
     setDraftMembers([
       ...visibleMembers,
       {
         user_id: candidate.user_id,
         full_name: candidate.full_name,
         email: candidate.email,
-        position: selectedPosition,
+        position,
         student_number: candidate.student_number,
       },
     ]);
@@ -205,7 +206,7 @@ export default function CouncilMembersPage() {
                       : departmentLabel(selectedCouncil, departments.data?.data ?? [])}
                   </p>
                 </div>
-                <Button isLoading={saveMembers.isPending} disabled={!activeCouncilId} onClick={() => saveMembers.mutate()}>
+                <Button isLoading={saveMembers.isPending} disabled={!activeCouncilId || visibleMembers.some((member) => !member.position.trim())} onClick={() => saveMembers.mutate()}>
                   Save Members
                 </Button>
               </div>
@@ -219,11 +220,19 @@ export default function CouncilMembersPage() {
                     </option>
                   ))}
                 </select>
-                <select value={selectedPosition} onChange={(event) => setSelectedPosition(event.target.value)} className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100">
-                  <option value="">Position</option>
-                  {positions.map((position) => <option key={position} value={position}>{position}</option>)}
-                </select>
-                <Button variant="secondary" disabled={!selectedUserId || !selectedPosition} onClick={addMember}>
+                <div className="space-y-1.5">
+                  <input
+                    value={selectedPosition}
+                    list="new-council-position-suggestions"
+                    placeholder="Position"
+                    onChange={(event) => setSelectedPosition(event.target.value)}
+                    className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 outline-none transition focus:ring-2 focus:ring-navy-400 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 dark:focus:ring-blue-700"
+                  />
+                  <datalist id="new-council-position-suggestions">
+                    {positions.map((position) => <option key={position} value={position} />)}
+                  </datalist>
+                </div>
+                <Button variant="secondary" disabled={!selectedUserId || !selectedPosition.trim()} onClick={addMember}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add
                 </Button>
@@ -241,9 +250,16 @@ export default function CouncilMembersPage() {
                       <p className="truncate font-semibold text-navy-900 dark:text-white">{member.full_name}</p>
                       <p className="truncate text-xs text-slate-500 dark:text-navy-400">{member.student_number ?? member.email}</p>
                     </div>
-                    <select value={member.position} onChange={(event) => updatePosition(member.user_id, event.target.value)} className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm dark:border-navy-800 dark:bg-navy-900">
-                      {positions.map((position) => <option key={position} value={position}>{position}</option>)}
-                    </select>
+                    <input
+                      value={member.position}
+                      list={`${member.user_id}-position-suggestions`}
+                      placeholder="Position"
+                      onChange={(event) => updatePosition(member.user_id, event.target.value)}
+                      className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm text-navy-900 outline-none transition focus:ring-2 focus:ring-navy-400 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 dark:focus:ring-blue-700"
+                    />
+                    <datalist id={`${member.user_id}-position-suggestions`}>
+                      {positions.map((position) => <option key={position} value={position} />)}
+                    </datalist>
                     <div className="text-right">
                       <Button size="sm" variant="danger" onClick={() => removeMember(member.user_id)}>
                         <Trash2 className="h-3.5 w-3.5" />

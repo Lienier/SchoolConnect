@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 
 class UserCreateRequest(BaseModel):
     """Admin-created user."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
 
     email: EmailStr
     full_name: str = Field(min_length=1, max_length=150)
@@ -50,6 +52,8 @@ class UserUpdateRequest(BaseModel):
 
 class AssignRolesRequest(BaseModel):
     """Assign a set of roles to a user."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
 
     roles: list[str] = Field(min_length=1)
     student_number: str | None = Field(default=None, max_length=30)

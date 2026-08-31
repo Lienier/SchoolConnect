@@ -353,6 +353,7 @@ class UserService:
         self, *, role_names: set[str], student_number=None, department_id=None,
         course_id=None, section_id=None, officer_position=None,
     ) -> None:
+        officer_position = officer_position.strip() if isinstance(officer_position, str) else officer_position
         if role_names & self.student_roles:
             if not student_number:
                 raise ValidationError("Student ID number is required.")
@@ -397,6 +398,7 @@ class UserService:
         self, user: User, *, role_names: set[str], student_number=None,
         department_id=None, course_id=None, section_id=None, officer_position=None,
     ) -> None:
+        officer_position = officer_position.strip() if isinstance(officer_position, str) else officer_position
         department_uuid = self._uuid_or_none(department_id)
         course_uuid = self._uuid_or_none(course_id)
         section_uuid = self._uuid_or_none(section_id)
@@ -443,6 +445,7 @@ class UserService:
         section_id=None,
         officer_position=None,
     ) -> None:
+        officer_position = officer_position.strip() if isinstance(officer_position, str) else officer_position
         department_uuid = self._uuid_or_none(department_id)
         course_uuid = self._uuid_or_none(course_id)
         section_uuid = self._uuid_or_none(section_id)

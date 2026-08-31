@@ -211,7 +211,7 @@ export default function UsersPage() {
       department_id: form.department_id || undefined,
       course_id: form.course_id || undefined,
       section_id: form.section_id || undefined,
-      officer_position: isOfficerRole(form.role) ? form.officer_position : undefined,
+      officer_position: isOfficerRole(form.role) ? form.officer_position.trim() : undefined,
     };
   };
   const canCreate = isCreateFormValid(form, organizations);
@@ -459,12 +459,12 @@ function CreateUserForm({
 
       {isOfficerRole(form.role) && (
         <div className="space-y-2">
-          <Select value={form.officer_position} onValueChange={(value) => setForm({ ...form, officer_position: value })}>
-            <SelectTrigger><SelectValue placeholder={form.role === "student_council" ? "Student Council role" : "Department leader role"} /></SelectTrigger>
-            <SelectContent>
-              {(form.role === "student_council" ? SC_POSITIONS : DEPARTMENT_LEADER_POSITIONS).map((position) => <SelectItem key={position} value={position}>{position}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <PositionInput
+            label={form.role === "student_council" ? "Student Council position" : "Department leader position"}
+            value={form.officer_position}
+            onChange={(value) => setForm({ ...form, officer_position: value })}
+            suggestions={form.role === "student_council" ? SC_POSITIONS : DEPARTMENT_LEADER_POSITIONS}
+          />
           <p className={(form.role === "student_council" ? studentCouncil : departmentLeaders) ? "text-xs text-emerald-600" : "text-xs text-amber-600"}>
             {form.role === "student_council"
               ? studentCouncil
@@ -513,6 +513,36 @@ function FloatingInput({
   );
 }
 
+function PositionInput({
+  label,
+  value,
+  onChange,
+  suggestions,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  suggestions: string[];
+}) {
+  return (
+    <div className="space-y-2">
+      <FloatingInput label={label} value={value} onChange={onChange} />
+      <div className="flex flex-wrap gap-1.5">
+        {suggestions.map((position) => (
+          <button
+            type="button"
+            key={position}
+            onClick={() => onChange(position)}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-navy-600 transition hover:border-blue-300 hover:text-blue-700 dark:border-navy-700 dark:bg-navy-900 dark:text-navy-300 dark:hover:border-blue-700 dark:hover:text-blue-200"
+          >
+            {position}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function middleInitials(middleName: string) {
   const parts = middleName.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "";
@@ -548,7 +578,7 @@ function isCreateFormValid(form: typeof emptyForm, organizations: Organization[]
   if (needsStudentNumber(form.role) && !form.student_number.trim()) return false;
   if ((form.role === "student" || isOfficerRole(form.role)) && (!form.department_id || !form.course_id)) return false;
   if (form.role === "teacher" && !form.department_id) return false;
-  if (isOfficerRole(form.role) && !form.officer_position) return false;
+  if (isOfficerRole(form.role) && !form.officer_position.trim()) return false;
   if (form.role === "student_council" && !organizations.some((organization) => organization.organization_type === "student_council")) return false;
   if (form.role === "department_student_leader" && !organizations.some((organization) => organization.department_id === form.department_id && organization.organization_type === "department_student_leaders")) return false;
   return true;
@@ -620,12 +650,12 @@ function RoleAssignmentFields({
             </p>
           </div>
 
-          <Select value={details.officer_position} onValueChange={(value) => setDetails((current) => ({ ...current, officer_position: value }))}>
-            <SelectTrigger><SelectValue placeholder="Position" /></SelectTrigger>
-            <SelectContent>
-              {positionOptions.map((position) => <SelectItem key={position} value={position}>{position}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <PositionInput
+            label="Position"
+            value={details.officer_position}
+            onChange={(value) => setDetails((current) => ({ ...current, officer_position: value }))}
+            suggestions={positionOptions}
+          />
 
           <FloatingInput
             label="Student ID number"
@@ -678,7 +708,7 @@ function canUpdateRoles(selectedRoles: string[], details: typeof emptyRoleDetail
   if (selectedOfficerRoles.length > 1) return false;
   const officerRole = selectedOfficerRoles[0];
   if (!officerRole) return true;
-  if (!details.officer_position || !details.student_number.trim() || !details.department_id || !details.course_id) return false;
+  if (!details.officer_position.trim() || !details.student_number.trim() || !details.department_id || !details.course_id) return false;
   if (officerRole === "student_council") {
     return organizations.some((organization) => organization.organization_type === "student_council");
   }
@@ -696,7 +726,7 @@ function roleAssignmentPayload(selectedRoles: string[], details: typeof emptyRol
     department_id: needsCouncilDetails ? details.department_id || undefined : undefined,
     course_id: needsCouncilDetails ? details.course_id || undefined : undefined,
     section_id: needsCouncilDetails ? details.section_id || undefined : undefined,
-    officer_position: needsCouncilDetails ? details.officer_position || undefined : undefined,
+    officer_position: needsCouncilDetails ? details.officer_position.trim() || undefined : undefined,
   };
 }
 
