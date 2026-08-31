@@ -36,7 +36,7 @@ def register_error_handlers(app: Flask) -> None:
     def handle_pydantic_validation_error(error: PydanticValidationError):
         """Convert request-model validation failures into client errors."""
         details = [
-            {key: value for key, value in item.items() if key != "input"}
+            _validation_error_detail(item)
             for item in error.errors(include_url=False)
         ]
         return error_response(
@@ -73,3 +73,16 @@ def register_error_handlers(app: Flask) -> None:
             status_code=500,
             error_code="internal_server_error",
         )
+
+
+def _validation_error_detail(item: dict) -> dict:
+    """Keep Pydantic details JSON-safe while preserving useful context."""
+    detail = {}
+    for key, value in item.items():
+        if key == "input":
+            continue
+        if key == "ctx" and isinstance(value, dict):
+            detail[key] = {ctx_key: str(ctx_value) for ctx_key, ctx_value in value.items()}
+        else:
+            detail[key] = value
+    return detail

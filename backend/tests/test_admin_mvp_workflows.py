@@ -231,6 +231,97 @@ def test_admin_create_role_specific_accounts_and_profiles(app_ctx):
     assert db.session.get(AdministratorProfile, admin_id) is not None
 
 
+def test_assign_council_role_requires_details_and_creates_profiles(app_ctx):
+    admin_role = _role("admin", ["users.manage_roles", "users.view"])
+    student_role = _role("student", [])
+    _role("student_council", [])
+    _role("department_student_leader", [])
+    admin = _user("role.admin@example.com", admin_role)
+    target = _user("gabriel.student@example.com", student_role)
+
+    department = Department(name="Computer Studies", code="CCS")
+    academic_year = AcademicYear(
+        name="2026-2027",
+        start_date=utcnow().date(),
+        end_date=(utcnow() + timedelta(days=300)).date(),
+        is_current=True,
+    )
+    db.session.add_all([department, academic_year])
+    db.session.flush()
+    semester = Semester(
+        academic_year_id=academic_year.id,
+        name="First Semester",
+        start_date=academic_year.start_date,
+        end_date=academic_year.end_date,
+    )
+    course = Course(department_id=department.id, name="BS Information Technology", code="BSIT")
+    db.session.add_all([semester, course])
+    db.session.flush()
+    section = Section(course_id=course.id, semester_id=semester.id, name="BSIT 3A")
+    leaders = Organization(
+        department_id=department.id,
+        organization_type="department_student_leaders",
+        name="CCS Student Leaders",
+        category="Department Student Leaders",
+    )
+    db.session.add_all([section, leaders])
+    db.session.commit()
+
+    client = app_ctx.test_client()
+    login = client.post("/api/auth/login", json={"email": admin.email, "password": "Password123!"})
+    headers = {"Authorization": f"Bearer {login.get_json()['data']['access_token']}"}
+
+    missing_position = client.put(
+        f"/api/users/{target.id}/roles",
+        json={
+            "roles": ["student", "department_student_leader"],
+            "student_number": "2026-0099",
+            "department_id": str(department.id),
+            "course_id": str(course.id),
+        },
+        headers=headers,
+    )
+    assert missing_position.status_code == 422
+
+    response = client.put(
+        f"/api/users/{target.id}/roles",
+        json={
+            "roles": ["student", "department_student_leader"],
+            "student_number": "2026-0099",
+            "department_id": str(department.id),
+            "course_id": str(course.id),
+            "section_id": str(section.id),
+            "officer_position": "Governor",
+        },
+        headers=headers,
+    )
+    assert response.status_code == 200
+    data = response.get_json()["data"]
+    assert set(data["roles"]) == {"student", "department_student_leader"}
+    student_profile = db.session.get(StudentProfile, target.id)
+    officer_profile = db.session.get(OfficerProfile, target.id)
+    assert student_profile.student_number == "2026-0099"
+    assert student_profile.department_id == department.id
+    assert student_profile.course_id == course.id
+    assert student_profile.section_id == section.id
+    assert student_profile.profile_completed is True
+    assert officer_profile.position == "Governor"
+    assert officer_profile.organization_id == leaders.id
+
+    both_councils = client.put(
+        f"/api/users/{target.id}/roles",
+        json={
+            "roles": ["student", "student_council", "department_student_leader"],
+            "student_number": "2026-0099",
+            "department_id": str(department.id),
+            "course_id": str(course.id),
+            "officer_position": "Governor",
+        },
+        headers=headers,
+    )
+    assert both_councils.status_code == 422
+
+
 def test_obsolete_content_approval_endpoints_are_removed(app_ctx):
     admin_role = _role("admin", ["announcements.moderate", "events.manage_all"])
     admin = _user("admin@example.com", admin_role)

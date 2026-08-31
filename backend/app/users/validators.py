@@ -52,6 +52,26 @@ class AssignRolesRequest(BaseModel):
     """Assign a set of roles to a user."""
 
     roles: list[str] = Field(min_length=1)
+    student_number: str | None = Field(default=None, max_length=30)
+    department_id: str | None = None
+    course_id: str | None = None
+    section_id: str | None = None
+    officer_position: str | None = Field(default=None, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_role_profile_fields(self):
+        role_names = set(self.roles)
+        if {"student_council", "department_student_leader"}.issubset(role_names):
+            raise ValueError("Choose either Student Council or Department Student Leader, not both.")
+        if role_names.intersection({"student_council", "department_student_leader"}):
+            if not self.officer_position:
+                raise ValueError("Officer position is required.")
+        if "department_student_leader" in role_names:
+            if not self.department_id:
+                raise ValueError("Department is required for Department Student Leaders.")
+            if not self.course_id:
+                raise ValueError("Course is required for Department Student Leaders.")
+        return self
 
 
 class ProfileUpdateRequest(BaseModel):

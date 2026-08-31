@@ -252,8 +252,20 @@ def user_activity(user_id: str):
 def assign_roles(user_id: str):
     """Replace a user's roles."""
     payload = AssignRolesRequest(**_body())
-    user = _service.assign_roles(uuid.UUID(user_id), payload.roles)
-    _record_user_audit("user.roles_updated", user.id, {"roles": payload.roles})
+    user = _service.assign_roles(
+        uuid.UUID(user_id),
+        payload.roles,
+        student_number=payload.student_number,
+        department_id=payload.department_id,
+        course_id=payload.course_id,
+        section_id=payload.section_id,
+        officer_position=payload.officer_position,
+    )
+    _record_user_audit(
+        "user.roles_updated",
+        user.id,
+        payload.model_dump(exclude_none=True),
+    )
     return success_response(
         data=public_user(user, include_roles=True),
         message="Roles updated.",

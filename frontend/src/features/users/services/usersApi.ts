@@ -58,8 +58,15 @@ export const usersApi = {
   async delete(id: string): Promise<void> {
     await apiClient.delete(`/users/${id}`);
   },
-  async assignRoles(id: string, roles: string[]): Promise<UserListItem> {
-    const { data } = await apiClient.put<ApiResponse<UserListItem>>(`/users/${id}/roles`, { roles });
+  async assignRoles(id: string, payload: {
+    roles: string[];
+    student_number?: string;
+    department_id?: string;
+    course_id?: string;
+    section_id?: string;
+    officer_position?: string;
+  }): Promise<UserListItem> {
+    const { data } = await apiClient.put<ApiResponse<UserListItem>>(`/users/${id}/roles`, payload);
     return data.data;
   },
   async roles(): Promise<{ name: string; display_name: string; is_system: boolean }[]> {

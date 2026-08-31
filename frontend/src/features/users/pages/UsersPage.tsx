@@ -1,5 +1,5 @@
 /** User management: list, search, filter, and lifecycle actions. */
-import { useState } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit3, Lock, Plus, Shield, Trash2, UserCheck, UserX } from "lucide-react";
 
@@ -55,6 +55,13 @@ const emptyForm = {
   section_id: "",
   officer_position: "",
 };
+const emptyRoleDetails = {
+  student_number: "",
+  department_id: "",
+  course_id: "",
+  section_id: "",
+  officer_position: "",
+};
 
 export default function UsersPage() {
   const { can } = usePermissions();
@@ -72,16 +79,18 @@ export default function UsersPage() {
   const [newPassword, setNewPassword] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [selectedRoles, setSelectedRoles] = useState<string[]>(["student"]);
+  const [roleDetails, setRoleDetails] = useState(emptyRoleDetails);
 
   const usersQuery = useQuery({
     queryKey: ["users", page, search, status, role],
     queryFn: () => usersApi.list({ page, search: search || undefined, status: (status || undefined) as UserStatus | undefined, role: role || undefined }),
   });
   const rolesQuery = useQuery({ queryKey: ["roles"], queryFn: usersApi.roles, enabled: can("roles.view") });
-  const departmentsQuery = useQuery({ queryKey: ["school", "departments", "all"], queryFn: () => schoolApi.listDepartments({ page_size: 100 }), enabled: createOpen });
-  const coursesQuery = useQuery({ queryKey: ["school", "courses", "all"], queryFn: () => schoolApi.listCourses({ page_size: 100 }), enabled: createOpen });
-  const sectionsQuery = useQuery({ queryKey: ["school", "sections", "all"], queryFn: () => schoolApi.listSections({ page_size: 100 }), enabled: createOpen });
-  const organizationsQuery = useQuery({ queryKey: ["school", "organizations", "all"], queryFn: () => schoolApi.listOrganizations({ page_size: 250 }), enabled: createOpen });
+  const needsStructure = createOpen || Boolean(rolesTarget);
+  const departmentsQuery = useQuery({ queryKey: ["school", "departments", "all"], queryFn: () => schoolApi.listDepartments({ page_size: 100 }), enabled: needsStructure });
+  const coursesQuery = useQuery({ queryKey: ["school", "courses", "all"], queryFn: () => schoolApi.listCourses({ page_size: 100 }), enabled: needsStructure });
+  const sectionsQuery = useQuery({ queryKey: ["school", "sections", "all"], queryFn: () => schoolApi.listSections({ page_size: 100 }), enabled: needsStructure });
+  const organizationsQuery = useQuery({ queryKey: ["school", "organizations", "all"], queryFn: () => schoolApi.listOrganizations({ page_size: 250 }), enabled: needsStructure });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["users"] });
   const roleOptions = rolesQuery.data?.map((r) => r.name) ?? SYSTEM_ROLES;
@@ -107,7 +116,7 @@ export default function UsersPage() {
   });
 
   const rolesMut = useMutation({
-    mutationFn: (args: { id: string; roles: string[] }) => usersApi.assignRoles(args.id, args.roles),
+    mutationFn: (args: { id: string; payload: Parameters<typeof usersApi.assignRoles>[1] }) => usersApi.assignRoles(args.id, args.payload),
     onSuccess: () => {
       toast(`Roles updated for ${rolesTarget?.full_name ?? "user"}.`, "success");
       setRolesTarget(null);
@@ -172,9 +181,18 @@ export default function UsersPage() {
   const openRoles = (user: UserListItem) => {
     setRolesTarget(user);
     setSelectedRoles(user.roles.length ? user.roles : ["student"]);
+    setRoleDetails({ ...emptyRoleDetails, student_number: user.username ?? "" });
   };
   const toggleRole = (roleName: string) => {
-    setSelectedRoles((current) => current.includes(roleName) ? current.filter((item) => item !== roleName) : [...current, roleName]);
+    setSelectedRoles((current) => {
+      const isSelected = current.includes(roleName);
+      if (roleName === "student" && isSelected && current.some(isOfficerRole)) return current;
+      if (isOfficerRole(roleName)) {
+        if (isSelected) return current.filter((item) => item !== roleName);
+        return Array.from(new Set([...current.filter((item) => !isOfficerRole(item)), roleName, "student"]));
+      }
+      return isSelected ? current.filter((item) => item !== roleName) : [...current, roleName];
+    });
   };
   const createPayload = () => {
     const fullName = buildFullName(form.first_name, form.middle_name, form.last_name);
@@ -287,11 +305,21 @@ export default function UsersPage() {
         itemName={rolesTarget?.full_name}
         confirmLabel="Update Roles"
         isLoading={rolesMut.isPending}
-        confirmDisabled={!selectedRoles.length}
+        confirmDisabled={!canUpdateRoles(selectedRoles, roleDetails, organizations)}
         onCancel={() => setRolesTarget(null)}
-        onConfirm={() => rolesTarget && rolesMut.mutate({ id: rolesTarget.id, roles: selectedRoles })}
+        onConfirm={() => rolesTarget && rolesMut.mutate({ id: rolesTarget.id, payload: roleAssignmentPayload(selectedRoles, roleDetails) })}
       >
-        <div className="grid gap-2 sm:grid-cols-2">{roleOptions.map((item) => <label key={item} className="flex items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm"><input type="checkbox" checked={selectedRoles.includes(item)} onChange={() => toggleRole(item)} />{roleLabel(item)}</label>)}</div>
+        <RoleAssignmentFields
+          roleOptions={roleOptions}
+          selectedRoles={selectedRoles}
+          toggleRole={toggleRole}
+          details={roleDetails}
+          setDetails={setRoleDetails}
+          departments={departments}
+          courses={courses}
+          sections={sections}
+          organizations={organizations}
+        />
       </ConfirmActionModal>
 
       <ConfirmActionModal
@@ -500,7 +528,7 @@ function needsStudentNumber(roleName: SystemRole) {
   return roleName === "student" || isOfficerRole(roleName);
 }
 
-function isOfficerRole(roleName: SystemRole) {
+function isOfficerRole(roleName: string) {
   return roleName === "student_council" || roleName === "department_student_leader";
 }
 
@@ -524,6 +552,152 @@ function isCreateFormValid(form: typeof emptyForm, organizations: Organization[]
   if (form.role === "student_council" && !organizations.some((organization) => organization.organization_type === "student_council")) return false;
   if (form.role === "department_student_leader" && !organizations.some((organization) => organization.department_id === form.department_id && organization.organization_type === "department_student_leaders")) return false;
   return true;
+}
+
+function RoleAssignmentFields({
+  roleOptions,
+  selectedRoles,
+  toggleRole,
+  details,
+  setDetails,
+  departments,
+  courses,
+  sections,
+  organizations,
+}: {
+  roleOptions: string[];
+  selectedRoles: string[];
+  toggleRole: (roleName: string) => void;
+  details: typeof emptyRoleDetails;
+  setDetails: Dispatch<SetStateAction<typeof emptyRoleDetails>>;
+  departments: Department[];
+  courses: Course[];
+  sections: Section[];
+  organizations: Organization[];
+}) {
+  const officerRole = selectedRoles.find(isOfficerRole);
+  const showCouncilDetails = Boolean(officerRole);
+  const filteredCourses = courses.filter((course) => !details.department_id || course.department_id === details.department_id);
+  const filteredSections = sections.filter((section) => !details.course_id || section.course_id === details.course_id);
+  const studentCouncil = organizations.find((organization) => organization.organization_type === "student_council");
+  const departmentLeaders = organizations.find((organization) => organization.department_id === details.department_id && organization.organization_type === "department_student_leaders");
+  const positionOptions = officerRole === "department_student_leader" ? DEPARTMENT_LEADER_POSITIONS : SC_POSITIONS;
+
+  const setDepartment = (department_id: string) => {
+    setDetails((current) => ({ ...current, department_id, course_id: "", section_id: "" }));
+  };
+  const setCourse = (course_id: string) => {
+    setDetails((current) => ({ ...current, course_id, section_id: "" }));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {roleOptions.map((item) => {
+          const isStudentLocked = item === "student" && selectedRoles.some(isOfficerRole);
+          return (
+            <label key={item} className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-navy-700">
+              <input
+                type="checkbox"
+                checked={selectedRoles.includes(item)}
+                disabled={isStudentLocked}
+                onChange={() => toggleRole(item)}
+              />
+              {roleLabel(item)}
+            </label>
+          );
+        })}
+      </div>
+
+      {showCouncilDetails && (
+        <div className="space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/60 dark:bg-blue-950/20">
+          <div>
+            <p className="text-sm font-semibold text-navy-900 dark:text-white">
+              {officerRole === "student_council" ? "Student Council information" : "Department Student Leader information"}
+            </p>
+            <p className="mt-1 text-xs text-navy-500 dark:text-navy-300">
+              Position, student ID, department, and course are required when assigning a council role.
+            </p>
+          </div>
+
+          <Select value={details.officer_position} onValueChange={(value) => setDetails((current) => ({ ...current, officer_position: value }))}>
+            <SelectTrigger><SelectValue placeholder="Position" /></SelectTrigger>
+            <SelectContent>
+              {positionOptions.map((position) => <SelectItem key={position} value={position}>{position}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <FloatingInput
+            label="Student ID number"
+            value={details.student_number}
+            onChange={(value) => setDetails((current) => ({ ...current, student_number: value }))}
+          />
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select value={details.department_id} onValueChange={setDepartment}>
+              <SelectTrigger><SelectValue placeholder="Department" /></SelectTrigger>
+              <SelectContent>
+                {departments.map((department) => <SelectItem key={department.id} value={department.id}>{department.code} - {department.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={details.course_id} onValueChange={setCourse} disabled={!details.department_id}>
+              <SelectTrigger><SelectValue placeholder={!details.department_id ? "Select department first" : "Course"} /></SelectTrigger>
+              <SelectContent>
+                {filteredCourses.map((course) => <SelectItem key={course.id} value={course.id}>{course.code} - {course.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Select value={details.section_id} onValueChange={(value) => setDetails((current) => ({ ...current, section_id: value }))} disabled={!details.course_id}>
+            <SelectTrigger><SelectValue placeholder={!details.course_id ? "Select course first" : "Section (optional)"} /></SelectTrigger>
+            <SelectContent>
+              {filteredSections.map((section) => <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <p className={(officerRole === "student_council" ? studentCouncil : departmentLeaders) ? "text-xs text-emerald-600" : "text-xs text-amber-600"}>
+            {officerRole === "student_council"
+              ? studentCouncil
+                ? `Council: ${studentCouncil.name}`
+                : "Create the Student Council organization in College Structure before assigning this role."
+              : details.department_id
+                ? departmentLeaders
+                  ? `Department student leaders: ${departmentLeaders.name}`
+                  : "Create this department's Student Leaders organization in College Structure before assigning this role."
+                : "Select a department to connect this member to the correct department student leaders."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function canUpdateRoles(selectedRoles: string[], details: typeof emptyRoleDetails, organizations: Organization[] = []) {
+  if (!selectedRoles.length) return false;
+  const selectedOfficerRoles = selectedRoles.filter(isOfficerRole);
+  if (selectedOfficerRoles.length > 1) return false;
+  const officerRole = selectedOfficerRoles[0];
+  if (!officerRole) return true;
+  if (!details.officer_position || !details.student_number.trim() || !details.department_id || !details.course_id) return false;
+  if (officerRole === "student_council") {
+    return organizations.some((organization) => organization.organization_type === "student_council");
+  }
+  return organizations.some((organization) => organization.department_id === details.department_id && organization.organization_type === "department_student_leaders");
+}
+
+function roleAssignmentPayload(selectedRoles: string[], details: typeof emptyRoleDetails) {
+  const roles = selectedRoles.some(isOfficerRole)
+    ? Array.from(new Set([...selectedRoles, "student"]))
+    : selectedRoles;
+  const needsCouncilDetails = roles.some(isOfficerRole);
+  return {
+    roles,
+    student_number: needsCouncilDetails ? details.student_number.trim() : undefined,
+    department_id: needsCouncilDetails ? details.department_id || undefined : undefined,
+    course_id: needsCouncilDetails ? details.course_id || undefined : undefined,
+    section_id: needsCouncilDetails ? details.section_id || undefined : undefined,
+    officer_position: needsCouncilDetails ? details.officer_position || undefined : undefined,
+  };
 }
 
 function UserForm({ form, setForm, roleOptions, includePassword = false, editMode = false }: {

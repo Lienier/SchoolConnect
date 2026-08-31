@@ -191,12 +191,31 @@ class UserService:
         self.users.commit()
 
     # --- roles ------------------------------------------------------------
-    def assign_roles(self, user_id: uuid.UUID, role_names: list[str]) -> User:
+    def assign_roles(
+        self,
+        user_id: uuid.UUID,
+        role_names: list[str],
+        *,
+        student_number=None,
+        department_id=None,
+        course_id=None,
+        section_id=None,
+        officer_position=None,
+    ) -> User:
         """Replace a user's roles with the given set."""
         user = self.get_user(user_id)
         role_objs = self._resolve_roles(role_names)
+        next_role_names = {role.name for role in role_objs}
+        self._sync_profiles_for_role_assignment(
+            user.id,
+            next_role_names,
+            student_number=student_number,
+            department_id=department_id,
+            course_id=course_id,
+            section_id=section_id,
+            officer_position=officer_position,
+        )
         self.user_roles.replace_roles(user.id, [r.id for r in role_objs])
-        self._sync_role_profiles(user.id, {role.name for role in role_objs})
         self.users.commit()
         return user
 
@@ -412,6 +431,115 @@ class UserService:
             )
         if "admin" in role_names:
             db.session.add(AdministratorProfile(id=user.id))
+
+    def _sync_profiles_for_role_assignment(
+        self,
+        user_id: uuid.UUID,
+        role_names: set[str],
+        *,
+        student_number=None,
+        department_id=None,
+        course_id=None,
+        section_id=None,
+        officer_position=None,
+    ) -> None:
+        department_uuid = self._uuid_or_none(department_id)
+        course_uuid = self._uuid_or_none(course_id)
+        section_uuid = self._uuid_or_none(section_id)
+
+        if role_names & self.student_roles:
+            profile = db.session.get(StudentProfile, user_id)
+            if profile is None:
+                if not student_number:
+                    raise ValidationError("Student ID number is required.")
+                if department_uuid is None or course_uuid is None:
+                    raise ValidationError("Department and course are required for student roles.")
+                profile = StudentProfile(id=user_id, student_number=student_number)
+                db.session.add(profile)
+            if student_number:
+                existing_student = db.session.scalar(
+                    select(StudentProfile).where(
+                        StudentProfile.student_number == student_number,
+                        StudentProfile.id != user_id,
+                    )
+                )
+                if existing_student is not None:
+                    raise ConflictError("This student ID number is already assigned.")
+                profile.student_number = student_number
+            if department_uuid:
+                if db.session.get(Department, department_uuid) is None:
+                    raise ValidationError("Department not found.")
+                profile.department_id = department_uuid
+            if course_uuid:
+                course = db.session.get(Course, course_uuid)
+                if course is None:
+                    raise ValidationError("Course not found.")
+                if profile.department_id and course.department_id != profile.department_id:
+                    raise ValidationError("Course does not belong to the selected department.")
+                profile.course_id = course_uuid
+                profile.department_id = course.department_id
+            if section_uuid:
+                section = db.session.get(Section, section_uuid)
+                if section is None:
+                    raise ValidationError("Section not found.")
+                if profile.course_id and section.course_id != profile.course_id:
+                    raise ValidationError("Section does not belong to the selected course.")
+                profile.section_id = section_uuid
+            profile.profile_completed = bool(
+                profile.student_number and profile.department_id and profile.course_id and profile.section_id
+            )
+        else:
+            student_profile = db.session.get(StudentProfile, user_id)
+            if student_profile is not None:
+                db.session.delete(student_profile)
+
+        if "teacher" in role_names:
+            teacher = db.session.get(TeacherProfile, user_id)
+            if teacher is None:
+                teacher = TeacherProfile(id=user_id)
+                db.session.add(teacher)
+            if department_uuid is None and teacher.department_id is None:
+                raise ValidationError("Department is required for professors.")
+            if department_uuid:
+                if db.session.get(Department, department_uuid) is None:
+                    raise ValidationError("Department not found.")
+                teacher.department_id = department_uuid
+        else:
+            teacher = db.session.get(TeacherProfile, user_id)
+            if teacher is not None:
+                db.session.delete(teacher)
+
+        if role_names & self.officer_roles:
+            if not officer_position:
+                raise ValidationError("Officer position is required.")
+            student_profile = db.session.get(StudentProfile, user_id)
+            if student_profile is None:
+                raise ValidationError("Council roles require a student profile.")
+            organization = (
+                self._student_council_organization()
+                if "student_council" in role_names
+                else self._department_student_leaders_for(student_profile.department_id)
+            )
+            if organization is None:
+                raise ValidationError("Create the matching council organization in College Structure before assigning this role.")
+            officer = db.session.get(OfficerProfile, user_id)
+            if officer is None:
+                officer = OfficerProfile(id=user_id)
+                db.session.add(officer)
+            officer.organization_id = organization.id
+            officer.position = officer_position
+        else:
+            officer = db.session.get(OfficerProfile, user_id)
+            if officer is not None:
+                db.session.delete(officer)
+
+        if "admin" in role_names:
+            if db.session.get(AdministratorProfile, user_id) is None:
+                db.session.add(AdministratorProfile(id=user_id))
+        else:
+            admin = db.session.get(AdministratorProfile, user_id)
+            if admin is not None:
+                db.session.delete(admin)
 
     @staticmethod
     def _student_council_organization() -> Organization:
