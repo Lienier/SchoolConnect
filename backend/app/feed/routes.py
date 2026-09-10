@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import and_, func, select
+from sqlalchemy.orm import selectinload
 
 from app.announcements.model import Announcement
 from app.events.model import Event
@@ -168,6 +169,7 @@ def public_feed():
         )
         event_rows = db.session.execute(
             select(Event, registered_count)
+            .options(selectinload(Event.attachments))
             .where(
                 Event.deleted_at.is_(None),
                 Event.status.in_(("approved", "ongoing")),
