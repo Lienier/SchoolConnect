@@ -1,0 +1,52 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+Settings
+
+Administrator workspace preferences.
+
+Profile
+Save profile
+Password
+Change password
+College-wide settings
+
+Server-wide configuration controls are not exposed by the backend yet, so they are intentionally unavailable here.

@@ -1,0 +1,63 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+1
+Log out
+Notifications
+
+Registration updates, event reminders, and college announcements.
+
+Mark all read
+
+1 unread
+
+Registration approved
+Unread
+Your registration for 'QA Auto Event Edited' is approved.
+10/5/2026, 1:05:24 PM
+QA Keyboard Notification
+Read
+Synthetic keyboard notification
+10/5/2026, 1:04:51 PM
+Registration cancelled
+Read
+Your registration for 'QA Full Event' was cancelled.
+10/5/2026, 1:03:37 PM
+Registration waitlisted
+Read
+Your registration for 'QA Full Event' is on the waitlist.
+10/5/2026, 1:03:35 PM
+Registration approved
+Read
+Your registration for 'Scenario UI Team Championship' was approved.
+10/5/2026, 1:03:30 PM
+Registration pending
+Read
+Your registration for 'Scenario UI Team Championship' with team 'Scenario UI Titans' is pending.
+10/5/2026, 1:03:18 PM
+QA Welcome
+Read
+Synthetic QA notification.
+10/5/2026, 1:02:36 PM

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "F06",
+    "title": "Console validation during loading and private image rendering",
+    "preconditions": "Existing synthetic data and uploaded announcement image.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as admin",
+        "expected": "Role dashboard opens",
+        "observed": "Administrator Dashboard",
+        "status": "passed",
+        "milliseconds": 1453,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/F06-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Load dashboard from a fresh page",
+        "expected": "No invalid DOM console errors while skeletons render",
+        "observed": "Dashboard skeleton and stats render without console errors",
+        "status": "passed",
+        "milliseconds": 1042,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/F06-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1628,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/F06-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Load protected announcement image",
+        "expected": "Real image loads without empty-src warnings",
+        "observed": "Private image loaded; no React console errors",
+        "status": "passed",
+        "milliseconds": 171,
+        "url": "http://127.0.0.1:5174/announcements",
+        "screenshot": "screenshots/F06-04.png"
+      }
+    ],
+    "consoleErrors": [],
+    "browserErrors": [],
+    "status": "passed"
+  }
+]

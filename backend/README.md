@@ -53,10 +53,10 @@ Errors add `errors` and `error_code`. Stack traces are never exposed.
 ## Getting started
 
 ```powershell
-# From the backend/ directory
-python -m venv .venv
+# From the repository root: use one Python environment for the whole project
+.\scripts\setup.ps1
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+Set-Location backend
 Copy-Item .env.example .env   # then fill in values
 
 # Database migrations (after configuring DATABASE_URL)
@@ -72,6 +72,9 @@ waitress-serve --call wsgi:create_app
 ```
 
 ## Adding a new feature module
+
+For k6 load, stress, spike, and scalability scenarios, see
+[performance testing](performance/README.md).
 
 1. Create `app/<feature>/` with `routes.py`, `service.py`, `repository.py`,
    `model.py`, `schema.py`, `validators.py`, `permissions.py`, `constants.py`,

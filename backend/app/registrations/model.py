@@ -24,6 +24,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.utils.datetime import utc_iso
+
 from app.extensions import db
 from app.utils.datetime import utcnow
 
@@ -113,7 +115,7 @@ class TeamMember(db.Model):
             "id": str(self.id),
             "user_id": str(self.user_id),
             "role": self.role,
-            "joined_at": self.joined_at.isoformat() if self.joined_at else None,
+            "joined_at": utc_iso(self.joined_at) if self.joined_at else None,
         }
 
 
@@ -178,6 +180,7 @@ class Registration(db.Model):
             "id": str(self.id),
             "event_id": str(self.event_id),
             "user_id": str(self.user_id),
+            "registration_deadline": utc_iso(self.event.registration_deadline) if self.event else None,
             "event_title": self.event.title if self.event else None,
             "participant_name": self.user.full_name if self.user else None,
             "participant_email": self.user.email if self.user else None,
@@ -190,8 +193,8 @@ class Registration(db.Model):
             "status": self.status,
             "notes": self.notes,
             "reviewed_by": str(self.reviewed_by) if self.reviewed_by else None,
-            "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "reviewed_at": utc_iso(self.reviewed_at) if self.reviewed_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
         }
 
 

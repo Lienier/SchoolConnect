@@ -23,7 +23,7 @@ from app.events.repository import (
     EventResultRepository,
 )
 from app.extensions import db
-from app.utils.datetime import date_in_app_timezone, today_in_app_timezone, utcnow
+from app.utils.datetime import date_in_app_timezone, today_in_app_timezone, utcnow, as_utc
 
 _VALID_STATUSES = {"approved", "ongoing", "completed", "cancelled", "archived"}
 _STATUS_TRANSITIONS = {
@@ -37,9 +37,9 @@ _STATUS_TRANSITIONS = {
 
 def _parse_dt(value, field: str) -> datetime:
     if isinstance(value, datetime):
-        return value
+        return as_utc(value)
     try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return as_utc(datetime.fromisoformat(str(value).replace("Z", "+00:00")))
     except (TypeError, ValueError):
         raise ValidationError(f"{field} must be a valid ISO-8601 datetime.")
 
@@ -101,6 +101,7 @@ class EventService:
         registration_deadline,
         is_team_event: bool,
         max_team_size,
+        approval_required: bool = True,
     ) -> Event:
         start = _parse_dt(start_time, "start_time")
         end = _parse_dt(end_time, "end_time")
@@ -134,6 +135,7 @@ class EventService:
             registration_deadline=deadline,
             is_team_event=is_team_event,
             max_team_size=max_team_size,
+            approval_required=approval_required,
             status="approved",
             created_by=organizer_id,
             updated_by=organizer_id,
@@ -164,6 +166,10 @@ class EventService:
     ) -> Event:
         event = self.get_event(event_id)
         previous_capacity = event.capacity
+        event.start_time = as_utc(event.start_time)
+        event.end_time = as_utc(event.end_time)
+        if event.registration_deadline:
+            event.registration_deadline = as_utc(event.registration_deadline)
         if event.status != "approved":
             raise ValidationError("Only upcoming approved events can be edited.")
         # Organizers, assigned officers, and admins may edit upcoming events.
@@ -193,17 +199,19 @@ class EventService:
             "location",
             "capacity",
             "is_team_event",
+            "approval_required",
             "max_team_size",
         ):
-            if fields.get(attr) is not None:
+            if attr in fields:
                 setattr(event, attr, fields[attr])
-        if fields.get("category_id") is not None:
-            event.category_id = uuid.UUID(fields["category_id"])
-        if fields.get("registration_deadline") is not None:
-            event.registration_deadline = _parse_dt(
-                fields["registration_deadline"], "registration_deadline"
-            )
-            _require_not_before_today(event.registration_deadline, "registration_deadline")
+        if "category_id" in fields:
+            event.category_id = uuid.UUID(fields["category_id"]) if fields["category_id"] else None
+        if "registration_deadline" in fields:
+            event.registration_deadline = _parse_dt(fields["registration_deadline"], "registration_deadline") if fields["registration_deadline"] else None
+            if event.registration_deadline:
+                _require_not_before_today(event.registration_deadline, "registration_deadline")
+        if event.is_team_event and (event.max_team_size is None or event.max_team_size < 2):
+            raise ValidationError("Team events require max_team_size >= 2.")
         if event.capacity is not None and event.capacity < 0:
             raise ValidationError("capacity cannot be negative.")
         if event.registration_deadline and event.registration_deadline > event.start_time:

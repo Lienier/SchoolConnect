@@ -1,0 +1,273 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+
+PROFESSOR CONSOLE
+
+Welcome back, Professor Teacher.
+
+Manage your events, rosters, QR check-ins, attendance records, and student announcements.
+
+Create event
+Attendance
+New announcement
+
+32
+
+ACTIVE EVENTS
+
+138
+
+OPEN ROSTERS
+
+4
+
+ANNOUNCEMENTS
+
+My event pipeline
+Manage events
+
+20
+
+Open
+
+0
+
+Live
+
+0
+
+Completed
+
+QA Pagination 12
+10/17/2026, 2:04:51 PM
+Approved
+Today's tools
+Open roster
+Mark attendance
+Calendar
+All Updates
+Announcements
+Upcoming Events
+Pinned
+QT
+
+QA Teacher
+
+Announcement
+Professor
+QA Campus
+Urgent
+Pinned
+11m ago
+/
+Announcement bulletin
+
+CAPTION
+
+QA Emergency Notice
+
+Audience: all
+
+Synthetic announcement for user interface testing.
+
+#qa-campus
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Event
+Professor
+8m ago
+/
+Event bulletin
+
+CAPTION
+
+QA Auto Event Edited
+
+EVENT DETAILS
+
+DATE & TIME
+
+Dec 1, 2026, 9:00 AM
+
+Ends Dec 1, 2026, 11:00 AM
+
+VENUE
+
+Reviewed Hall
+
+Deadline Nov 30, 2026, 6:00 PM
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+QT
+
+QA Teacher
+
+Announcement
+Professor
+9m ago
+/
+Announcement bulletin
+
+CAPTION
+
+Scenario UI Campus Notice
+Media
+
+Synthetic announcement for a complete UI publishing and reading scenario.
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Event
+Professor
+QA Seminar
+10m ago
+/
+Event bulletin
+/
+Team event
+
+CAPTION
+
+Scenario UI Team Championship
+Media
+
+Synthetic scenario event created entirely using UI controls.
+
+#qa-seminar
+
+EVENT DETAILS
+
+DATE & TIME
+
+Nov 12, 2026, 9:00 AM
+
+Ends Nov 12, 2026, 11:00 AM
+
+VENUE
+
+Scenario UI Hall
+
+Max Team 4
+Registration Approval
+CAPACITY
+2 / 8
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+QT
+
+QA Teacher
+
+Announcement
+Professor
+QA Campus
+11m ago
+/
+Announcement bulletin
+
+CAPTION
+
+QA Public Notice
+
+Audience: all
+
+Synthetic announcement for user interface testing.
+
+#qa-campus
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Event
+Professor
+QA Seminar
+11m ago
+/
+Event bulletin
+
+CAPTION
+
+QA Live Attendance
+
+Synthetic UI testing event. No real participants.
+
+#qa-seminar
+
+EVENT DETAILS
+
+DATE & TIME
+
+Oct 5, 2026, 1:02 PM
+
+Ends Oct 5, 2026, 3:02 PM
+
+VENUE
+
+QA Campus Hall
+
+Deadline Oct 5, 2026, 12:02 PM
+Registration Approval
+CAPACITY
+107 / 200
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+Success
+Welcome back!
+Notification SuccessWelcome back!

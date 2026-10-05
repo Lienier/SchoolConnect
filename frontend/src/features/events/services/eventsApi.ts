@@ -11,9 +11,14 @@ import type {
   TeamRegistration,
 } from "@/features/events/types";
 
+export interface EventListParams {
+  page?: number; page_size?: number; status?: string; category_id?: string; organizer_id?: string;
+  managed?: boolean; team_only?: boolean; range_start?: string; range_end?: string;
+}
+
 export const eventsApi = {
   async list(
-    params: { page?: number; status?: string; category_id?: string; organizer_id?: string } = {},
+    params: EventListParams = {},
   ): Promise<{ data: SchoolEvent[]; meta?: EventListResponse["meta"] }> {
     const { data } = await apiClient.get<EventListResponse>("/events", {
       params,
@@ -21,6 +26,19 @@ export const eventsApi = {
     return { data: data.data, meta: data.meta };
   },
 
+  async listAll(params: EventListParams = {}): Promise<{ data: SchoolEvent[] }> {
+    const first = await eventsApi.list({ ...params, page: 1, page_size: 100 });
+    const items = [...first.data];
+    for (let page = 2; page <= (first.meta?.total_pages ?? 1); page++) {
+      const result = await eventsApi.list({ ...params, page, page_size: 100 });
+      items.push(...result.data);
+    }
+    return { data: items };
+  },
+  async update(id: string, payload: Partial<SchoolEvent>): Promise<SchoolEvent> {
+    const { data } = await apiClient.patch(`/events/${id}`, payload);
+    return data.data;
+  },
   async get(id: string): Promise<SchoolEvent> {
     const { data } = await apiClient.get(`/events/${id}`);
     return data.data;
@@ -35,6 +53,8 @@ export const eventsApi = {
     location?: string;
     capacity?: number;
     is_team_event: boolean;
+    approval_required?: boolean;
+    registration_deadline?: string;
     max_team_size?: number;
   }): Promise<SchoolEvent> {
     const { data } = await apiClient.post("/events", payload);
@@ -113,23 +133,27 @@ export const registrationsApi = {
 
   async mine(
     page = 1,
+    status?: string,
   ): Promise<{ data: Registration[]; meta?: RegistrationListResponse["meta"] }> {
     const { data } = await apiClient.get<RegistrationListResponse>(
       "/registrations/mine",
-      { params: { page } },
+      { params: { page, status } },
     );
     return { data: data.data, meta: data.meta };
   },
 
-  async listForEvent(
-    eventId: string,
-    page = 1,
-  ): Promise<{ data: Registration[]; meta?: RegistrationListResponse["meta"] }> {
-    const { data } = await apiClient.get<RegistrationListResponse>(
-      "/registrations",
-      { params: { event_id: eventId, page } },
-    );
-    return { data: data.data, meta: data.meta };
+  async listForEvent(eventId: string): Promise<{ data: Registration[] }> {
+    const registrations: Registration[] = [];
+    let page = 1;
+    while (true) {
+      const { data } = await apiClient.get<RegistrationListResponse>("/registrations", {
+        params: { event_id: eventId, page, page_size: 100 },
+      });
+      registrations.push(...data.data);
+      if (!data.meta || page >= data.meta.total_pages) break;
+      page += 1;
+    }
+    return { data: registrations };
   },
 
   async decide(

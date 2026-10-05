@@ -1,0 +1,42 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+New Event
+My Events
+Announcements
+My Registrations
+Attendance
+
+DISCOVER
+
+Browse Events
+Announcements
+Calendar
+Q
+
+QA Leader
+
+leader@qa.schoolconnect.example
+
+Log out
+
+DEPARTMENT STUDENT LEADER
+
+1
+Attendance
+
+Record and monitor attendance for approved college events.
+
+Export CSV
+Scan QR
+Select an event
+
+No approved or ongoing events are available for QR generation yet.
+
+Success
+Welcome back!

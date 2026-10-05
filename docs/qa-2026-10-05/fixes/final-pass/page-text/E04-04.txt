@@ -1,0 +1,66 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+New Event
+My Events
+Announcements
+My Registrations
+Attendance
+
+DISCOVER
+
+Browse Events
+Announcements
+Calendar
+Q
+
+QA Officer
+
+officer@qa.schoolconnect.example
+
+Log out
+
+STUDENT COUNCIL
+
+1
+Attendance
+
+Record and monitor attendance for approved college events.
+
+Export CSV
+Select an event
+QA Live Attendance
+
+QR will be generated for QA Live Attendance. Students scan it from My Attendance.
+
+REGISTERED
+
+2
+
+PRESENT
+
+1
+
+LATE
+
+0
+
+ABSENT
+
+0
+
+EXCUSED
+
+0
+
+PARTICIPANT	REGISTRATION	ATTENDANCE	CHECK-IN	METHOD	ACTIONS
+QA Student	Approved	Present	10/5/2026, 1:03:50 PM	Qr
+
+QA Student2	Approved	Absent	-	Not Marked
+Success
+Welcome back!

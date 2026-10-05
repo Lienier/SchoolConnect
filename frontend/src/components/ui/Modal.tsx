@@ -1,5 +1,6 @@
 /** Accessible modal dialog (shadcn/ui new-york style). */
-import { type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/utils/cn";
@@ -14,24 +15,21 @@ interface ModalProps {
 }
 
 export function Modal({ open, title, onClose, children, footer, className }: ModalProps) {
-  if (!open) return null;
+  const returnFocus = useRef<HTMLElement | null>(null);
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/55 p-4 backdrop-blur-sm"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <div
+    <Dialog.Root open={open} onOpenChange={(value) => { if (!value) onClose(); }}>
+      <Dialog.Portal>
+      <Dialog.Overlay className="fixed inset-0 z-50 bg-navy-950/55 backdrop-blur-sm" />
+      <Dialog.Content aria-describedby={undefined}
+        onOpenAutoFocus={() => { returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }}
+        onCloseAutoFocus={(event) => { event.preventDefault(); if (returnFocus.current?.isConnected) returnFocus.current.focus(); }}
         className={cn(
-          "w-full max-w-lg rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-navy-950/10 dark:border-navy-800 dark:bg-navy-950 dark:text-navy-100 dark:shadow-none",
+          "fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-6 shadow-xl shadow-navy-950/10 dark:border-navy-800 dark:bg-navy-950 dark:text-navy-100 dark:shadow-none",
           className,
         )}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-navy-900 dark:text-white">{title}</h2>
+          <Dialog.Title className="text-lg font-semibold text-navy-900 dark:text-white">{title}</Dialog.Title>
           <button
             type="button"
             onClick={onClose}
@@ -43,7 +41,8 @@ export function Modal({ open, title, onClose, children, footer, className }: Mod
         </div>
         <div className="max-h-[70vh] overflow-y-auto">{children}</div>
         {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
-      </div>
-    </div>
+      </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

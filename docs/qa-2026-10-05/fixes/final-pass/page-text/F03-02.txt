@@ -1,0 +1,161 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+QA Live Attendance
+QA Seminar
+Ongoing
+Registration Approval
+
+Synthetic UI testing event. No real participants.
+
+Starts
+Monday, October 5, 2026 at 1:02 PM
+Ends
+Monday, October 5, 2026 at 3:02 PM
+Location
+QA Campus Hall
+Capacity
+200 seats
+
+Registration deadline: Monday, October 5, 2026 at 12:02 PM
+
+Complete event
+Cancel event
+Registrations
+Export CSV
+QA Roster 104approved
+QA Roster 103approved
+QA Roster 102approved
+QA Roster 101approved
+QA Roster 100approved
+QA Roster 099approved
+QA Roster 098approved
+QA Roster 097approved
+QA Roster 096approved
+QA Roster 095approved
+QA Roster 094approved
+QA Roster 093approved
+QA Roster 092approved
+QA Roster 091approved
+QA Roster 090approved
+QA Roster 089approved
+QA Roster 088approved
+QA Roster 087approved
+QA Roster 086approved
+QA Roster 085approved
+QA Roster 084approved
+QA Roster 083approved
+QA Roster 082approved
+QA Roster 081approved
+QA Roster 080approved
+QA Roster 079approved
+QA Roster 078approved
+QA Roster 077approved
+QA Roster 076approved
+QA Roster 075approved
+QA Roster 074approved
+QA Roster 073approved
+QA Roster 072approved
+QA Roster 071approved
+QA Roster 070approved
+QA Roster 069approved
+QA Roster 068approved
+QA Roster 067approved
+QA Roster 066approved
+QA Roster 065approved
+QA Roster 064approved
+QA Roster 063approved
+QA Roster 062approved
+QA Roster 061approved
+QA Roster 060approved
+QA Roster 059approved
+QA Roster 058approved
+QA Roster 057approved
+QA Roster 056approved
+QA Roster 055approved
+QA Roster 054approved
+QA Roster 053approved
+QA Roster 052approved
+QA Roster 051approved
+QA Roster 050approved
+QA Roster 049approved
+QA Roster 048approved
+QA Roster 047approved
+QA Roster 046approved
+QA Roster 045approved
+QA Roster 044approved
+QA Roster 043approved
+QA Roster 042approved
+QA Roster 041approved
+QA Roster 040approved
+QA Roster 039approved
+QA Roster 038approved
+QA Roster 037approved
+QA Roster 036approved
+QA Roster 035approved
+QA Roster 034approved
+QA Roster 033approved
+QA Roster 032approved
+QA Roster 031approved
+QA Roster 030approved
+QA Roster 029approved
+QA Roster 028approved
+QA Roster 027approved
+QA Roster 026approved
+QA Roster 025approved
+QA Roster 024approved
+QA Roster 023approved
+QA Roster 022approved
+QA Roster 021approved
+QA Roster 020approved
+QA Roster 019approved
+QA Roster 018approved
+QA Roster 017approved
+QA Roster 016approved
+QA Roster 015approved
+QA Roster 014approved
+QA Roster 013approved
+QA Roster 012approved
+QA Roster 011approved
+QA Roster 010approved
+QA Roster 009approved
+QA Roster 008approved
+QA Roster 007approved
+QA Roster 006approved
+QA Roster 005approved
+QA Roster 004approved
+QA Roster 003approved
+QA Roster 002approved
+QA Roster 001approved
+QA Roster 000approved
+QA Student2approved
+QA Studentapproved
+Event Results
+
+Results have not been posted yet.
+
+Add result

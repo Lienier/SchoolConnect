@@ -1,0 +1,300 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+
+PROFESSOR CONSOLE
+
+Welcome back, Professor Teacher.
+
+Manage your events, rosters, QR check-ins, attendance records, and student announcements.
+
+Create event
+Attendance
+New announcement
+
+5
+
+ACTIVE EVENTS
+
+5
+
+OPEN ROSTERS
+
+3
+
+ANNOUNCEMENTS
+
+My event pipeline
+Manage events
+
+4
+
+Open
+
+1
+
+Live
+
+1
+
+Completed
+
+QA Live Attendance
+10/5/2026, 1:02:34 PM
+Ongoing
+Today's tools
+Open roster
+Mark attendance
+Calendar
+All Updates
+Announcements
+Upcoming Events
+Pinned
+QT
+
+QA Teacher
+
+Announcement
+Professor
+QA Campus
+Urgent
+Pinned
+just now
+/
+Announcement bulletin
+
+CAPTION
+
+QA Emergency Notice
+
+Audience: all
+
+Synthetic announcement for user interface testing.
+
+#qa-campus
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Announcement
+Professor
+QA Campus
+just now
+/
+Announcement bulletin
+
+CAPTION
+
+QA Public Notice
+
+Audience: all
+
+Synthetic announcement for user interface testing.
+
+#qa-campus
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Event
+Professor
+QA Seminar
+just now
+/
+Event bulletin
+
+CAPTION
+
+QA Live Attendance
+
+Synthetic UI testing event. No real participants.
+
+#qa-seminar
+
+EVENT DETAILS
+
+DATE & TIME
+
+Oct 5, 2026, 1:02 PM
+
+Ends Oct 5, 2026, 3:02 PM
+
+VENUE
+
+QA Campus Hall
+
+Deadline Oct 5, 2026, 12:02 PM
+Registration Approval
+CAPACITY
+2 / 10
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+QT
+
+QA Teacher
+
+Event
+Professor
+QA Seminar
+just now
+/
+Event bulletin
+
+CAPTION
+
+QA Deadline Passed
+
+Synthetic UI testing event. No real participants.
+
+#qa-seminar
+
+EVENT DETAILS
+
+DATE & TIME
+
+Oct 15, 2026, 1:02 PM
+
+Ends Oct 15, 2026, 3:02 PM
+
+VENUE
+
+QA Campus Hall
+
+Deadline Oct 4, 2026, 1:02 PM
+Registration Approval
+CAPACITY
+0 / 10
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+QT
+
+QA Teacher
+
+Event
+Professor
+QA Seminar
+just now
+/
+Event bulletin
+
+CAPTION
+
+QA Full Event
+
+Synthetic UI testing event. No real participants.
+
+#qa-seminar
+
+EVENT DETAILS
+
+DATE & TIME
+
+Oct 14, 2026, 1:02 PM
+
+Ends Oct 14, 2026, 3:02 PM
+
+VENUE
+
+QA Campus Hall
+
+Deadline Oct 14, 2026, 12:02 PM
+Registration Approval
+CAPACITY
+1 / 1
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+QT
+
+QA Teacher
+
+Event
+Professor
+QA Seminar
+just now
+/
+Event bulletin
+/
+Team event
+
+CAPTION
+
+QA Team Challenge
+
+Synthetic UI testing event. No real participants.
+
+#qa-seminar
+
+EVENT DETAILS
+
+DATE & TIME
+
+Oct 13, 2026, 1:02 PM
+
+Ends Oct 13, 2026, 3:02 PM
+
+VENUE
+
+QA Campus Hall
+
+Deadline Oct 13, 2026, 12:02 PM
+Max Team 4
+Registration Approval
+CAPACITY
+0 / 10
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+Success
+Welcome back!
+Notification SuccessWelcome back!

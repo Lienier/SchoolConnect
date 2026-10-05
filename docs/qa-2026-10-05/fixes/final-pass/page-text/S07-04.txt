@@ -1,0 +1,14 @@
+SchoolConnect
+
+Sign in to your account
+
+Email
+Password
+Show
+Sign In
+
+Accounts are issued by the College administrator.
+
+Error
+This account is not active.
+Notification ErrorThis account is not active.

@@ -1,0 +1,66 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+Reports
+
+Analytics and insights about college events and participation.
+
+Total Events
+
+33
+
+Upcoming Events
+
+32
+
+Total Registrations
+
+34
+
+Attendance Rate
+
+100%
+
+Registration status
+Popular categories
+Attendance by department
+QA Computer Studies Reviewed
+33.33%

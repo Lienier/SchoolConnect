@@ -1,4 +1,4 @@
-import { forwardRef, type InputHTMLAttributes } from "react";
+import React, { forwardRef, type InputHTMLAttributes } from "react";
 import { cn } from "@/utils/cn";
 
 export interface RadioProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -108,7 +108,7 @@ export function RadioGroup({
         aria-required={required}
       >
         {React.Children.map(children, (child) => {
-          if (!React.isValidElement(child)) return child;
+          if (!React.isValidElement<RadioProps>(child)) return child;
           return React.cloneElement(child, {
             name,
             checked: child.props.value === value,

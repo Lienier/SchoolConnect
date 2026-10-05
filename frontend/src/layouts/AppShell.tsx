@@ -143,7 +143,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
         <nav className="flex-1 space-y-7 overflow-y-auto px-4 py-7">
           {visibleNav.map((section) => (
             <div key={section.title}>
-              <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-navy-300/75">
+              <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-navy-200">
                 {section.title}
               </p>
               <div className="space-y-1.5">
@@ -217,7 +217,7 @@ export function AppShell({ title, nav, children }: AppShellProps) {
                 </div>
               </div>
             )}
-            <p className="hidden text-sm font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-navy-500 md:block">{title}</p>
+            <p className="hidden text-sm font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-navy-500 md:block">{title}</p>
           </div>
 
           <div className="ml-auto flex items-center gap-3 sm:gap-4">

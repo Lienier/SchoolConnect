@@ -23,6 +23,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.utils.datetime import utc_iso
+
 from app.extensions import db
 from app.models.base import UUIDMixin
 from app.utils.datetime import utcnow
@@ -126,14 +128,14 @@ class Announcement(db.Model):
             "author_id": str(self.author_id),
             "priority": self.priority,
             "status": self.status,
-            "published_at": self.published_at.isoformat() if self.published_at else None,
-            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "published_at": utc_iso(self.published_at) if self.published_at else None,
+            "expires_at": utc_iso(self.expires_at) if self.expires_at else None,
             "target_audience": self.target_audience,
             "is_pinned": self.is_pinned,
             "is_emergency": self.is_emergency,
             "view_count": self.view_count,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
+            "updated_at": utc_iso(self.updated_at) if self.updated_at else None,
             "author_name": self.author.full_name if self.author else None,
             "author_avatar": self.author.avatar_url if self.author else None,
             "author_role": (
@@ -150,7 +152,7 @@ class Announcement(db.Model):
         for attachment in self.attachments:
             file = attachment.file
             if file and file.content_type.startswith("image/"):
-                return file.url
+                return file.delivery_url
         return None
 
 
@@ -181,6 +183,10 @@ class UploadedFile(db.Model):
     __table_args__ = (
         CheckConstraint("size_bytes > 0", name="ck_uploaded_files_size"),
     )
+
+    @property
+    def delivery_url(self) -> str:
+        return f"/api/uploads/{self.filename}"
 
 
 class AnnouncementAttachment(db.Model):
@@ -218,7 +224,7 @@ class AnnouncementAttachment(db.Model):
             "original_name": self.file.original_name if self.file else None,
             "content_type": self.file.content_type if self.file else None,
             "size_bytes": self.file.size_bytes if self.file else None,
-            "url": self.file.url if self.file else None,
+            "url": self.file.delivery_url if self.file else None,
         }
 
 

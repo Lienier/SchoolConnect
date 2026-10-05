@@ -1,0 +1,86 @@
+
+> schoolconnect-frontend@0.1.0 build
+> npm run typecheck && vite build --config vite.config.ts
+
+
+> schoolconnect-frontend@0.1.0 typecheck
+> tsc --noEmit
+
+vite v8.3.2 building client environment for production...
+transforming...
+✓ 1901 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                   0.97 kB │ gzip:   0.42 kB
+dist/assets/index-B4bC-ysy.css                   83.62 kB │ gzip:  14.29 kB
+dist/assets/arrow-left-m0yQdutD.js                0.15 kB │ gzip:   0.15 kB
+dist/assets/search-9KhDahy9.js                    0.15 kB │ gzip:   0.15 kB
+dist/assets/clock-CrG8Ldx6.js                     0.16 kB │ gzip:   0.16 kB
+dist/assets/dashboardApi-BumhDhqU.js              0.18 kB │ gzip:   0.17 kB
+dist/assets/mail-DtBL2Wt1.js                      0.20 kB │ gzip:   0.18 kB
+dist/assets/copy-DIo4Brw4.js                      0.22 kB │ gzip:   0.19 kB
+dist/assets/external-link-BsroNW8g.js             0.23 kB │ gzip:   0.18 kB
+dist/assets/archive-yt2GqGYV.js                   0.23 kB │ gzip:   0.20 kB
+dist/assets/calendar-D2LIb7Ge.js                  0.24 kB │ gzip:   0.19 kB
+dist/assets/map-pin-Da5uLkcy.js                   0.24 kB │ gzip:   0.21 kB
+dist/assets/download-DLDUHQ_4.js                  0.24 kB │ gzip:   0.20 kB
+dist/assets/shield-1hb2nbb_.js                    0.25 kB │ gzip:   0.21 kB
+dist/assets/pen-line-0gEokQXn.js                  0.26 kB │ gzip:   0.21 kB
+dist/assets/book-open-BysNO0mF.js                 0.26 kB │ gzip:   0.19 kB
+dist/assets/Card-BhAVbVFK.js                      0.27 kB │ gzip:   0.21 kB
+dist/assets/feedApi-fipQ7p7x.js                   0.30 kB │ gzip:   0.25 kB
+dist/assets/file-text-B-PouSik.js                 0.31 kB │ gzip:   0.20 kB
+dist/assets/trash-2-D0EWpogK.js                   0.34 kB │ gzip:   0.23 kB
+dist/assets/building-2-o3eDLXwu.js                0.42 kB │ gzip:   0.24 kB
+dist/assets/Input-BGkt8qE4.js                     0.58 kB │ gzip:   0.36 kB
+dist/assets/Pagination-BrPrr1-v.js                0.58 kB │ gzip:   0.35 kB
+dist/assets/Badge-CWTJb5XT.js                     0.62 kB │ gzip:   0.34 kB
+dist/assets/errors-Bxbql1eV.js                    0.65 kB │ gzip:   0.43 kB
+dist/assets/rolldown-runtime-hePW80VL.js          0.71 kB │ gzip:   0.42 kB
+dist/assets/announcementsApi-CPhDKrtR.js          0.76 kB │ gzip:   0.29 kB
+dist/assets/attendanceApi-CxGMFKPU.js             0.86 kB │ gzip:   0.41 kB
+dist/assets/Table-eaUEDIjU.js                     1.12 kB │ gzip:   0.44 kB
+dist/assets/usersApi-BCz59KDP.js                  1.14 kB │ gzip:   0.37 kB
+dist/assets/preload-helper-DjzSQ1t3.js            1.38 kB │ gzip:   0.75 kB
+dist/assets/AdminPrimitives-CF64weXi.js           1.71 kB │ gzip:   0.68 kB
+dist/assets/uploadsApi-DNAx13FK.js                1.75 kB │ gzip:   0.95 kB
+dist/assets/DashboardPage-BP_DNE1w.js             1.80 kB │ gzip:   0.85 kB
+dist/assets/schoolApi-1BI2WNc-.js                 1.95 kB │ gzip:   0.50 kB
+dist/assets/widgets-BP7mmIHY.js                   1.97 kB │ gzip:   0.78 kB
+dist/assets/CreateEventPage-DhJkswqe.js           2.07 kB │ gzip:   1.08 kB
+dist/assets/SupportPage-C-qFy2zJ.js               2.30 kB │ gzip:   1.00 kB
+dist/assets/useMutation-DXJLvgYQ.js               2.32 kB │ gzip:   0.98 kB
+dist/assets/eventsApi-VdLP69uG.js                 2.34 kB │ gzip:   0.70 kB
+dist/assets/EditEventPage-BFAR2gFg.js             2.59 kB │ gzip:   1.20 kB
+dist/assets/LoginPage-CLZPFOlV.js                 3.29 kB │ gzip:   1.35 kB
+dist/assets/react-dom-CZQa7qmP.js                 3.58 kB │ gzip:   1.36 kB
+dist/assets/AnnouncementsPage-uR0msHVr.js         4.47 kB │ gzip:   1.78 kB
+dist/assets/NotificationsPage-fWTIwy_L.js         4.67 kB │ gzip:   1.78 kB
+dist/assets/DashboardPage-_7msWzIC.js             4.72 kB │ gzip:   1.41 kB
+dist/assets/DashboardPage-QePnh3pn.js             6.11 kB │ gzip:   1.96 kB
+dist/assets/MyRegistrationsPage-DUb4RwK5.js       6.29 kB │ gzip:   2.50 kB
+dist/assets/DashboardPage-Dg8nb4d0.js             6.44 kB │ gzip:   1.99 kB
+dist/assets/CreateAnnouncementPage-DKd8zsEa.js    6.47 kB │ gzip:   2.49 kB
+dist/assets/StudentProfilePage-QI0Iqy7d.js        7.11 kB │ gzip:   2.42 kB
+dist/assets/StudentAttendancePage-Du7c_Znt.js     7.69 kB │ gzip:   2.66 kB
+dist/assets/CreateEventForm-D2Y2LVev.js           8.88 kB │ gzip:   2.97 kB
+dist/assets/RolesPage-CnkfkXxU.js                 8.88 kB │ gzip:   2.71 kB
+dist/assets/EventsPage-C4ZM6M2v.js               11.15 kB │ gzip:   4.03 kB
+dist/assets/AttendancePage-DfmfErB-.js           11.31 kB │ gzip:   3.99 kB
+dist/assets/CouncilMembersPage-BgrTHPig.js       11.81 kB │ gzip:   3.43 kB
+dist/assets/HomePage-BraApa2L.js                 12.09 kB │ gzip:   3.52 kB
+dist/assets/SchoolPage-DN8TDbrA.js               19.67 kB │ gzip:   5.66 kB
+dist/assets/EventDetailPage-BXyAV7SN.js          23.82 kB │ gzip:   6.94 kB
+dist/assets/UsersPage-BIeiwIMP.js                24.48 kB │ gzip:   6.62 kB
+dist/assets/BulletinFeed-_yWlVnXq.js             24.93 kB │ gzip:   7.22 kB
+dist/assets/ToastProvider-W5MQeenZ.js            28.83 kB │ gzip:   9.54 kB
+dist/assets/cn-DkIeCw9c.js                       28.83 kB │ gzip:  10.10 kB
+dist/assets/Select-B95lvqjg.js                   48.86 kB │ gzip:  17.14 kB
+dist/assets/QueryClientProvider-BUB8tjCb.js      51.91 kB │ gzip:  19.51 kB
+dist/assets/types-D_ktgWTl.js                    89.13 kB │ gzip:  24.35 kB
+dist/assets/AdminSupportPages-E-PRbBhz.js       183.71 kB │ gzip:  62.98 kB
+dist/assets/CalendarPage-CUV_lJCD.js            264.21 kB │ gzip:  76.67 kB
+dist/assets/index-CPcFk2gX.js                   350.46 kB │ gzip: 110.21 kB
+dist/assets/esm-DQLUU7nU.js                     368.73 kB │ gzip: 108.08 kB
+
+✓ built in 901ms

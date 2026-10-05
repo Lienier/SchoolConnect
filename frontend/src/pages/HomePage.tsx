@@ -100,12 +100,12 @@ export default function HomePage() {
                 onSubmit={(event) => event.preventDefault()}
               >
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-600" />
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Search announcements or events..."
-                    className="h-12 w-full rounded-lg border-0 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:bg-navy-950 dark:text-navy-100 dark:placeholder:text-navy-500"
+                    className="h-12 w-full rounded-lg border-0 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none placeholder:text-slate-600 dark:bg-navy-950 dark:text-navy-100 dark:placeholder:text-navy-500"
                   />
                 </div>
                 <Button type="submit" className="h-12 rounded-lg px-6">Search</Button>

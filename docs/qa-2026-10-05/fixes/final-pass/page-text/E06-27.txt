@@ -1,0 +1,60 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+1
+Log out
+Profile
+
+Review your account and college details.
+
+QA Student
+Student
+Active
+EMAIL
+student@qa.schoolconnect.example
+PHONE
+Not provided
+USERNAME
+qa-student
+EMAIL VERIFIED
+Verified
+College Profile
+
+Complete these details before registering for an event.
+
+Complete
+STUDENT ID
+QA-student
+Department
+Select department
+QA-CCS - QA Computer Studies Reviewed
+SCENARIO - Scenario UI Department Updated
+Course
+Select course
+QA-BSIT - QA IT Reviewed
+Section
+Select section
+QA 3A Reviewed
+Save College Profile

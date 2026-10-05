@@ -1,0 +1,61 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Incomplete
+
+incomplete@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+1
+Log out
+QA Open Seminar
+QA Seminar
+Approved
+Registration Approval
+
+Synthetic UI testing event. No real participants.
+
+Starts
+Monday, October 12, 2026 at 1:02 PM
+Ends
+Monday, October 12, 2026 at 3:02 PM
+Location
+QA Campus Hall
+Capacity
+10 seats
+
+Registration deadline: Monday, October 12, 2026 at 12:02 PM
+
+Register
+Success
+Welcome back!
+Error
+Complete your college profile before registering for events.
+Register for event
+QA Open Seminar
+10/12/2026, 1:02:34 PM
+10 seats
+Deadline 10/12/2026, 12:02:34 PM
+Registration approval required
+Notes
+Complete your college profile before registering for events.
+Close
+Confirm registration
+Notification ErrorComplete your college profile before registering for events.

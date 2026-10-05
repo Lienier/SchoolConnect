@@ -1,0 +1,74 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+Council Members
+
+Change Student Council and Department Student Leader memberships without recreating accounts.
+
+Councils
+QA Council Reviewed
+Student Council
+
+QUICK SETUP
+
+Student Council exists
+Select department
+QA-CCS - QA Computer Studies Reviewed
+SCENARIO - Scenario UI Department Updated
+Create Department Organization
+QA Council Reviewed
+
+College-wide Student Council
+
+Save Members
+Position
+President
+Add
+MEMBER
+POSITION
+ACTION
+
+QA Officer
+
+QA-officer
+
+President
+Saving Distributes This Council's Saved Positions To Selected Members.

@@ -1,0 +1,58 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+New Event
+
+Post a college event directly so students can see it.
+
+Back to Events
+New Event
+Title
+Description
+Start
+End
+Location
+Category
+QA Seminar
+None
+QA Seminar
+Capacity (optional)
+Max team size
+Registration deadline (optional)
+Require organizer approval for registrations
+This is a team event
+Event photo
+
+Add PNG, JPG, JPEG, or GIF images. The first image becomes the event preview photo.
+
+1 SELECTED
+1 KB
+fixture.png
+1 KB
+Post Event
+Success
+Welcome back!

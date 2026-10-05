@@ -15,6 +15,7 @@ import {
 } from "@/constants";
 import { authApi } from "@/features/auth/services/authApi";
 import type { AuthTokens, AuthUser } from "@/features/auth/types";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -37,6 +38,7 @@ function clearTokens() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(() => Boolean(localStorage.getItem(TOKEN_STORAGE_KEY)));
 
@@ -53,17 +55,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const tokens = await authApi.login(email, password);
+    await queryClient.cancelQueries();
+    queryClient.clear();
     persistTokens(tokens);
     setUser(tokens.user);
-  }, []);
+  }, [queryClient]);
 
   const logout = useCallback(async () => {
     const accessToken = localStorage.getItem(TOKEN_STORAGE_KEY);
     const refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY);
     clearTokens();
     setUser(null);
+    await queryClient.cancelQueries();
+    queryClient.clear();
     void authApi.logout(refreshToken ?? undefined, accessToken ?? undefined).catch(() => undefined);
-  }, []);
+  }, [queryClient]);
+
+  useEffect(() => {
+    const expire = () => {
+      clearTokens();
+      setUser(null);
+      void queryClient.cancelQueries().then(() => queryClient.clear());
+    };
+    window.addEventListener("schoolconnect:session-expired", expire);
+    return () => window.removeEventListener("schoolconnect:session-expired", expire);
+  }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

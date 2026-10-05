@@ -1,0 +1,173 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+2
+Log out
+
+EVENT DISCOVERY
+
+Events
+
+Browse approved college events, join team activities, and track registration deadlines.
+
+My Registrations
+All
+Upcoming
+Happening Now
+Past
+All categories
+QA Seminar
+Team only
+QA Pagination 02
+Approved
+Oct 17, 2026
+1:14 PM - 2:14 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 21
+Approved
+Oct 16, 2026
+2:49 PM - 3:49 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 11
+Approved
+Oct 16, 2026
+1:59 PM - 2:59 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 01
+Approved
+Oct 16, 2026
+1:09 PM - 2:09 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 20
+Approved
+Oct 15, 2026
+2:44 PM - 3:44 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 10
+Approved
+Oct 15, 2026
+1:54 PM - 2:54 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 00
+Approved
+Oct 15, 2026
+1:04 PM - 2:04 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Deadline Passed
+QA Seminar
+
+Synthetic UI testing event. No real participants.
+
+Approved
+Oct 15, 2026
+1:02 PM - 3:02 PM
+QA Campus Hall
+0 / 10
+Seats filled
+Deadline 10/4/2026
+Registration approval
+View details
+QA Full Event
+QA Seminar
+
+Synthetic UI testing event. No real participants.
+
+Approved
+Oct 14, 2026
+1:02 PM - 3:02 PM
+QA Campus Hall
+0 / 1
+Seats filled
+Deadline 10/14/2026
+Registration approval
+View details
+QA Team Challenge
+QA Seminar
+
+Synthetic UI testing event. No real participants.
+
+Approved
+Oct 13, 2026
+1:02 PM - 3:02 PM
+QA Campus Hall
+0 / 10
+Seats filled
+Team event
+Up to 4 members
+Deadline 10/13/2026
+Registration approval
+View details
+QA Open Seminar
+QA Seminar
+
+Synthetic UI testing event. No real participants.
+
+Approved
+Oct 12, 2026
+1:02 PM - 3:02 PM
+QA Campus Hall
+0 / 10
+Seats filled
+Deadline 10/12/2026
+Registration approval
+View details
+QA Live Attendance
+QA Seminar
+
+Synthetic UI testing event. No real participants.
+
+Ongoing
+Oct 5, 2026
+1:02 PM - 3:02 PM
+QA Campus Hall
+0 / 10
+Seats filled
+Deadline 10/5/2026
+Registration approval
+View details
+Page 2 of 2
+Previous
+Next

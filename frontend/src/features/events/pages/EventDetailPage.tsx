@@ -1,7 +1,7 @@
 /** Event detail page: smart student registration plus staff controls. */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -152,7 +152,7 @@ export default function EventDetailPage() {
   const isStudent = Boolean(user?.roles?.includes("student"));
 
   const { data: event, isLoading } = useQuery({
-    queryKey: ["event", id],
+    queryKey: ["event", id, user?.id],
     queryFn: () => eventsApi.get(id),
     enabled: Boolean(id),
   });
@@ -307,7 +307,7 @@ export default function EventDetailPage() {
       ["participant", "event", "status", "team", "team_code", "registered_at"],
       ...rows.map((registration) => [
         registration.participant_name ?? "",
-        registration.event_title ?? event.title,
+        registration.event_title ?? event?.title ?? "Event",
         registration.status,
         registration.team_name ?? "",
         registration.team_code ?? "",
@@ -316,7 +316,7 @@ export default function EventDetailPage() {
     ]
       .map((row) => row.map(csvCell).join(","))
       .join("\n");
-    downloadCsv(`${event.title}-roster.csv`, csv);
+    downloadCsv(`${event?.title ?? "Event"}-roster.csv`, csv);
   };
 
   if (isLoading || !event) {
@@ -330,6 +330,7 @@ export default function EventDetailPage() {
           <div
             className="h-64 border-b border-navy-100 bg-cover bg-center dark:border-navy-800"
             style={{ backgroundImage: `url(${detailImageUrl})` }}
+            role="img"
             aria-label={`${event.title} photo`}
           />
         )}
@@ -363,10 +364,11 @@ export default function EventDetailPage() {
           )}
 
           <div className="mt-6 flex flex-wrap gap-2">
+            {isManager && event.status === "approved" && <Link to={`/events/${id}/edit`}><Button variant="secondary"><Edit3 className="mr-2 h-4 w-4" />Edit event</Button></Link>}
             {isStudent && ["approved", "ongoing"].includes(event.status) && (
-              <Button onClick={() => setRegistrationOpen(true)}>
+              <Button disabled={!!(event.my_registration_status && event.my_registration_status !== "cancelled") || !!(event.registration_deadline && new Date(event.registration_deadline) < new Date())} onClick={() => setRegistrationOpen(true)}>
                 <Users className="mr-2 h-4 w-4" />
-                Register
+                {event.my_registration_status && event.my_registration_status !== "cancelled" ? "Already registered" : event.registration_deadline && new Date(event.registration_deadline) < new Date() ? "Registration closed" : "Register"}
               </Button>
             )}
             {isManager && ["approved", "ongoing"].includes(event.status) && (

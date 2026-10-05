@@ -1,0 +1,41 @@
+[
+  {
+    "id": "F02",
+    "title": "System-theme toggle and actual dark accessibility",
+    "preconditions": "Fresh browser context defaults to system light.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1389,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/F02-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Toggle system theme to dark and scan profile",
+        "expected": "HTML dark class, dark card background and no WCAG violations",
+        "observed": "Actual dark profile; background rgb(13, 21, 38); no WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 819,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/F02-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Toggle back to light",
+        "expected": "HTML light class and white card restored",
+        "observed": "Light theme restored",
+        "status": "passed",
+        "milliseconds": 102,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/F02-03.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  }
+]

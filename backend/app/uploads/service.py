@@ -7,6 +7,8 @@ that other modules reference via attachment tables.
 from __future__ import annotations
 
 import os
+import json
+import time
 import uuid
 from io import BytesIO
 
@@ -151,6 +153,7 @@ class UploadService:
         result = cloudinary.uploader.upload(
             BytesIO(payload),
             resource_type="auto",
+            type="authenticated",
             folder="schoolconnect/uploads",
             public_id=stored_name.rsplit(".", 1)[0],
             overwrite=False,
@@ -159,7 +162,21 @@ class UploadService:
         secure_url = result.get("secure_url")
         if not secure_url:
             raise ValidationError("Cloudinary upload did not return a file URL.")
-        return secure_url, f"/api/uploads/{stored_name}", len(payload)
+        metadata = {"public_id": result["public_id"], "resource_type": result.get("resource_type", "image"), "format": result.get("format", stored_name.rsplit(".", 1)[-1])}
+        return json.dumps(metadata), f"/api/uploads/{stored_name}", len(payload)
+
+    @staticmethod
+    def cloudinary_download_url(record: UploadedFile) -> str:
+        """Deliver private Cloudinary uploads through short-lived signed downloads."""
+        import cloudinary
+        import cloudinary.utils
+        cloudinary.config(cloud_name=current_app.config.get("CLOUDINARY_CLOUD_NAME"), api_key=current_app.config.get("CLOUDINARY_API_KEY"), api_secret=current_app.config.get("CLOUDINARY_API_SECRET"), secure=True)
+        try:
+            metadata = json.loads(record.storage_path)
+        except (TypeError, ValueError):
+            # Historical public assets require migration in Cloudinary before delivery.
+            raise ValidationError("This attachment needs a storage privacy migration. Contact an administrator.")
+        return cloudinary.utils.private_download_url(metadata["public_id"], metadata["format"], resource_type=metadata["resource_type"], type="authenticated", expires_at=int(time.time()) + 60, secure=True)
 
     @staticmethod
     def to_dict(record: UploadedFile) -> dict:
@@ -169,7 +186,7 @@ class UploadService:
             "original_name": record.original_name,
             "content_type": record.content_type,
             "size_bytes": record.size_bytes,
-            "url": record.url,
+            "url": record.delivery_url,
             "entity_type": record.entity_type,
             "entity_id": str(record.entity_id) if record.entity_id else None,
         }

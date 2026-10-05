@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Image as ImageIcon, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { eventSchema, type EventFormValues } from "@/features/events/validators";
+import { eventSchemaFor, type EventFormValues } from "@/features/events/validators";
 import type { EventCategory } from "@/features/events/types";
 
 interface Props {
@@ -19,6 +19,7 @@ interface Props {
   onSubmit: (values: EventFormValues, files: File[]) => Promise<void>;
   isSubmitting: boolean;
   submitLabel?: string;
+  initialValues?: Partial<EventFormValues>;
 }
 
 export function CreateEventForm({
@@ -26,6 +27,7 @@ export function CreateEventForm({
   onSubmit,
   isSubmitting,
   submitLabel = "Create Event",
+  initialValues,
 }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const {
@@ -34,8 +36,8 @@ export function CreateEventForm({
     control,
     formState: { errors },
   } = useForm<EventFormValues>({
-    resolver: zodResolver(eventSchema),
-    defaultValues: { is_team_event: false },
+    resolver: zodResolver(eventSchemaFor(initialValues?.registration_deadline)),
+    defaultValues: { is_team_event: false, approval_required: true, ...initialValues },
   });
 
   const isTeamEvent = useWatch({ control, name: "is_team_event" });
@@ -53,7 +55,7 @@ export function CreateEventForm({
 
   return (
     <Card className="w-full max-w-2xl">
-      <h2 className="mb-4 text-xl font-semibold text-navy-800">New Event</h2>
+      <h2 className="mb-4 text-xl font-semibold text-navy-800">{initialValues ? "Edit Event" : "New Event"}</h2>
       <form onSubmit={handleSubmit((values) => onSubmit(values, files))} className="space-y-5" noValidate>
         <div>
           <Label htmlFor="title">Title</Label>
@@ -108,22 +110,12 @@ export function CreateEventForm({
           </div>
           <div>
             <Label htmlFor="category_id">Category</Label>
-            <Select
-              placeholder="Select category"
-              {...register("category_id")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">None</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller name="category_id" control={control} render={({ field }) => (
+              <Select value={field.value || "none"} onValueChange={(value) => field.onChange(value === "none" ? "" : value)}>
+                <SelectTrigger id="category_id" onBlur={field.onBlur} ref={field.ref}><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent><SelectItem value="none">None</SelectItem>{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            )} />
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,10 +144,17 @@ export function CreateEventForm({
                 placeholder="e.g. 4"
                 {...register("max_team_size")}
               />
+              {errors.max_team_size && <p role="alert" className="mt-1.5 text-sm text-red-600">{errors.max_team_size.message}</p>}
             </div>
           )}
         </div>
+        <div>
+          <Label htmlFor="registration_deadline">Registration deadline (optional)</Label>
+          <Input id="registration_deadline" type="datetime-local" min={minDateTime} {...register("registration_deadline")} />
+          {errors.registration_deadline && <p role="alert" className="mt-1.5 text-sm text-red-600">{errors.registration_deadline.message}</p>}
+        </div>
         <div className="space-y-3">
+          <Checkbox {...register("approval_required")} label="Require organizer approval for registrations" />
           <Checkbox {...register("is_team_event")} label="This is a team event" />
         </div>
         <div>
@@ -188,7 +187,7 @@ export function CreateEventForm({
                     type="button"
                     aria-label={`Remove ${file.name}`}
                     onClick={() => setFiles((current) => current.filter((item) => item !== file))}
-                    className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-navy-900 dark:hover:text-white"
+                    className="rounded-lg p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-navy-900 dark:hover:text-white"
                   >
                     <X className="h-4 w-4" />
                   </button>

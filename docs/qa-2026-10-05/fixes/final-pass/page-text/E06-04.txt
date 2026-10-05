@@ -1,0 +1,131 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+User Management
+
+Manage accounts, roles, and access across the college community.
+
+Add User
+All statuses
+All roles
+NAME	EMAIL	ROLES	STATUS	LAST LOGIN	ACTIONS
+Scenario Student	sce***@qa.schoolconnect.example
+Student
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+
+QA Incomplete	inc***@qa.schoolconnect.example
+Student
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+
+QA Student2	stu***@qa.schoolconnect.example
+Student
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+
+QA Student	stu***@qa.schoolconnect.example
+Student
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+
+QA Leader	lea***@qa.schoolconnect.example
+Department Student Leader
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+
+QA Officer	off***@qa.schoolconnect.example
+Student Council
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+
+QA Teacher	tea***@qa.schoolconnect.example
+Professor
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+
+QA Admin	adm***@qa.schoolconnect.example
+Admin
+	Active	10/5/2026
+Edit
+Roles
+Disable
+Suspend
+Reset PW
+Delete
+Page 1 of 1
+Previous
+Next

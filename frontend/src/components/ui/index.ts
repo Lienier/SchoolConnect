@@ -3,10 +3,10 @@ export * from "@/styles/design-tokens";
 
 // Layout components
 export { Container } from "./Container";
-export { Grid } from "./Grid";
-export { Stack } from "./Stack";
-export { Divider } from "./Divider";
-export { ScrollArea } from "./ScrollArea";
+export { Grid } from "./Layout";
+export { Stack } from "./Layout";
+export { Divider } from "./Layout";
+export { ScrollArea } from "./Layout";
 
 // Core UI components
 export { Button } from "./Button";
@@ -16,7 +16,7 @@ export { Textarea } from "./Textarea";
 export { Label } from "./Label";
 export { Badge } from "./Badge";
 export { Avatar, AvatarImage, AvatarFallback } from "./Avatar";
-export { Separator } from "./Separator";
+export { Separator } from "./Layout";
 
 // Form components
 export { Checkbox } from "./Checkbox";
@@ -47,7 +47,7 @@ export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "./Popove
 // Feedback components
 export { Alert } from "./Alert";
 export { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription, ToastClose, ToastAction, useToast } from "./Toast";
-export { Skeleton, SkeletonText, SkeletonCard, SkeletonTable, SkeletonList, SkeletonForm, SkeletonAvatar, SkeletonButton, SkeletonInput } from "./Skeleton";
+export { Skeleton, SkeletonText, SkeletonCard, SkeletonTable, SkeletonList, SkeletonForm, SkeletonAvatar, SkeletonButton } from "./Skeleton";
 export { EmptyState, EmptyStateCard, NoEventsEmptyState, NoAnnouncementsEmptyState, NoRegistrationsEmptyState, NoAttendanceEmptyState, NoCertificatesEmptyState, NoHistoryEmptyState, NoUsersEmptyState, NoNotificationsEmptyState, NoSchoolEmptyState } from "./EmptyState";
 export { ErrorPage, NotFoundPage, UnauthorizedPage, ForbiddenPage, ServerErrorPage, MaintenancePage, OfflinePage } from "./ErrorPages";
 

@@ -1,0 +1,65 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+New Event
+
+Post a college event directly so students can see it.
+
+Back to Events
+New Event
+Title
+Description
+Start
+End
+Location
+Category
+None
+None
+QA Seminar
+Capacity (optional)
+Registration deadline (optional)
+Require organizer approval for registrations
+This is a team event
+Event photo
+
+Add PNG, JPG, JPEG, or GIF images. The first image becomes the event preview photo.
+
+Post Event

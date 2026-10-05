@@ -1,0 +1,50 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+Edit Event
+Title
+Description
+Start
+End
+Location
+Category
+None
+None
+QA Seminar
+Capacity (optional)
+Registration deadline (optional)
+Require organizer approval for registrations
+This is a team event
+Event photo
+
+Add PNG, JPG, JPEG, or GIF images. The first image becomes the event preview photo.
+
+Save Event
+Success
+Welcome back!
+Success
+Event posted.

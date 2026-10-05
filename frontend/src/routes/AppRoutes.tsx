@@ -28,6 +28,7 @@ const EventsPage = lazy(() => import("@/features/events/pages/EventsPage"));
 const CreateEventPage = lazy(
   () => import("@/features/events/pages/CreateEventPage"),
 );
+const EditEventPage = lazy(() => import("@/features/events/pages/EditEventPage"));
 const EventDetailPage = lazy(
   () => import("@/features/events/pages/EventDetailPage"),
 );
@@ -77,11 +78,11 @@ export function AppRoutes() {
           }
         >
           {/* Role dashboards */}
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/professor" element={<TeacherDashboardPage />} />
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboardPage /></ProtectedRoute>} />
+          <Route path="/professor" element={<ProtectedRoute allowedRoles={["teacher"]}><TeacherDashboardPage /></ProtectedRoute>} />
           <Route path="/teacher" element={<Navigate to="/professor" replace />} />
-          <Route path="/officer" element={<OfficerDashboardPage />} />
-          <Route path="/student" element={<StudentDashboardPage />} />
+          <Route path="/officer" element={<ProtectedRoute allowedRoles={["student_council", "department_student_leader"]}><OfficerDashboardPage /></ProtectedRoute>} />
+          <Route path="/student" element={<ProtectedRoute allowedRoles={["student"]}><StudentDashboardPage /></ProtectedRoute>} />
           {/* Legacy catch-all: send users to their role dashboard */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
           <Route path="/forbidden" element={<ForbiddenPage />} />
@@ -90,6 +91,7 @@ export function AppRoutes() {
           <Route path="/announcements/new" element={<ProtectedRoute requiredPermission="announcements.create"><CreateAnnouncementPage /></ProtectedRoute>} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/events/new" element={<ProtectedRoute requiredPermission="events.create"><CreateEventPage /></ProtectedRoute>} />
+          <Route path="/events/:id/edit" element={<ProtectedRoute requiredPermission="events.update"><EditEventPage /></ProtectedRoute>} />
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/registrations/mine" element={<MyRegistrationsPage />} />
           <Route path="/users" element={<ProtectedRoute requiredPermission="users.view"><UsersPage /></ProtectedRoute>} />

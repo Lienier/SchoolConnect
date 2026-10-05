@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from app.utils.datetime import utc_iso
+
 from app.permissions.model import Permission, Role
 
 
@@ -14,7 +16,7 @@ def role_to_dict(role: Role, *, include_permissions: bool = False) -> dict:
         "description": role.description,
         "is_system": role.is_system,
         "priority": role.priority,
-        "created_at": role.created_at.isoformat() if role.created_at else None,
+        "created_at": utc_iso(role.created_at) if role.created_at else None,
     }
     if include_permissions:
         data["permissions"] = sorted(perm.name for perm in role.permissions)

@@ -1,0 +1,64 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student2
+
+student2@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+3
+Log out
+My Registrations
+
+Track your event sign-ups, team codes, waitlists, and cancellations.
+
+Browse Events
+Active
+Pending
+Waitlisted
+Cancelled
+Past
+Scenario UI Team Championship
+
+Registered 10/5/2026, 1:03:22 PM
+
+Approved
+Scenario UI Titans
+MEMBER
+SC-IC62
+Copy
+Details
+Cancel
+QA Live Attendance
+
+Registered 10/5/2026, 1:02:36 PM
+
+Approved
+Details
+QA Full Event
+
+Registered 10/5/2026, 1:02:36 PM
+
+Approved
+Details
+Cancel
+Info
+Registration approved
+Notification InfoRegistration approved

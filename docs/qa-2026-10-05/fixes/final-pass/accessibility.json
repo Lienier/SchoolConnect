@@ -1,0 +1,118 @@
+[
+  {
+    "role": "admin",
+    "route": "/admin",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/users",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/roles",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/school",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/councils",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/events",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/events/new",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/announcements",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/announcements/new",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/attendance",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/reports",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/audit/logs",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/calendar",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/notifications",
+    "violations": []
+  },
+  {
+    "role": "admin",
+    "route": "/settings",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/student",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/profile",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/events",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/registrations/mine",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/calendar",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/notifications",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/attendance/mine",
+    "violations": []
+  },
+  {
+    "role": "student",
+    "route": "/profile",
+    "theme": "dark",
+    "violations": []
+  }
+]

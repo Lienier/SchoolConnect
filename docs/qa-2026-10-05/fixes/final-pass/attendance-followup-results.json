@@ -1,0 +1,51 @@
+[
+  {
+    "id": "F01",
+    "title": "Strict mobile attendance history verification",
+    "preconditions": "Existing live event and approved student.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1295,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/F01-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Mark absent and generate a fresh check-in code",
+        "expected": "Roster absent; code displayed",
+        "observed": "Absent roster; fresh event code displayed",
+        "status": "passed",
+        "milliseconds": 2165,
+        "url": "http://127.0.0.1:5174/attendance",
+        "screenshot": "screenshots/F01-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1338,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/F01-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Check in and wait for the history badge",
+        "expected": "Live event history becomes Present without reload",
+        "observed": "History badge Present; check-in time shown without reload",
+        "status": "passed",
+        "milliseconds": 5619,
+        "url": "http://127.0.0.1:5174/attendance/mine",
+        "screenshot": "screenshots/F01-04.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  }
+]

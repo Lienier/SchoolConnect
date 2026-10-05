@@ -1,0 +1,220 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+2
+Log out
+College Calendar
+
+Browse events, schedules, and registration deadlines.
+
+All event statuses
+Upcoming
+Ongoing
+Completed
+Cancelled
+All categories
+QA Seminar
+Any registration availability
+Registration open
+Registration closed
+30 scheduled events
+Browse all events
+Today
+October 2026
+Month
+Week
+Day
+Sun
+
+Mon
+
+Tue
+
+Wed
+
+Thu
+
+Fri
+
+Sat
+
+
+27
+
+28
+
+29
+
+30
+
+1
+
+2
+
+3
+
+
+4
+1:02p
+Registration deadline: QA Deadline Passed
+
+5
+12:02p
+Registration deadline: QA Live Attendance
+1:02p
+QA Live Attendance
+
+6
+
+7
+
+8
+
+9
+
+10
+
+
+11
+
+12
+12:02p
+Registration deadline: QA Open Seminar
+1:02p
+QA Open Seminar
+
+13
+12:02p
+Registration deadline: QA Team Challenge
+1:02p
+QA Team Challenge
+
+14
+12:02p
+Registration deadline: QA Full Event
+1:02p
+QA Full Event
+
+15
+1:02p
+QA Deadline Passed
+1:04p
+QA Pagination 00
+1:54p
+QA Pagination 10
++1 more
+
+16
+1:09p
+QA Pagination 01
+1:59p
+QA Pagination 11
+2:49p
+QA Pagination 21
+
+17
+1:14p
+QA Pagination 02
+2:04p
+QA Pagination 12
+2:54p
+QA Pagination 22
+
+
+18
+1:19p
+QA Pagination 03
+2:09p
+QA Pagination 13
+2:59p
+QA Pagination 23
+
+19
+1:24p
+QA Pagination 04
+2:14p
+QA Pagination 14
+3:04p
+QA Pagination 24
+
+20
+1:29p
+QA Pagination 05
+2:19p
+QA Pagination 15
+
+21
+1:34p
+QA Pagination 06
+2:24p
+QA Pagination 16
+
+22
+1:39p
+QA Pagination 07
+2:29p
+QA Pagination 17
+
+23
+1:44p
+QA Pagination 08
+2:34p
+QA Pagination 18
+
+24
+1:49p
+QA Pagination 09
+2:39p
+QA Pagination 19
+
+
+25
+
+26
+
+27
+
+28
+
+29
+
+30
+
+31
+
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7

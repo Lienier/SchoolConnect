@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 
 from app.attendance.model import Attendance
 from app.events.model import Event, EventCategory
@@ -46,10 +46,11 @@ class ReportService:
             )
         ) or 0
         attended_count = db.session.scalar(
-            select(func.count(Registration.id)).where(
+            select(func.count(Registration.id)).join(Attendance, and_(Attendance.event_id == Registration.event_id, Attendance.user_id == Registration.user_id)).where(
                 Registration.event_id == event_id,
                 Registration.deleted_at.is_(None),
-                Registration.status == "attended",
+                Registration.status.in_(("approved", "attended", "absent")),
+                Attendance.status.in_(("present", "late")),
             )
         ) or 0
         percentage = round((attended_count / approved_count * 100), 2) if approved_count > 0 else 0.0
@@ -67,16 +68,19 @@ class ReportService:
             select(
                 Department.name,
                 func.count(Registration.id).filter(
-                    Registration.status == "attended"
+                    Attendance.status.in_(("present", "late"))
                 ).label("attended"),
                 func.count(Registration.id).filter(
                     Registration.status.in_(("approved", "attended", "absent"))
                 ).label("total"),
             )
+            .select_from(Registration)
+            .join(Event, Registration.event_id == Event.id)
             .join(StudentProfile, Registration.user_id == StudentProfile.id)
             .join(Department, StudentProfile.department_id == Department.id)
-            .where(Registration.deleted_at.is_(None))
-            .group_by(Department.name)
+            .outerjoin(Attendance, and_(Attendance.event_id == Registration.event_id, Attendance.user_id == Registration.user_id))
+            .where(Registration.deleted_at.is_(None), Event.deleted_at.is_(None), Event.status.in_(("ongoing", "completed")), Registration.status.in_(("approved", "attended", "absent")))
+            .group_by(Department.id, Department.name)
         ).all()
         return [
             {

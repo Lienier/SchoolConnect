@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timezone
 
 from flask import Blueprint, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -110,7 +110,9 @@ def logout():
     """Revoke the presented refresh token."""
     body = _body()
     raw = body.get("refresh_token")
-    _service.logout(raw_refresh=raw)
+    _service.logout(raw_refresh=raw, session_id=get_jwt().get("sid"), user_id=uuid.UUID(get_jwt_identity()))
+    from app.realtime.service import disconnect_session
+    disconnect_session(get_jwt()["sid"])
     return success_response(message="Logged out.")
 
 

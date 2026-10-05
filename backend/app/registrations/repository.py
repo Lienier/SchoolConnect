@@ -47,7 +47,7 @@ class RegistrationRepository:
         if user_id:
             stmt = stmt.where(Registration.user_id == user_id)
         if status:
-            stmt = stmt.where(Registration.status == status)
+            stmt = stmt.where(Registration.status.in_(status.split(",")))
         return stmt.order_by(Registration.created_at.desc())
 
     def count_active(self, event_id: uuid.UUID) -> int:

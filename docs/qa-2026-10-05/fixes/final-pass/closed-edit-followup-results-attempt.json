@@ -1,0 +1,41 @@
+[
+  {
+    "id": "F05",
+    "title": "Edit metadata after registration deadline",
+    "preconditions": "Upcoming event with expired registration deadline.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1354,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/F05-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Open the expired-deadline event editor",
+        "expected": "Original past deadline loads without blocking metadata edits",
+        "status": "needs-review",
+        "observed": "locator.click: Timeout 6500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href=\"/events/7620df68-d286-4515-afab-019669b675fe\"]').filter({ hasText: 'View details' }).first()\u001b[22m\n",
+        "milliseconds": 6697,
+        "url": "http://127.0.0.1:5174/events",
+        "screenshot": "screenshots/F05-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Save metadata and reopen editor",
+        "expected": "Location persists and original deadline is unchanged",
+        "status": "needs-review",
+        "observed": "locator.click: Timeout 6500ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Save Event', exact: true })\u001b[22m\n",
+        "milliseconds": 6554,
+        "url": "http://127.0.0.1:5174/events",
+        "screenshot": "screenshots/F05-03.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "needs-review"
+  }
+]

@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/utils/cn";
 
@@ -7,7 +8,7 @@ export const PopoverPortal = PopoverPrimitive.Portal;
 
 export const PopoverContent = forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
-  PopoverPrimitive.ContentProps
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
 >(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
   <PopoverPrimitive.Portal>
     <PopoverPrimitive.Content

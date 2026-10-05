@@ -1,0 +1,47 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+QA Auto Event Edited
+Approved
+Starts
+Tuesday, December 1, 2026 at 9:00 AM
+Ends
+Tuesday, December 1, 2026 at 11:00 AM
+Location
+Reviewed Hall
+Capacity
+Unlimited
+
+Registration deadline: Monday, November 30, 2026 at 6:00 PM
+
+Edit event
+Start event
+Cancel event
+Registrations
+Export CSV
+
+No registrations yet.

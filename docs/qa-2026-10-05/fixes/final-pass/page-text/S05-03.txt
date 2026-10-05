@@ -1,0 +1,93 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+Professor Attendance
+
+Generate event-wide QR codes and record attendance for your events.
+
+Export CSV
+Generate QR
+Scan QR
+Select an event
+Scenario UI Team Championship
+QA Deadline Passed
+QA Full Event
+QA Team Challenge
+QA Open Seminar
+QA Live Attendance
+
+QR will be generated for QA Live Attendance. Students scan it from My Attendance.
+
+REGISTERED
+
+2
+
+PRESENT
+
+0
+
+LATE
+
+0
+
+ABSENT
+
+1
+
+EXCUSED
+
+0
+
+PARTICIPANT	REGISTRATION	ATTENDANCE	CHECK-IN	METHOD	ACTIONS
+QA Student	Approved	Absent	-	Manual
+present
+late
+absent
+excused
+
+QA Student2	Approved	Absent	-	Not Marked
+present
+late
+absent
+excused
+Success
+Welcome back!
+Success
+Attendance marked absent.
+Success
+QR generated for QA Live Attendance.
+Event check-in code
+
+Show this QR during the event. Students scan it from My Attendance to check themselves in.
+
+[synthetic attendance code omitted]
+
+Reusable for different students until 10/5/2026, 1:18:42 PM
+
+Copy code
+Regenerate
+Notification SuccessQR generated for QA Live Attendance.

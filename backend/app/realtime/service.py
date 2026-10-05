@@ -48,4 +48,9 @@ def disconnect_user(user_id: uuid.UUID | str) -> None:
         socketio.server.disconnect(sid, namespace="/")
 
 
+def disconnect_session(session_id: uuid.UUID | str) -> None:
+    for sid, _ in list(socketio.server.manager.get_participants("/", f"session:{session_id}")):
+        socketio.server.disconnect(sid, namespace="/")
+
+
 __all__ = ["disconnect_user", "emit_update"]

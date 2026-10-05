@@ -1,0 +1,52 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Incomplete
+
+incomplete@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+2
+Log out
+My Registrations
+
+Track your event sign-ups, team codes, waitlists, and cancellations.
+
+Browse Events
+Active
+Pending
+Waitlisted
+Cancelled
+Past
+QA Open Seminar
+
+Registered 10/5/2026, 1:03:04 PM
+
+Pending
+Details
+Cancel
+Success
+College profile completed.
+Info
+Registration pending
+Success
+Registration pending.
+Notification InfoRegistration pending
+Notification SuccessRegistration pending.

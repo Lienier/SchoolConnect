@@ -1,0 +1,64 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+SchoolConnect
+
+5
+Dashboard
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+
+Scan your professor's event QR or enter the code manually during an event.
+
+Event check-in
+
+Use the scanner when your professor shows the event QR code, or enter the check-in code below.
+
+Open scanner
+Check in
+Attendance summary
+
+1
+
+RECORDS
+
+1
+
+PRESENT
+
+Only your own attendance records are shown.
+
+Attendance history
+QA Live Attendance
+
+10/5/2026, 1:03:50 PM
+
+Present
+Qr
+Success
+Checked in for QA Live Attendance.
+Notification SuccessChecked in for QA Live Attendance.

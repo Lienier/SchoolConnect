@@ -6,7 +6,7 @@ import type { Config } from "tailwindcss";
  * Large border radius, comfortable spacing, soft shadows.
  */
 const config: Config = {
-  darkMode: ["class"],
+  darkMode: "class",
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     container: {

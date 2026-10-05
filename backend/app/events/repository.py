@@ -29,7 +29,7 @@ class EventRepository:
     def list_query(self, *, status=None, category_id=None, organizer_id=None, search=None):
         stmt = select(Event)
         if status:
-            stmt = stmt.where(Event.status == status)
+            stmt = stmt.where(Event.status.in_(status.split(",")))
         if category_id:
             stmt = stmt.where(Event.category_id == category_id)
         if organizer_id:

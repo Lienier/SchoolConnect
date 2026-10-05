@@ -35,6 +35,8 @@ export default function CreateEventPage() {
         location: values.location || undefined,
         capacity: values.capacity ? Number(values.capacity) : undefined,
         is_team_event: values.is_team_event,
+        approval_required: values.approval_required,
+        registration_deadline: values.registration_deadline ? new Date(values.registration_deadline).toISOString() : undefined,
         max_team_size: values.max_team_size
           ? Number(values.max_team_size)
           : undefined,

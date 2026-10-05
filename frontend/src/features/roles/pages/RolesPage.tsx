@@ -57,7 +57,7 @@ export default function RolesPage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: (payload: { id: string; display_name: string; description: string }) => rolesApi.update(payload.id, payload),
+    mutationFn: (payload: { id: string; display_name: string; description: string }) => rolesApi.update(payload.id, { display_name: payload.display_name, description: payload.description }),
     onSuccess: (_data, variables) => {
       toast(`Role updated: ${variables.display_name}.`, "success");
       setEditor({ open: false, role: null });
@@ -189,6 +189,7 @@ export default function RolesPage() {
       </Card>
 
       <Modal open={editor.open} title={editor.role ? "Edit Role" : "New Role"} onClose={() => setEditor({ open: false, role: null })}>
+        {updateMut.isError && <p role="alert" className="mb-3 text-sm text-red-700">{apiErrorMessage(updateMut.error, "Could not save role.")}</p>}
         <RoleForm
           role={editor.role}
           onSubmit={(payload) => {
@@ -253,16 +254,16 @@ function RoleForm({
     <div className="space-y-4">
       <div>
         <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">Name</label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={!!role} placeholder="registrar" />
+        <Input aria-label="Name" value={name} onChange={(e) => setName(e.target.value)} disabled={!!role} placeholder="registrar" />
         {role && <p className="mt-1 text-xs text-navy-500 dark:text-navy-400">System name cannot be changed.</p>}
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">Display Name</label>
-        <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+        <Input aria-label="Display Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">Description</label>
-        <Input value={description} onChange={(e) => setDescription(e.target.value)} />
+        <Input aria-label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
       <div className="flex justify-end gap-2">
         <Button onClick={() => onSubmit({ name, display_name: displayName, description })} isLoading={submitting} disabled={!displayName.trim()}>
@@ -324,11 +325,11 @@ function CloneForm({
     <div className="space-y-4">
       <div>
         <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">New Name</label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} />
+        <Input aria-label="Name" value={name} onChange={(e) => setName(e.target.value)} />
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">Display Name</label>
-        <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+        <Input aria-label="Display Name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
       </div>
       <div className="flex justify-end gap-2">
         <Button onClick={() => onSubmit({ name, display_name: displayName })} isLoading={submitting}>Clone</Button>

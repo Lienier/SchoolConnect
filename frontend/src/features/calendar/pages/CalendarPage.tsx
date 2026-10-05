@@ -13,7 +13,7 @@ import { eventsApi } from "@/features/events/services/eventsApi";
 
 const statusColors: Record<string, string> = {
   approved: "#2563eb",
-  ongoing: "#16a34a",
+  ongoing: "#15803d",
   completed: "#64748b",
   cancelled: "#dc2626",
 };
@@ -47,9 +47,10 @@ export default function CalendarPage() {
   const [organizer, setOrganizer] = useState("");
   const [availability, setAvailability] = useState("");
   const navigate = useNavigate();
+  const [range, setRange] = useState<{ start: string; end: string } | null>(null);
   const events = useQuery({
-    queryKey: ["calendar-events", status, categoryId],
-    queryFn: () => eventsApi.list({ status: status || undefined, category_id: categoryId || undefined }),
+    queryKey: ["calendar-events", status, categoryId, range],
+    queryFn: () => eventsApi.listAll({ status: status || undefined, category_id: categoryId || undefined, range_start: range?.start, range_end: range?.end }),
   });
   const categories = useQuery({ queryKey: ["event-categories"], queryFn: eventsApi.listCategories });
 
@@ -82,8 +83,8 @@ export default function CalendarPage() {
           title: `Registration deadline: ${event.title}`,
           start: event.registration_deadline,
           allDay: false,
-          backgroundColor: "#f59e0b",
-          borderColor: "#f59e0b",
+          backgroundColor: "#92400e",
+          borderColor: "#92400e",
           extendedProps: { eventId: event.id, kind: "deadline" },
         });
       }
@@ -101,19 +102,19 @@ export default function CalendarPage() {
 
       <Card className="border-slate-200 p-4 shadow-sm">
         <div className="mb-5 grid gap-3 lg:grid-cols-4">
-          <select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+          <select aria-label="Event status" value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
             <option value="">All event statuses</option>
             <option value="approved">Upcoming</option>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
-          <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+          <select aria-label="Event category" value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
             <option value="">All categories</option>
             {(categories.data ?? []).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
-          <input value={organizer} onChange={(event) => setOrganizer(event.target.value)} placeholder="Organizer name..." className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" />
-          <select value={availability} onChange={(event) => setAvailability(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+          <input aria-label="Organizer name" value={organizer} onChange={(event) => setOrganizer(event.target.value)} placeholder="Organizer name..." className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm" />
+          <select aria-label="Registration availability" value={availability} onChange={(event) => setAvailability(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
             <option value="">Any registration availability</option>
             <option value="open">Registration open</option>
             <option value="closed">Registration closed</option>
@@ -121,7 +122,7 @@ export default function CalendarPage() {
         </div>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
           <span className="inline-flex items-center gap-2">
-            <CalendarDays size={16} className="text-blue-600" />
+            <CalendarDays aria-hidden="true" size={16} className="text-blue-600" />
             {filteredEvents.length} scheduled event{filteredEvents.length === 1 ? "" : "s"}
           </span>
           <Link to="/events" className="font-bold text-blue-700 hover:underline">Browse all events</Link>
@@ -132,12 +133,17 @@ export default function CalendarPage() {
           <div className="school-calendar relative overflow-x-auto">
             {events.isLoading && <div className="absolute inset-0 z-10 flex items-start justify-center bg-white/70 pt-20 text-sm text-slate-500">Loading calendar...</div>}
             <FullCalendar
+              datesSet={(info) => {
+                setRange((previous) => previous?.start === info.startStr && previous.end === info.endStr ? previous : { start: info.startStr, end: info.endStr });
+                document.querySelectorAll(".school-calendar .fc-icon").forEach((icon) => { icon.setAttribute("aria-hidden", "true"); });
+              }}
               plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
               initialView="dayGridMonth"
               headerToolbar={{ left: "prev,next today", center: "title", right: "dayGridMonth,timeGridWeek,timeGridDay" }}
               buttonText={{ today: "Today", month: "Month", week: "Week", day: "Day" }}
               events={calendarEvents}
               eventDisplay="block"
+              moreLinkDidMount={(info) => { info.el.setAttribute("role", "button"); }}
               dayMaxEvents={3}
               height="auto"
               contentHeight="auto"

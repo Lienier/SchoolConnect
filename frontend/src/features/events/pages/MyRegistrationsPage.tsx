@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/ui/Pagination";
+import { useAuth } from "@/features/auth/context/AuthContext";
 /** Current user's registrations with mobile-first status cards. */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -36,14 +38,17 @@ const filters = [
 type FilterKey = (typeof filters)[number]["key"];
 
 export default function MyRegistrationsPage() {
+  const { user } = useAuth();
+  const [page, setPage] = useState(1);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState<FilterKey>("active");
   const [cancelTarget, setCancelTarget] = useState<{ id: string; title: string } | null>(null);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["my-registrations"],
-    queryFn: () => registrationsApi.mine(1),
+    queryKey: ["my-registrations", user?.id, activeFilter, page],
+    queryFn: () => registrationsApi.mine(page, activeFilter === "active" ? "approved" : activeFilter === "past" ? "attended,absent,rejected" : activeFilter),
+    refetchInterval: 15_000,
   });
 
   const filtered = useMemo(() => {
@@ -86,7 +91,7 @@ export default function MyRegistrationsPage() {
           <button
             key={filter.key}
             type="button"
-            onClick={() => setActiveFilter(filter.key)}
+            onClick={() => { setActiveFilter(filter.key); setPage(1); }}
             className={cn(
               "shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition",
               activeFilter === filter.key
@@ -119,6 +124,7 @@ export default function MyRegistrationsPage() {
         ))}
       </div>
 
+      {data?.meta && <Pagination meta={data.meta} onPageChange={setPage} />}
       <ConfirmActionModal
         open={Boolean(cancelTarget)}
         title="Cancel registration"
@@ -138,7 +144,8 @@ export default function MyRegistrationsPage() {
 
 function RegistrationCard({ registration, onCancel }: { registration: Registration; onCancel: () => void }) {
   const { toast } = useToast();
-  const canCancel = ["pending", "approved", "waitlisted"].includes(registration.status);
+  const deadlinePassed = !!registration.registration_deadline && new Date(registration.registration_deadline) < new Date();
+  const canCancel = ["pending", "approved", "waitlisted"].includes(registration.status) && !deadlinePassed;
   const copyCode = async () => {
     if (!registration.team_code) return;
     const copied = await copyText(registration.team_code);

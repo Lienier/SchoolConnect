@@ -22,6 +22,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.utils.datetime import utc_iso
+
 from app.extensions import db
 from app.utils.datetime import utcnow
 
@@ -94,8 +96,8 @@ class Notification(db.Model):
             "status": self.status,
             "entity_type": self.entity_type,
             "entity_id": str(self.entity_id) if self.entity_id else None,
-            "read_at": self.read_at.isoformat() if self.read_at else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "read_at": utc_iso(self.read_at) if self.read_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
         }
 
 

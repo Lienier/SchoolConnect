@@ -33,7 +33,7 @@ import type {
   Semester,
 } from "@/features/school/types";
 
-type SchoolRecord = Record<string, unknown> & { id?: string };
+type SchoolRecord = Partial<Department & Course & Section & Organization & AcademicYear & Semester>;
 type ListResult = { data: SchoolRecord[]; meta?: SchoolListResponse<SchoolRecord>["meta"] };
 type RelationMaps = {
   departments: Department[];
@@ -57,6 +57,15 @@ const TABS: { key: EntityKey; label: string; managePerm: string }[] = [
   { key: "academic_years", label: "Academic Years", managePerm: "academic_years.manage" },
   { key: "semesters", label: "Semesters", managePerm: "semesters.manage" },
 ];
+
+const EDIT_FIELDS: Record<EntityKey, string[]> = {
+  departments: ["code", "name", "description", "head_id"],
+  courses: ["code", "name", "department_id"],
+  sections: ["name", "course_id", "semester_id"],
+  organizations: ["name", "description", "category", "organization_type", "department_id", "adviser_id", "positions"],
+  academic_years: ["name", "start_date", "end_date", "is_current"],
+  semesters: ["name", "start_date", "end_date", "academic_year_id"],
+};
 
 const ENDPOINTS = {
   departments: {
@@ -190,10 +199,11 @@ function EntityTab({ entity, canManage, relations }: { entity: EntityKey; canMan
   };
 
   const saveMut = useMutation({
-    mutationFn: (payload: SchoolRecord) => {
+    mutationFn: async (payload: SchoolRecord): Promise<unknown> => {
       const endpoint = ENDPOINTS[entity];
-      if (payload.id) return endpoint.update(payload.id, payload);
-      return endpoint.create(payload);
+      const body = Object.fromEntries(EDIT_FIELDS[entity].filter((key) => key in payload).map((key) => [key, payload[key as keyof SchoolRecord]]));
+      if (payload.id) return endpoint.update(payload.id, body);
+      return endpoint.create(body);
     },
     onSuccess: () => {
       toast(`${singularLabel(entity)} saved.`, "success");
@@ -282,6 +292,7 @@ function EntityTab({ entity, canManage, relations }: { entity: EntityKey; canMan
       )}
 
       <Modal open={editor.open} title={editor.item ? `Edit ${singularLabel(entity)}` : `New ${singularLabel(entity)}`} onClose={() => setEditor({ open: false, item: null })}>
+        {saveMut.isError && <p role="alert" className="mb-3 text-sm text-red-700">{apiErrorMessage(saveMut.error, "Could not save record.")}</p>}
         <EntityForm
           entity={entity}
           item={editor.item}
@@ -364,14 +375,14 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
   const textField = (key: string, label: string, type = "text") => (
     <div key={key}>
       <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">{label}</label>
-      <Input type={type} value={String(form[key] ?? "")} onChange={(e) => set(key, e.target.value)} />
+      <Input aria-label={label} type={type} value={String(form[key as keyof SchoolRecord] ?? "")} onChange={(e) => set(key, e.target.value)} />
     </div>
   );
   const selectField = (key: string, label: string, placeholder: string, options: { value: string; label: string }[], disabled = false) => (
     <div key={key}>
       <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">{label}</label>
-      <Select value={String(form[key] ?? "")} onValueChange={(value) => set(key, value)} disabled={disabled}>
-        <SelectTrigger>
+      <Select value={String(form[key as keyof SchoolRecord] ?? "")} onValueChange={(value) => set(key, value)} disabled={disabled}>
+        <SelectTrigger aria-label={label}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -412,7 +423,7 @@ function fieldsFor(entity: EntityKey, form: SchoolRecord, set: (key: string, val
           <div key="organization_type">
             <label className="mb-1 block text-sm font-medium text-navy-700 dark:text-navy-200">Organization type</label>
             <Select value={String(form.organization_type ?? "college_wide")} onValueChange={setOrganizationType}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Organization type">
                 <SelectValue placeholder="Select organization type" />
               </SelectTrigger>
               <SelectContent>

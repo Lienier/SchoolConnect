@@ -1,0 +1,56 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+QA Open Seminar
+QA Seminar
+Approved
+Registration Approval
+
+Synthetic UI testing event. No real participants.
+
+Starts
+Monday, October 12, 2026 at 1:02 PM
+Ends
+Monday, October 12, 2026 at 3:02 PM
+Location
+QA Campus Hall
+Capacity
+10 seats
+
+Registration deadline: Monday, October 12, 2026 at 12:02 PM
+
+Edit event
+Start event
+Cancel event
+Registrations
+Export CSV
+QA Incompleteapproved
+Success
+Welcome back!
+Success
+Registration approved.
+Notification SuccessRegistration approved.

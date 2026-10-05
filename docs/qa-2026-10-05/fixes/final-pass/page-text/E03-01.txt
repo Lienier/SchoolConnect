@@ -1,0 +1,254 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+2
+Log out
+
+STUDENT HOME
+
+Welcome back, QA.
+
+Your college feed, registrations, check-ins, and event updates are ready from one place.
+
+Find an event
+Check in
+
+31
+
+UPCOMING
+
+29
+
+REGISTERED
+
+2
+
+UNREAD
+
+Browse Events
+My Registrations
+Check In
+Notifications
+Profile
+All Updates
+Announcements
+Upcoming Events
+Pinned
+QT
+
+QA Teacher
+
+Announcement
+Professor
+QA Campus
+Urgent
+Pinned
+2m ago
+/
+Announcement bulletin
+
+CAPTION
+
+QA Emergency Notice
+
+Audience: all
+
+Synthetic announcement for user interface testing.
+
+#qa-campus
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Event
+Professor
+just now
+/
+Event bulletin
+
+CAPTION
+
+QA Auto Event Edited
+
+EVENT DETAILS
+
+DATE & TIME
+
+Dec 1, 2026, 9:00 AM
+
+Ends Dec 1, 2026, 11:00 AM
+
+VENUE
+
+Reviewed Hall
+
+Deadline Nov 30, 2026, 6:00 PM
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+QT
+
+QA Teacher
+
+Announcement
+Professor
+1m ago
+/
+Announcement bulletin
+
+CAPTION
+
+Scenario UI Campus Notice
+Media
+
+Synthetic announcement for a complete UI publishing and reading scenario.
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Event
+Professor
+QA Seminar
+2m ago
+/
+Event bulletin
+/
+Team event
+
+CAPTION
+
+Scenario UI Team Championship
+Media
+
+Synthetic scenario event created entirely using UI controls.
+
+#qa-seminar
+
+EVENT DETAILS
+
+DATE & TIME
+
+Nov 12, 2026, 9:00 AM
+
+Ends Nov 12, 2026, 11:00 AM
+
+VENUE
+
+Scenario UI Hall
+
+Max Team 4
+Registration Approval
+CAPACITY
+2 / 8
+
+ACTIONS
+
+Register now
+Share
+Add to calendar
+QT
+
+QA Teacher
+
+Announcement
+Professor
+QA Campus
+2m ago
+/
+Announcement bulletin
+
+CAPTION
+
+QA Students Only
+
+Audience: student
+
+Synthetic announcement for user interface testing.
+
+#qa-campus
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+QT
+
+QA Teacher
+
+Announcement
+Professor
+QA Campus
+2m ago
+/
+Announcement bulletin
+
+CAPTION
+
+QA Public Notice
+
+Audience: all
+
+Synthetic announcement for user interface testing.
+
+#qa-campus
+
+ACTIONS
+
+Open bulletin
+Share
+View all announcements
+Next events
+View all
+QA Auto Event Edited
+12/1/2026, 9:00:00 AM
+Scenario UI Team Championship
+11/12/2026, 9:00:00 AM
+QA Seminar
+Team
+QA Pagination 19
+10/24/2026, 2:39:51 PM
+Attendance
+
+QA Live Attendance: present
+
+Open check-in
+Success
+Welcome back!

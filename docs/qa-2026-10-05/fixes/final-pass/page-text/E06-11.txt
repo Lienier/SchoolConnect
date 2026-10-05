@@ -1,0 +1,64 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+New Announcement
+
+Post a college bulletin directly to the feed.
+
+Back to Announcements
+New Announcement
+Title
+Body
+Summary (optional)
+Category
+None
+None
+QA Campus
+Priority
+Normal
+Normal
+Important
+Urgent
+Media and attachments
+
+Add images for post previews or attach PDF, DOCX, and XLSX files.
+
+Post Announcement

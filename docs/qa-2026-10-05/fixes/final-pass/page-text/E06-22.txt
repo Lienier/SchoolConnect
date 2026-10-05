@@ -1,0 +1,182 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+1
+Log out
+My Registrations
+
+Track your event sign-ups, team codes, waitlists, and cancellations.
+
+Browse Events
+Active
+Pending
+Waitlisted
+Cancelled
+Past
+QA Auto Event Edited
+
+Registered 10/5/2026, 1:05:24 PM
+
+Approved
+Details
+Cancel
+Scenario UI Team Championship
+
+Registered 10/5/2026, 1:03:18 PM
+
+Approved
+Scenario UI Titans
+LEADER
+SC-IC62
+Copy
+Details
+Cancel
+QA Completed Event
+
+Registered 10/5/2026, 1:02:36 PM
+
+Approved
+Details
+QA Live Attendance
+
+Registered 10/5/2026, 1:02:36 PM
+
+Approved
+Details
+QA Pagination 24
+
+Registered 10/4/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 23
+
+Registered 10/3/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 22
+
+Registered 10/2/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 21
+
+Registered 10/1/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 20
+
+Registered 9/30/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 19
+
+Registered 9/29/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 18
+
+Registered 9/28/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 17
+
+Registered 9/27/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 16
+
+Registered 9/26/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 15
+
+Registered 9/25/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 14
+
+Registered 9/24/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 13
+
+Registered 9/23/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 12
+
+Registered 9/22/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 11
+
+Registered 9/21/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 10
+
+Registered 9/20/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 09
+
+Registered 9/19/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+Page 1 of 2
+Previous
+Next

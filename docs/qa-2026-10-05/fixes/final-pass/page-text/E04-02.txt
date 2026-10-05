@@ -1,0 +1,33 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+2
+Log out
+Access Denied
+
+You don't have permission to access this page. Contact your administrator if you believe this is an error.
+
+Go Home
+Go Home

@@ -87,6 +87,7 @@ export function EventCard({
         <div
           className="h-40 border-b border-navy-100 bg-cover bg-center dark:border-navy-800"
           style={{ backgroundImage: `url(${mediaUrl})` }}
+          role="img"
           aria-label={`${title} photo`}
         />
       )}

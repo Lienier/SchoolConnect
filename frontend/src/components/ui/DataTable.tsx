@@ -1,6 +1,6 @@
 import { type ReactNode, useMemo, useState, useCallback } from "react";
 import { cn } from "@/utils/cn";
-import { ChevronUp, ChevronDown, ChevronUpDown, Search, Download } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, Search, Download } from "lucide-react";
 
 import { Button } from "./Button";
 import { Input } from "./Input";
@@ -180,12 +180,12 @@ export function DataTable<T>({
               {columns
                 .filter((c) => c.filterable && c.filterOptions)
                 .map((col) => (
-                  <Select key={col.key} value={filters[col.key] || ""} onValueChange={(v) => handleFilterChange(col.key, v)}>
-                    <SelectTrigger className="w-40">
+                  <Select key={col.key} value={filters[col.key] || ""} onValueChange={(v) => handleFilterChange(col.key, v === "all" ? "" : v)}>
+                    <SelectTrigger aria-label={`Filter ${col.header}`} className="w-40">
                       <SelectValue placeholder={`Filter ${col.header}`} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
                       {col.filterOptions!.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {opt.label}
@@ -207,7 +207,7 @@ export function DataTable<T>({
 
         {pagination && filteredData.length > pageSize && (
           <Select value={String(pageSize)} onValueChange={(v) => handlePageSizeChange(Number(v))}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger aria-label="Rows per page" className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -247,7 +247,7 @@ export function DataTable<T>({
                         {sortConfig?.key === column.key ? (
                           sortConfig.direction === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                         ) : (
-                          <ChevronUpDown className="h-4 w-4" />
+                          <ChevronsUpDown className="h-4 w-4" />
                         )}
                       </button>
                     )}
@@ -278,7 +278,7 @@ export function DataTable<T>({
                         column.className
                       )}
                     >
-                      {column.cell ? column.cell(row) : column.accessor ? column.accessor(row) : (row as Record<string, unknown>)[column.key]}
+                      {column.cell ? column.cell(row) : column.accessor ? column.accessor(row) : String((row as Record<string, unknown>)[column.key] ?? "")}
                     </TD>
                   ))}
                 </TR>
@@ -293,8 +293,8 @@ export function DataTable<T>({
           meta={{
             page: currentPage,
             total_pages: totalPages,
-            total: filteredData.length,
-            per_page: pageSize,
+            total_items: filteredData.length,
+            page_size: pageSize,
           }}
           onPageChange={setCurrentPage}
         />

@@ -1,0 +1,79 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+
+OVERVIEW
+
+Administrator Dashboard
+
+Monitor college activity, posted content, and operational volume.
+
+Current system overview
+
+Total Users
+
+113
+
+Live from system
+
+Students
+
+4
+
+Live from system
+
+Active Events
+
+32
+
+Live from system
+
+Announcements
+
+4
+
+Live from system
+
+Open Registrations
+
+138
+
+Live from system

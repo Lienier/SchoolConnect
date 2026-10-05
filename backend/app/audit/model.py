@@ -22,6 +22,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.utils.datetime import utc_iso
+
 from app.extensions import db
 from app.utils.datetime import utcnow
 
@@ -63,7 +65,7 @@ class AuditLog(db.Model):
             "entity_id": str(self.entity_id) if self.entity_id else None,
             "changes": self.changes,
             "ip_address": self.ip_address,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
         }
 
 
@@ -97,7 +99,7 @@ class LoginHistory(db.Model):
             "method": self.method,
             "ip_address": self.ip_address,
             "reason": self.reason,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
         }
 
 
@@ -128,7 +130,7 @@ class ActivityLog(db.Model):
             "description": self.description,
             "entity_type": self.entity_type,
             "entity_id": str(self.entity_id) if self.entity_id else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
         }
 
 

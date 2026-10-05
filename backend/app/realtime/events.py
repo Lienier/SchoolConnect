@@ -9,6 +9,7 @@ from flask_jwt_extended import decode_token
 from flask_socketio import SocketIO, emit, join_room
 
 from app.auth.model import User
+from app.auth.service import AuthService
 from app.extensions import db
 
 
@@ -31,11 +32,12 @@ def register_socket_handlers(socketio: SocketIO) -> None:
         except Exception:
             return False
 
-        if user is None or user.deleted_at is not None or user.status != "active":
+        if user is None or user.deleted_at is not None or user.status != "active" or not AuthService.session_active(decoded):
             return False
 
         join_room("school")
         join_room(f"user:{user.id}")
+        join_room(f"session:{decoded['sid']}")
         for role in user.roles:
             join_room(f"role:{role.name}")
 

@@ -1,3 +1,4 @@
+import { Pagination } from "@/components/ui/Pagination";
 /** Events list page with student-friendly filters. */
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -24,6 +25,7 @@ const STATUS_TABS = [
 ];
 
 export default function EventsPage() {
+  const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [teamOnly, setTeamOnly] = useState(false);
@@ -50,10 +52,11 @@ export default function EventsPage() {
     queryKey: ["events", "categories"],
     queryFn: eventsApi.listCategories,
   });
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["events", status, categoryId, isProfessor ? user?.id : "all"],
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["events", user?.id, page, status, categoryId, teamOnly],
     queryFn: () => eventsApi.list({
-      page: 1,
+      page,
+      team_only: teamOnly || undefined,
       status: status || undefined,
       category_id: categoryId || undefined,
       organizer_id: isProfessor ? user?.id : undefined,
@@ -143,7 +146,7 @@ export default function EventsPage() {
                 <button
                   key={tab.key}
                   type="button"
-                  onClick={() => setStatus(tab.key)}
+                  onClick={() => { setStatus(tab.key); setPage(1); }}
                   className={cn(
                     "rounded-lg px-4 py-2 text-sm font-semibold transition",
                     status === tab.key
@@ -158,7 +161,8 @@ export default function EventsPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <select
                 value={categoryId}
-                onChange={(event) => setCategoryId(event.target.value)}
+                aria-label="Event category"
+                onChange={(event) => { setCategoryId(event.target.value); setPage(1); }}
                 className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-[#102858] outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
               >
                 <option value="">All categories</option>
@@ -168,7 +172,7 @@ export default function EventsPage() {
               </select>
               <button
                 type="button"
-                onClick={() => setTeamOnly((value) => !value)}
+                onClick={() => { setTeamOnly((value) => !value); setPage(1); }}
                 className={cn(
                   "inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition",
                   teamOnly
@@ -184,15 +188,17 @@ export default function EventsPage() {
         </div>
       </header>
 
-      <main>
+      <div>
         {isLoading && <Card className="p-8 text-center text-navy-500">Loading events...</Card>}
         {isError && (
           <Card className="border-red-200 bg-red-50 p-8 text-center text-red-700">
-            Failed to load events. You may lack permission.
+            <p>{apiErrorMessage(error, "Could not load events.")}</p>
+            <Button className="mt-3" variant="secondary" onClick={() => refetch()}>Retry</Button>
           </Card>
         )}
         {!isLoading && !isError && <EventList items={items} renderActions={renderActions} />}
-      </main>
+        {data?.meta && !isError && <Pagination meta={data.meta} onPageChange={setPage} />}
+      </div>
       <ConfirmActionModal
         open={!!pendingAction}
         title={pendingAction?.title ?? "Confirm action"}

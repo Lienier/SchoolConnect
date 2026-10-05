@@ -11,7 +11,7 @@ from app.common.exceptions import ValidationError
 from app.common.pagination import PaginationParams, paginate
 from app.common.responses import success_response
 from app.events.service import EventService
-from app.events.access import can_manage_event, require_event_manager
+from app.events.access import can_manage_event, require_event_manager, managed_event_ids
 from app.events.model import EventOfficerAssignment
 from app.events.validators import (
     EventCategoryCreateRequest,
@@ -63,14 +63,27 @@ def list_events():
     # Students receive only public, actionable events. Workflow records remain
     # available to staff who have the matching management permissions.
     if has_role(actor, "student"):
-        requested_status = requested_status or "approved"
-        if requested_status not in {"approved", "ongoing"}:
+        requested_status = requested_status or "approved,ongoing"
+        if requested_status not in {"approved", "ongoing", "completed", "approved,ongoing"}:
             requested_status = "approved"
     query = _service.list_events(
         status=requested_status,
         category_id=request.args.get("category_id"),
         organizer_id=request.args.get("organizer_id"),
     )
+    from app.events.model import Event
+    from sqlalchemy import or_
+    from app.events.service import _parse_dt
+    if request.args.get("managed") == "true":
+        ids = managed_event_ids(actor)
+        if ids is not None:
+            query = query.where(Event.id.in_(ids))
+    if request.args.get("team_only") == "true":
+        query = query.where(Event.is_team_event.is_(True))
+    if request.args.get("range_start") and request.args.get("range_end"):
+        start = _parse_dt(request.args["range_start"], "range_start")
+        end = _parse_dt(request.args["range_end"], "range_end")
+        query = query.where(or_((Event.start_time < end) & (Event.end_time >= start), (Event.registration_deadline >= start) & (Event.registration_deadline < end)))
     items, meta = paginate(query, params)
     return success_response(data=[e.to_dict() for e in items], meta=meta)
 
@@ -82,11 +95,14 @@ def get_event(event_id: str):
     """Get a single event with approval history."""
     _service.refresh_lifecycle()
     event = _service.get_event(uuid.UUID(event_id))
-    if has_role(get_jwt_identity(), "student") and event.status not in {"approved", "ongoing"}:
+    if has_role(get_jwt_identity(), "student") and event.status not in {"approved", "ongoing", "completed"}:
         from app.common.exceptions import NotFoundError
         raise NotFoundError("Event not found.")
     data = event.to_dict()
     data["can_manage"] = can_manage_event(get_jwt_identity(), event)
+    from app.registrations.repository import RegistrationRepository
+    registration = RegistrationRepository().get_for_user_event(uuid.UUID(get_jwt_identity()), event.id)
+    data["my_registration_status"] = registration.status if registration else None
     return success_response(data=data)
 
 
@@ -148,6 +164,7 @@ def create_event():
         capacity=payload.capacity,
         registration_deadline=payload.registration_deadline,
         is_team_event=payload.is_team_event,
+        approval_required=payload.approval_required,
         max_team_size=payload.max_team_size,
     )
     _record_audit("event.published", event.id, actor)
@@ -168,7 +185,7 @@ def update_event(event_id: str):
         uuid.UUID(event_id),
         actor,
         can_override=has_permission(str(actor), "events.manage_all"),
-        **payload.model_dump(exclude_none=True),
+        **payload.model_dump(exclude_unset=True),
     )
     _record_audit("event.updated", event.id, actor)
     emit_update("event", "updated", entity_id=event.id, message=f"Event updated: {event.title}")

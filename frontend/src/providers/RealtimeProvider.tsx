@@ -25,13 +25,13 @@ function socketBaseUrl() {
 const queryKeysByTopic: Record<string, string[]> = {
   announcement: ["announcements", "announcements-management", "feed", "home-feed", "dashboard", "admin"],
   event: ["events", "event", "event-results", "event-categories", "feed", "home-feed", "calendar-events", "dashboard", "student-dashboard", "professor", "admin"],
-  registration: ["registrations", "my-registrations", "event-registrations", "events", "dashboard", "student-dashboard", "professor", "admin", "reports"],
+  registration: ["registrations", "my-registrations", "event-registrations", "event", "events", "dashboard", "student-dashboard", "professor", "admin", "reports"],
   attendance: ["attendance", "attendance-mine", "attendance-events", "attendance-summary", "dashboard", "student-dashboard", "professor", "admin", "reports"],
   notification: ["notifications", "notifications-unread", "dashboard"],
 };
 
 export function RealtimeProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -40,10 +40,13 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     if (!isAuthenticated || !token) return undefined;
 
     const socket: Socket = io(socketBaseUrl(), {
-      auth: { token },
+      auth: (callback) => callback({ token: localStorage.getItem(TOKEN_STORAGE_KEY) }),
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
+    const reconnect = () => { socket.disconnect(); socket.connect(); };
+    window.addEventListener("schoolconnect:token-refreshed", reconnect);
+    socket.on("schoolconnect:ready", () => { void queryClient.invalidateQueries(); });
 
     socket.on("schoolconnect:update", (payload: RealtimeUpdate) => {
       const keys = queryKeysByTopic[payload.topic] ?? ["dashboard"];
@@ -58,8 +61,9 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
 
     return () => {
       socket.disconnect();
+      window.removeEventListener("schoolconnect:token-refreshed", reconnect);
     };
-  }, [isAuthenticated, queryClient, toast]);
+  }, [isAuthenticated, user?.id, queryClient, toast]);
 
   return children;
 }

@@ -1,0 +1,96 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+2
+Log out
+My Registrations
+
+Track your event sign-ups, team codes, waitlists, and cancellations.
+
+Browse Events
+Active
+Pending
+Waitlisted
+Cancelled
+Past
+QA Pagination 08
+
+Registered 9/18/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 07
+
+Registered 9/17/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 06
+
+Registered 9/16/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 05
+
+Registered 9/15/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 04
+
+Registered 9/14/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 03
+
+Registered 9/13/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 02
+
+Registered 9/12/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+QA Pagination 01
+
+Registered 9/11/2026, 1:04:51 PM
+
+Approved
+Details
+Cancel
+Page 2 of 2
+Previous
+Next

@@ -1,0 +1,55 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+5
+Log out
+My Registrations
+
+Track your event sign-ups, team codes, waitlists, and cancellations.
+
+Browse Events
+Active
+Pending
+Waitlisted
+Cancelled
+Past
+QA Full Event
+
+Registered 10/5/2026, 1:03:35 PM
+
+Cancelled
+Details
+Success
+Welcome back!
+Info
+Registration waitlisted
+Success
+You were added to the event waitlist.
+Info
+Registration cancelled
+Success
+Registration cancelled.
+Notification InfoRegistration cancelled
+Notification SuccessRegistration cancelled.

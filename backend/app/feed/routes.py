@@ -10,6 +10,8 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import selectinload
 
+from app.utils.datetime import utc_iso
+
 from app.announcements.model import Announcement
 from app.events.model import Event
 from app.extensions import db
@@ -61,8 +63,8 @@ def _announcement_item(announcement: Announcement) -> dict:
         "status": announcement.status,
         "is_pinned": announcement.is_pinned,
         "is_emergency": announcement.is_emergency,
-        "created_at": announcement.created_at.isoformat() if announcement.created_at else None,
-        "updated_at": announcement.updated_at.isoformat() if announcement.updated_at else None,
+        "created_at": utc_iso(announcement.created_at) if announcement.created_at else None,
+        "updated_at": utc_iso(announcement.updated_at) if announcement.updated_at else None,
         "tags": [announcement.category.slug] if announcement.category else [],
         "target_audience": announcement.target_audience,
         "attachments": attachments,
@@ -97,15 +99,15 @@ def _event_item(event: Event, registered_count: int) -> dict:
         "author_role": _primary_role(event.organizer),
         "category": event.category.name if event.category else None,
         "status": event.status,
-        "created_at": event.created_at.isoformat() if event.created_at else None,
-        "updated_at": event.updated_at.isoformat() if event.updated_at else None,
-        "start_time": event.start_time.isoformat() if event.start_time else None,
-        "end_time": event.end_time.isoformat() if event.end_time else None,
+        "created_at": utc_iso(event.created_at) if event.created_at else None,
+        "updated_at": utc_iso(event.updated_at) if event.updated_at else None,
+        "start_time": utc_iso(event.start_time) if event.start_time else None,
+        "end_time": utc_iso(event.end_time) if event.end_time else None,
         "location": event.location,
         "capacity": event.capacity,
         "registered_count": registered_count,
         "registration_deadline": (
-            event.registration_deadline.isoformat() if event.registration_deadline else None
+            utc_iso(event.registration_deadline) if event.registration_deadline else None
         ),
         "is_team_event": event.is_team_event,
         "max_team_size": event.max_team_size,
@@ -143,12 +145,11 @@ def public_feed():
                 Announcement.is_pinned.desc(),
                 Announcement.created_at.desc(),
             )
-            .limit(limit)
         ).all()
+        visible = [a for a in announcements if _audience_allows(a, role_names)][:limit]
         items.extend(
             _announcement_item(a)
-            for a in announcements
-            if _audience_allows(a, role_names)
+            for a in visible
         )
 
     if kind in {"all", "events"}:
@@ -181,7 +182,7 @@ def public_feed():
 
     items.sort(key=_sort_key)
 
-    return success_response(data=items)
+    return success_response(data=items[:limit])
 
 
 def _sort_key(item: dict) -> tuple[int, int, float]:

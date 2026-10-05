@@ -1,13 +1,13 @@
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { X } from "lucide-react";
-import React, { type ReactNode, forwardRef, type Ref } from "react";
+import React, { type ReactNode, forwardRef } from "react";
 import { cn } from "@/utils/cn";
 
 export const ToastProvider = ToastPrimitive.Provider;
 
 export const ToastViewport = forwardRef<
-  Ref<typeof ToastPrimitive.Viewport>,
-  ToastPrimitive.ViewportProps
+  React.ElementRef<typeof ToastPrimitive.Viewport>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitive.Viewport>
 >(({ className, ...props }, ref) => (
   <ToastPrimitive.Viewport
     ref={ref}
@@ -27,7 +27,7 @@ export type ToastProps = ToastPrimitive.ToastProps & {
   action?: ReactNode;
 };
 
-export const Toast = forwardRef<Ref<typeof ToastPrimitive.Root>, ToastProps>(
+export const Toast = forwardRef<React.ElementRef<typeof ToastPrimitive.Root>, ToastProps>(
   ({ className, variant = "default", title, description, action, ...props }, ref) => {
     const variantClasses = {
       default: "border-navy-200 bg-white dark:border-navy-700 dark:bg-navy-900",

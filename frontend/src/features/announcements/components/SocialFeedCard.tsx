@@ -347,11 +347,13 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
         <button
           type="button"
           onClick={() => setLightboxOpen(true)}
+          disabled={!mediaUrl}
+          aria-label={`View image for ${item.title}`}
           className="relative block w-full cursor-zoom-in overflow-hidden border-y border-navy-100 bg-navy-950 text-left dark:border-navy-800"
         >
           <>
             <img
-              src={mediaUrl ?? ""}
+              src={mediaUrl || undefined}
               alt={item.title}
               className="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             />
@@ -360,7 +362,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
         </button>
       )}
 
-      {hasMedia && lightboxOpen && (
+      {mediaUrl && lightboxOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/90 p-4 backdrop-blur-sm"
           onClick={() => setLightboxOpen(false)}
@@ -368,7 +370,7 @@ export function SocialFeedCard({ item, className, compact = false }: SocialFeedC
         >
           <div className="relative max-h-[90vh] max-w-5xl" onClick={(event) => event.stopPropagation()}>
             <img
-              src={mediaUrl ?? ""}
+              src={mediaUrl || undefined}
               alt={item.title}
               className="max-h-[90vh] rounded-3xl object-contain shadow-2xl"
             />

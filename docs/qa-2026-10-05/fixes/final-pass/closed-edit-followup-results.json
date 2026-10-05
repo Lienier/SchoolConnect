@@ -1,0 +1,41 @@
+[
+  {
+    "id": "F05",
+    "title": "Edit metadata after registration deadline",
+    "preconditions": "Upcoming event with expired registration deadline.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1329,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/F05-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Open the expired-deadline event editor",
+        "expected": "Original past deadline loads without blocking metadata edits",
+        "observed": "Expired deadline loaded; location edited",
+        "status": "passed",
+        "milliseconds": 5327,
+        "url": "http://127.0.0.1:5174/events/7620df68-d286-4515-afab-019669b675fe/edit",
+        "screenshot": "screenshots/F05-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Save metadata and reopen editor",
+        "expected": "Location persists and original deadline is unchanged",
+        "observed": "Metadata saved while retaining expired deadline",
+        "status": "passed",
+        "milliseconds": 531,
+        "url": "http://127.0.0.1:5174/events/7620df68-d286-4515-afab-019669b675fe/edit",
+        "screenshot": "screenshots/F05-03.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  }
+]

@@ -1,0 +1,70 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+Roles & Permissions
+
+Create roles and manage permission assignments.
+
+New Role
+NAME	DISPLAY NAME	SYSTEM	PERMISSIONS	ACTIONS
+admin	Admin	System	45 granted
+Clone
+
+department_student_leader	Department Student Leader	System	17 granted
+Clone
+
+qa_review_role	QA Role Updated	Custom	0 granted
+Edit
+Permissions
+Clone
+Delete
+
+student	Student	System	13 granted
+Clone
+
+student_council	Student Council	System	17 granted
+Clone
+
+teacher	Teacher	System	22 granted
+Clone
+Page 1 of 1
+Previous
+Next

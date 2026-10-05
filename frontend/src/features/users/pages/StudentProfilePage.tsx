@@ -22,9 +22,9 @@ export default function StudentProfilePage() {
     section_id: string;
   } | null>(null);
   const isStudent = Boolean(authUser?.roles.some((role) => ["student", "student_council", "department_student_leader"].includes(role)));
-  const profile = useQuery({ queryKey: ["users", "me", "profile"], queryFn: usersApi.getMyProfile });
+  const profile = useQuery({ queryKey: ["users", "me", "profile", authUser?.id], queryFn: usersApi.getMyProfile });
   const collegeProfile = useQuery({
-    queryKey: ["users", "me", "student-profile"],
+    queryKey: ["users", "me", "student-profile", authUser?.id],
     queryFn: usersApi.getMyStudentProfile,
     enabled: isStudent,
   });
@@ -57,7 +57,7 @@ export default function StudentProfilePage() {
   const user = profile.data;
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <PageHeader title="Profile" subtitle="Review your account and college details." />
       {profile.isLoading && <Card className="border-slate-200 p-6 text-sm text-slate-500 shadow-sm">Loading profile...</Card>}
       {profile.isError && <Card className="border-red-200 bg-red-50 p-6 text-sm text-red-700">Could not load your profile right now.</Card>}
@@ -110,7 +110,7 @@ export default function StudentProfilePage() {
 }
 
 function ProfileField({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value: string }) {
-  return <Card className="flex items-center gap-3 border-slate-200 bg-white p-4 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-[#102858] dark:bg-navy-900 dark:text-navy-200"><Icon className="h-5 w-5" /></span><span className="min-w-0"><span className="block text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-navy-500">{label}</span><span className="mt-1 block truncate text-sm font-semibold text-[#102858] dark:text-white">{value}</span></span></Card>;
+  return <Card className="flex min-w-0 items-center gap-3 border-slate-200 bg-white p-4 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-[#102858] dark:bg-navy-900 dark:text-navy-200"><Icon className="h-5 w-5" /></span><span className="min-w-0"><span className="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-navy-500">{label}</span><span className="mt-1 block break-all text-sm font-semibold text-[#102858] dark:text-white">{value}</span></span></Card>;
 }
 
 function ProfileSelect({ icon: Icon, label, value, options, onChange, disabled = false }: { icon: typeof Building2; label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void; disabled?: boolean }) {

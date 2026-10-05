@@ -1,0 +1,606 @@
+[
+  {
+    "id": "E01",
+    "title": "All structure editors and custom roles persist changes",
+    "preconditions": "Existing synthetic structure records.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as admin",
+        "expected": "Role dashboard opens",
+        "observed": "Administrator Dashboard",
+        "status": "passed",
+        "milliseconds": 1259,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/E01-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Edit Departments",
+        "expected": "New name survives reload",
+        "observed": "QA Computer Studies Reviewed persisted",
+        "status": "passed",
+        "milliseconds": 2519,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/E01-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Edit Courses",
+        "expected": "New name survives reload",
+        "observed": "QA IT Reviewed persisted",
+        "status": "passed",
+        "milliseconds": 2251,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/E01-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Edit Sections",
+        "expected": "New name survives reload",
+        "observed": "QA 3A Reviewed persisted",
+        "status": "passed",
+        "milliseconds": 2210,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/E01-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Edit Organizations",
+        "expected": "New name survives reload",
+        "observed": "QA Council Reviewed persisted",
+        "status": "passed",
+        "milliseconds": 2338,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/E01-05.png"
+      },
+      {
+        "number": 6,
+        "title": "Edit Academic Years",
+        "expected": "New name survives reload",
+        "observed": "2026-2027R persisted",
+        "status": "passed",
+        "milliseconds": 2133,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/E01-06.png"
+      },
+      {
+        "number": 7,
+        "title": "Edit Semesters",
+        "expected": "New name survives reload",
+        "observed": "QA Semester Reviewed persisted",
+        "status": "passed",
+        "milliseconds": 1982,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/E01-07.png"
+      },
+      {
+        "number": 8,
+        "title": "Create and edit a custom role",
+        "expected": "Changed display name survives reload",
+        "observed": "Custom role update persisted",
+        "status": "passed",
+        "milliseconds": 2223,
+        "url": "http://127.0.0.1:5174/roles",
+        "screenshot": "screenshots/E01-08.png"
+      },
+      {
+        "number": 9,
+        "title": "Apply and clear user filters",
+        "expected": "Both Radix filters open, select, and reset without errors",
+        "observed": "User filters applied and cleared",
+        "status": "passed",
+        "milliseconds": 1205,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/E01-09.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "E02",
+    "title": "Deadline, approval mode, metadata editing and duplicate prevention",
+    "preconditions": "Teacher creates a future auto-approval event.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1914,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/E02-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Create event with deadline and automatic approval",
+        "expected": "Fields persist in the edit form",
+        "observed": "Deadline and automatic approval persisted",
+        "status": "passed",
+        "milliseconds": 2352,
+        "url": "http://127.0.0.1:5174/events/4c28b551-28bf-4861-a1b1-c5e3d213f0fb/edit",
+        "screenshot": "screenshots/E02-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Edit event metadata",
+        "expected": "Updated title and Manila times persist",
+        "observed": "Edited title, location and times persisted",
+        "status": "passed",
+        "milliseconds": 2078,
+        "url": "http://127.0.0.1:5174/events/4c28b551-28bf-4861-a1b1-c5e3d213f0fb",
+        "screenshot": "screenshots/E02-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 2082,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/E02-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Register for automatic approval event",
+        "expected": "Receipt is Approved and repeat action is disabled",
+        "observed": "Approved receipt; duplicate registration disabled",
+        "status": "passed",
+        "milliseconds": 1528,
+        "url": "http://127.0.0.1:5174/events/4c28b551-28bf-4861-a1b1-c5e3d213f0fb",
+        "screenshot": "screenshots/E02-05.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "E03",
+    "title": "Pagination and complete calendar data",
+    "preconditions": "25 synthetic events and registrations, including an old pending record.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 2064,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/E03-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Reach an older event on page two",
+        "expected": "QA Pagination 00 is reachable through Next",
+        "observed": "Older event appears on page two",
+        "status": "passed",
+        "milliseconds": 4181,
+        "url": "http://127.0.0.1:5174/events",
+        "screenshot": "screenshots/E03-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Find older Pending registration",
+        "expected": "Server filter includes QA Pagination 00",
+        "observed": "Older pending registration appears",
+        "status": "passed",
+        "milliseconds": 264,
+        "url": "http://127.0.0.1:5174/registrations/mine",
+        "screenshot": "screenshots/E03-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Paginate Active registrations",
+        "expected": "Next opens page two with additional registrations",
+        "observed": "Active page two contains registrations",
+        "status": "passed",
+        "milliseconds": 299,
+        "url": "http://127.0.0.1:5174/registrations/mine",
+        "screenshot": "screenshots/E03-04.png"
+      },
+      {
+        "number": 5,
+        "title": "View complete month calendar",
+        "expected": "At least 25 scheduled events load",
+        "observed": "30 scheduled events",
+        "status": "passed",
+        "milliseconds": 850,
+        "url": "http://127.0.0.1:5174/calendar",
+        "screenshot": "screenshots/E03-05.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "E04",
+    "title": "Role guards and permission-aware attendance",
+    "preconditions": "Officer assigned only to the live event; leader unassigned.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1321,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/E04-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Navigate to admin dashboard URL",
+        "expected": "Forbidden route replaces admin dashboard",
+        "observed": "Student redirected to Forbidden",
+        "status": "passed",
+        "milliseconds": 928,
+        "url": "http://127.0.0.1:5174/forbidden",
+        "screenshot": "screenshots/E04-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Sign in as officer",
+        "expected": "Role dashboard opens",
+        "observed": "Council workspace",
+        "status": "passed",
+        "milliseconds": 2087,
+        "url": "http://127.0.0.1:5174/officer",
+        "screenshot": "screenshots/E04-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Open assigned attendance",
+        "expected": "Only assigned event and permitted actions are offered",
+        "observed": "Assigned roster visible; QR/manual actions hidden",
+        "status": "passed",
+        "milliseconds": 989,
+        "url": "http://127.0.0.1:5174/attendance",
+        "screenshot": "screenshots/E04-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Sign in as leader",
+        "expected": "Role dashboard opens",
+        "observed": "Council workspace",
+        "status": "passed",
+        "milliseconds": 2088,
+        "url": "http://127.0.0.1:5174/officer",
+        "screenshot": "screenshots/E04-05.png"
+      },
+      {
+        "number": 6,
+        "title": "Open attendance without assignments",
+        "expected": "Empty selection, no forbidden roster request",
+        "observed": "No assigned events; clean empty state",
+        "status": "passed",
+        "milliseconds": 255,
+        "url": "http://127.0.0.1:5174/attendance",
+        "screenshot": "screenshots/E04-06.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "E05",
+    "title": "Outage recovery and keyboard notification marking",
+    "preconditions": "Synthetic server outage injected by browser route interception.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1208,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/E05-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Recover events after temporary HTTP 503",
+        "expected": "Specific outage message and Retry recover the page",
+        "observed": "Events recovered through Retry",
+        "status": "passed",
+        "milliseconds": 1977,
+        "url": "http://127.0.0.1:5174/events",
+        "screenshot": "screenshots/E05-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Mark a notification using Enter",
+        "expected": "Unread notification becomes read",
+        "observed": "Keyboard notification marked read",
+        "status": "passed",
+        "milliseconds": 361,
+        "url": "http://127.0.0.1:5174/notifications",
+        "screenshot": "screenshots/E05-03.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "E06",
+    "title": "Keyboard modal, accessibility scans and narrow layouts",
+    "preconditions": "axe WCAG scans plus manual keyboard and mobile checks.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as admin",
+        "expected": "Role dashboard opens",
+        "observed": "Administrator Dashboard",
+        "status": "passed",
+        "milliseconds": 1742,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/E06-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Modal focus, full Tab cycle and Escape return",
+        "expected": "Focus stays inside and returns to Add User",
+        "observed": "35 Tab steps trapped; Escape closes and returns focus",
+        "status": "passed",
+        "milliseconds": 3997,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/E06-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Accessibility /admin",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1717,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/E06-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Accessibility /users",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 2017,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/E06-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Accessibility /roles",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1677,
+        "url": "http://127.0.0.1:5174/roles",
+        "screenshot": "screenshots/E06-05.png"
+      },
+      {
+        "number": 6,
+        "title": "Accessibility /school",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1734,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/E06-06.png"
+      },
+      {
+        "number": 7,
+        "title": "Accessibility /councils",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1754,
+        "url": "http://127.0.0.1:5174/councils",
+        "screenshot": "screenshots/E06-07.png"
+      },
+      {
+        "number": 8,
+        "title": "Accessibility /events",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 2620,
+        "url": "http://127.0.0.1:5174/events",
+        "screenshot": "screenshots/E06-08.png"
+      },
+      {
+        "number": 9,
+        "title": "Accessibility /events/new",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1668,
+        "url": "http://127.0.0.1:5174/events/new",
+        "screenshot": "screenshots/E06-09.png"
+      },
+      {
+        "number": 10,
+        "title": "Accessibility /announcements",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 2838,
+        "url": "http://127.0.0.1:5174/announcements",
+        "screenshot": "screenshots/E06-10.png"
+      },
+      {
+        "number": 11,
+        "title": "Accessibility /announcements/new",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1715,
+        "url": "http://127.0.0.1:5174/announcements/new",
+        "screenshot": "screenshots/E06-11.png"
+      },
+      {
+        "number": 12,
+        "title": "Accessibility /attendance",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1550,
+        "url": "http://127.0.0.1:5174/attendance",
+        "screenshot": "screenshots/E06-12.png"
+      },
+      {
+        "number": 13,
+        "title": "Accessibility /reports",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1396,
+        "url": "http://127.0.0.1:5174/reports",
+        "screenshot": "screenshots/E06-13.png"
+      },
+      {
+        "number": 14,
+        "title": "Accessibility /audit/logs",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1607,
+        "url": "http://127.0.0.1:5174/audit/logs",
+        "screenshot": "screenshots/E06-14.png"
+      },
+      {
+        "number": 15,
+        "title": "Accessibility /calendar",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 2825,
+        "url": "http://127.0.0.1:5174/calendar",
+        "screenshot": "screenshots/E06-15.png"
+      },
+      {
+        "number": 16,
+        "title": "Accessibility /notifications",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1559,
+        "url": "http://127.0.0.1:5174/notifications",
+        "screenshot": "screenshots/E06-16.png"
+      },
+      {
+        "number": 17,
+        "title": "Accessibility /settings",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1536,
+        "url": "http://127.0.0.1:5174/settings",
+        "screenshot": "screenshots/E06-17.png"
+      },
+      {
+        "number": 18,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 2332,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/E06-18.png"
+      },
+      {
+        "number": 19,
+        "title": "Student accessibility /student",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 2414,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/E06-19.png"
+      },
+      {
+        "number": 20,
+        "title": "Student accessibility /profile",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1403,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/E06-20.png"
+      },
+      {
+        "number": 21,
+        "title": "Student accessibility /events",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 2311,
+        "url": "http://127.0.0.1:5174/events",
+        "screenshot": "screenshots/E06-21.png"
+      },
+      {
+        "number": 22,
+        "title": "Student accessibility /registrations/mine",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1934,
+        "url": "http://127.0.0.1:5174/registrations/mine",
+        "screenshot": "screenshots/E06-22.png"
+      },
+      {
+        "number": 23,
+        "title": "Student accessibility /calendar",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 3361,
+        "url": "http://127.0.0.1:5174/calendar",
+        "screenshot": "screenshots/E06-23.png"
+      },
+      {
+        "number": 24,
+        "title": "Student accessibility /notifications",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1644,
+        "url": "http://127.0.0.1:5174/notifications",
+        "screenshot": "screenshots/E06-24.png"
+      },
+      {
+        "number": 25,
+        "title": "Student accessibility /attendance/mine",
+        "expected": "No WCAG A/AA violations",
+        "observed": "No WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 1758,
+        "url": "http://127.0.0.1:5174/attendance/mine",
+        "screenshot": "screenshots/E06-25.png"
+      },
+      {
+        "number": 26,
+        "title": "Profile at 320 pixels",
+        "expected": "Page width stays within viewport",
+        "observed": "{\"viewport\":320,\"document\":305}",
+        "status": "passed",
+        "milliseconds": 1276,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/E06-26.png"
+      },
+      {
+        "number": 27,
+        "title": "Dark profile accessibility",
+        "expected": "No WCAG A/AA violations in dark mode",
+        "observed": "No dark profile WCAG A/AA violations",
+        "status": "passed",
+        "milliseconds": 466,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/E06-27.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  }
+]

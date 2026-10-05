@@ -1,0 +1,53 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+Notifications
+
+Registration updates, event reminders, and college announcements.
+
+Mark all read
+
+1 unread
+
+QA Welcome
+Unread
+Synthetic QA notification.
+10/5/2026, 1:02:36 PM

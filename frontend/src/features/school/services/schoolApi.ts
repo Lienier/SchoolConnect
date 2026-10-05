@@ -50,7 +50,7 @@ export const schoolApi = {
   // Organizations
   listOrganizations: listEndpoint<Organization>("/school/organizations"),
   createOrganization: (p: Partial<Organization>) =>
-    apiClient.post<SchoolListResponse<Organization>>("/school/organizations", p).then((r) => r.data.data),
+    apiClient.post<{ data: Organization }>("/school/organizations", p).then((r) => r.data.data),
   updateOrganization: (id: string, p: Partial<Organization>) =>
     apiClient.patch<SchoolListResponse<Organization>>(`/school/organizations/${id}`, p).then((r) => r.data.data),
   deleteOrganization: (id: string) => apiClient.delete(`/school/organizations/${id}`),

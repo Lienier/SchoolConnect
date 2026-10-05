@@ -40,6 +40,7 @@ export interface SchoolEvent {
   organizer_avatar?: string | null;
   organizer_role?: string | null;
   can_manage?: boolean;
+  my_registration_status?: Registration["status"] | null;
   attachments?: AnnouncementAttachment[];
   banner_url?: string | null;
 }
@@ -86,6 +87,7 @@ export interface EventListResponse extends ApiResponse<SchoolEvent[]> {
 export type EventCategoryListResponse = ApiResponse<EventCategory[]>;
 
 export interface Registration {
+  registration_deadline?: string | null;
   id: string;
   event_id: string;
   user_id: string;

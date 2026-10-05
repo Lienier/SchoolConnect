@@ -1,0 +1,56 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+Scenario UI Team Championship
+QA Seminar
+Approved
+Team Event
+Registration Approval
+
+Synthetic scenario event created entirely using UI controls.
+
+Starts
+Thursday, November 12, 2026 at 9:00 AM
+Ends
+Thursday, November 12, 2026 at 11:00 AM
+Location
+Scenario UI Hall
+Capacity
+8 seats
+Edit event
+Start event
+Cancel event
+Registrations
+Export CSV
+
+No registrations yet.
+
+Success
+Welcome back!
+Success
+Event and photos posted.
+Notification SuccessEvent and photos posted.

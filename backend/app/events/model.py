@@ -23,6 +23,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.utils.datetime import utc_iso
+
 from app.extensions import db
 from app.utils.datetime import utcnow
 
@@ -131,19 +133,19 @@ class Event(db.Model):
             "organizer_id": str(self.organizer_id),
             "organization_id": str(self.organization_id) if self.organization_id else None,
             "status": self.status,
-            "start_time": self.start_time.isoformat() if self.start_time else None,
-            "end_time": self.end_time.isoformat() if self.end_time else None,
+            "start_time": utc_iso(self.start_time) if self.start_time else None,
+            "end_time": utc_iso(self.end_time) if self.end_time else None,
             "location": self.location,
             "capacity": self.capacity,
-            "registration_deadline": self.registration_deadline.isoformat()
+            "registration_deadline": utc_iso(self.registration_deadline)
             if self.registration_deadline
             else None,
             "is_team_event": self.is_team_event,
             "max_team_size": self.max_team_size,
             "approval_required": self.approval_required,
             "view_count": self.view_count,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
+            "updated_at": utc_iso(self.updated_at) if self.updated_at else None,
             "organizer_name": self.organizer.full_name if self.organizer else None,
             "organizer_avatar": self.organizer.avatar_url if self.organizer else None,
             "organizer_role": (
@@ -159,7 +161,7 @@ class Event(db.Model):
     def banner_url(self) -> str | None:
         for attachment in self.attachments:
             if attachment.file and attachment.file.content_type.startswith("image/"):
-                return attachment.file.url
+                return attachment.file.delivery_url
         return None
 
 
@@ -196,7 +198,7 @@ class EventAttachment(db.Model):
             "original_name": self.file.original_name if self.file else None,
             "content_type": self.file.content_type if self.file else None,
             "size_bytes": self.file.size_bytes if self.file else None,
-            "url": self.file.url if self.file else None,
+            "url": self.file.delivery_url if self.file else None,
         }
 
 
@@ -295,7 +297,7 @@ class EventResult(db.Model):
             "title": self.title, "winner_user_id": str(self.winner_user_id) if self.winner_user_id else None,
             "team_id": str(self.team_id) if self.team_id else None, "remarks": self.remarks,
             "attachment_file_id": str(self.attachment_file_id) if self.attachment_file_id else None,
-            "created_by": str(self.created_by), "created_at": self.created_at.isoformat(),
+            "created_by": str(self.created_by), "created_at": utc_iso(self.created_at),
         }
 
 

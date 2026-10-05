@@ -90,7 +90,7 @@ def my_registrations():
     """List the current user's registrations."""
     params = PaginationParams.from_request()
     actor = get_jwt_identity()
-    query = _service.list_registrations(user_id=actor)
+    query = _service.list_registrations(user_id=actor, status=request.args.get("status"))
     items, meta = paginate(query, params)
     return success_response(data=[r.to_dict() for r in items], meta=meta)
 

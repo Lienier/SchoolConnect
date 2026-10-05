@@ -1,0 +1,41 @@
+[
+  {
+    "id": "F03",
+    "title": "Roster beyond 100 and complete CSV export",
+    "preconditions": "105 additional synthetic participants on live event.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1720,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/F03-01.png"
+      },
+      {
+        "number": 2,
+        "title": "View the complete event roster",
+        "expected": "All 105 extra participants appear across API batches",
+        "observed": "105 added participants visible; existing two also retained",
+        "status": "passed",
+        "milliseconds": 4927,
+        "url": "http://127.0.0.1:5174/events/e9c4c5ea-4304-4a03-b5ab-3764d9692f60",
+        "screenshot": "screenshots/F03-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Download complete registration roster",
+        "expected": "CSV includes first and last participant with 107 data rows",
+        "observed": "107 registration rows exported through UI",
+        "status": "passed",
+        "milliseconds": 439,
+        "url": "http://127.0.0.1:5174/events/e9c4c5ea-4304-4a03-b5ab-3764d9692f60",
+        "screenshot": "screenshots/F03-03.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  }
+]

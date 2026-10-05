@@ -20,6 +20,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID, CITEXT, INET
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.utils.datetime import utc_iso
+
 from app.extensions import db
 from app.utils.datetime import utcnow as _utcnow
 
@@ -109,9 +111,9 @@ class User(db.Model):
             "avatar_url": self.avatar_url,
             "phone": self.phone,
             "locale": self.locale,
-            "last_login_at": self.last_login_at.isoformat() if self.last_login_at else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "last_login_at": utc_iso(self.last_login_at) if self.last_login_at else None,
+            "created_at": utc_iso(self.created_at) if self.created_at else None,
+            "updated_at": utc_iso(self.updated_at) if self.updated_at else None,
         }
         if include_roles:
             data["roles"] = [role.name for role in self.roles]

@@ -1,0 +1,4 @@
+Command: ../.venv/Scripts/python.exe -m pytest -q -p no:cacheprovider
+Environment: FLASK_ENV=testing; TEST_DATABASE_URL=sqlite:///:memory:
+Result: 39 passed in 47.49s
+Includes three realtime disconnect/reconnect revocation cases and an authenticated Cloudinary upload mock.

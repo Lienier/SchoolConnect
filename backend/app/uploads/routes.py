@@ -8,6 +8,8 @@ from flask import Blueprint, current_app, redirect, request, send_from_directory
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from app.announcements.model import Announcement
+from app.announcements.service import AnnouncementService
+from app.permissions.decorators import has_permission, user_roles
 from app.common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.events.access import require_event_manager
 from app.events.model import Event
@@ -59,12 +61,31 @@ def upload():
 @bp.get("/<path:filename>")
 @jwt_required()
 def serve(filename: str):
-    """Serve a stored file only to authenticated users."""
+    """Apply the parent resource's visibility rules before delivering a file."""
     record = _service.get_by_filename(filename)
-    if record and record.storage_backend == "cloudinary" and record.storage_path:
-        return redirect(record.storage_path)
-
-    folder = current_app.config.get("UPLOAD_FOLDER", "uploads")
     if record is None:
         raise NotFoundError("File not found.")
+    actor = get_jwt_identity()
+    if record.entity_type == "announcement":
+        announcement = db.session.get(Announcement, record.entity_id)
+        if announcement is None or announcement.deleted_at is not None or not has_permission(actor, "announcements.view"):
+            raise NotFoundError("File not found.")
+        if not has_permission(actor, "announcements.moderate") and not (
+            announcement.author_id == uuid.UUID(actor)
+            or AnnouncementService.visible_to(announcement, user_roles(actor))
+        ):
+            raise NotFoundError("File not found.")
+    elif record.entity_type == "event":
+        from app.events.access import can_manage_event
+        event = db.session.get(Event, record.entity_id)
+        if event is None or event.deleted_at is not None or not has_permission(actor, "events.view") or (
+            event.status not in {"approved", "ongoing", "completed"} and not can_manage_event(actor, event)
+        ):
+            raise NotFoundError("File not found.")
+    elif record.uploader_id != uuid.UUID(actor):
+        raise NotFoundError("File not found.")
+    if record and record.storage_backend == "cloudinary" and record.storage_path:
+        return redirect(_service.cloudinary_download_url(record))
+
+    folder = current_app.config.get("UPLOAD_FOLDER", "uploads")
     return send_from_directory(folder, filename)

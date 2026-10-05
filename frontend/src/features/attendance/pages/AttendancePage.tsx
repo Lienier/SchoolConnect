@@ -1,3 +1,4 @@
+import { usePermissions } from "@/hooks/usePermissions";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ClipboardCheck, Copy, Download, QrCode, ScanLine, Search } from "lucide-react";
@@ -68,14 +69,15 @@ export default function AttendancePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { can } = usePermissions();
   const isProfessor = Boolean(user?.roles?.includes("teacher"));
 
   const events = useQuery({
-    queryKey: ["attendance-events", isProfessor ? user?.id : "all"],
+    queryKey: ["attendance-events", user?.id],
     queryFn: async () => {
       const statuses = await Promise.all([
-        eventsApi.list({ status: "approved", organizer_id: isProfessor ? user?.id : undefined }),
-        eventsApi.list({ status: "ongoing", organizer_id: isProfessor ? user?.id : undefined }),
+        eventsApi.listAll({ managed: true, status: "approved", organizer_id: isProfessor ? user?.id : undefined }),
+        eventsApi.listAll({ managed: true, status: "ongoing", organizer_id: isProfessor ? user?.id : undefined }),
       ]);
       const byId = new Map(statuses.flatMap((result) => result.data).map((event) => [event.id, event]));
       return { data: Array.from(byId.values()) };
@@ -172,24 +174,24 @@ export default function AttendancePage() {
             <Button variant="secondary" disabled={!selectedEventId || !items.length} onClick={exportAttendance}>
               <Download size={16} className="mr-2" />Export CSV
             </Button>
-            <Button variant="secondary" disabled={!selectedEventId || qr.isPending} onClick={() => confirmQr(false)}>
+            {can("attendance.manage") && <Button variant="secondary" disabled={!selectedEventId || qr.isPending} onClick={() => confirmQr(false)}>
               <QrCode size={16} className="mr-2" />{!selectedEventId ? "Select event first" : qr.isPending ? "Generating..." : "Generate QR"}
-            </Button>
-            <Button variant="primary" onClick={() => setScannerOpen(true)}>
+            </Button>}
+            {can("attendance.scan") && <Button variant="primary" onClick={() => setScannerOpen(true)}>
               <ScanLine size={16} className="mr-2" />Scan QR
-            </Button>
+            </Button>}
           </div>
         }
       />
 
       <Card className="border-slate-200 p-4 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
         <div className="flex flex-col gap-3 md:flex-row">
-          <select value={selectedEventId} onChange={(event) => { setEventId(event.target.value); setQrToken(null); }} className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 md:max-w-sm">
+          <select aria-label="Attendance event" value={selectedEventId} onChange={(event) => { setEventId(event.target.value); setQrToken(null); }} className="rounded-lg border border-slate-200 px-3 py-2.5 text-sm dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100 md:max-w-sm">
             <option value="">Select an event</option>
             {availableEvents.map((event) => <option key={event.id} value={event.id}>{event.title}</option>)}
           </select>
           <div className="relative flex-1">
-            <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search participant or status..." className="w-full rounded-lg border border-slate-200 py-2.5 pl-10 pr-3 text-sm dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100" />
           </div>
         </div>
@@ -227,7 +229,7 @@ export default function AttendancePage() {
                       <td className="capitalize">{item.method.replace("_", " ")}</td>
                       <td>
                         <div className="flex flex-wrap gap-2">
-                          {(["present", "late", "absent", "excused"] as const).map((status) => (
+                          {can("attendance.manage") && (["present", "late", "absent", "excused"] as const).map((status) => (
                             <Button key={status} size="sm" disabled={mark.isPending} variant={status === item.status ? "primary" : "secondary"} onClick={() => confirmMarkAttendance(item, status)}>{status}</Button>
                           ))}
                         </div>

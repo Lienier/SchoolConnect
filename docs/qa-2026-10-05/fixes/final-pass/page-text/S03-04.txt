@@ -1,0 +1,73 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student2
+
+student2@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+2
+Log out
+Scenario UI Team Championship
+QA Seminar
+Approved
+Team Event
+Registration Approval
+
+Synthetic scenario event created entirely using UI controls.
+
+Starts
+Thursday, November 12, 2026 at 9:00 AM
+Ends
+Thursday, November 12, 2026 at 11:00 AM
+Location
+Scenario UI Hall
+Capacity
+8 seats
+Already registered
+Success
+Welcome back!
+Info
+Registration pending
+Success
+Team joined. Registration pending.
+Register for event
+Scenario UI Team Championship
+11/12/2026, 9:00:00 AM
+8 seats
+Registration approval required
+
+Registration recorded
+
+Your registration is waiting for organizer approval.
+
+Event
+Scenario UI Team Championship
+Status
+Pending
+Team
+Scenario UI Titans
+Team code
+SC-IC62
+Copy
+Done
+View My Registrations
+Notification InfoRegistration pending
+Notification SuccessTeam joined. Registration pending.

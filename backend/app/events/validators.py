@@ -19,6 +19,7 @@ class EventCreateRequest(BaseModel):
     capacity: Optional[int] = Field(default=None, ge=0)
     registration_deadline: Optional[str] = None
     is_team_event: bool = False
+    approval_required: bool = True
     max_team_size: Optional[int] = Field(default=None, ge=2)
 
 
@@ -34,6 +35,7 @@ class EventUpdateRequest(BaseModel):
     capacity: Optional[int] = Field(default=None, ge=0)
     registration_deadline: Optional[str] = None
     is_team_event: Optional[bool] = None
+    approval_required: Optional[bool] = None
     max_team_size: Optional[int] = Field(default=None, ge=2)
 
 

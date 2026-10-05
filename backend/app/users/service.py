@@ -175,6 +175,8 @@ class UserService:
         user.password_hash = self._hash_password(new_password)
         RefreshTokenRepository().revoke_all_for_user(user.id)
         self.users.commit()
+        from app.realtime.service import disconnect_user
+        disconnect_user(user.id)
 
     def set_avatar(self, user_id: uuid.UUID, url: str) -> User:
         """Set a user's profile-picture URL."""

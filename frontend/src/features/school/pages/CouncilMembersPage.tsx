@@ -149,7 +149,7 @@ export default function CouncilMembersPage() {
                 className={`w-full rounded-lg border px-3 py-3 text-left text-sm transition ${activeCouncilId === org.id ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-100" : "border-slate-200 bg-white text-navy-700 hover:bg-slate-50 dark:border-navy-800 dark:bg-navy-950 dark:text-navy-200 dark:hover:bg-navy-900"}`}
               >
                 <span className="block font-semibold">{org.name}</span>
-                <span className="mt-1 block text-xs text-slate-500 dark:text-navy-400">
+                <span className="mt-1 block text-xs text-slate-600 dark:text-navy-400">
                   {org.organization_type === "student_council" ? "Student Council" : departmentLabel(org, departments.data?.data ?? [])}
                 </span>
               </button>
@@ -161,7 +161,7 @@ export default function CouncilMembersPage() {
             )}
           </div>
           <div className="mt-4 space-y-3 border-t border-slate-100 pt-4 dark:border-navy-800">
-            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-navy-400">Quick setup</p>
+            <p className="text-xs font-semibold uppercase text-slate-600 dark:text-navy-400">Quick setup</p>
             <Button
               variant="secondary"
               className="w-full justify-start"
@@ -174,6 +174,7 @@ export default function CouncilMembersPage() {
             </Button>
             <div className="space-y-2">
               <select
+                aria-label="Department for council setup"
                 value={setupDepartmentId}
                 onChange={(event) => setSetupDepartmentId(event.target.value)}
                 className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
@@ -204,7 +205,7 @@ export default function CouncilMembersPage() {
               <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 dark:border-navy-800 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-navy-900 dark:text-white">{selectedCouncil.name}</h2>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-navy-400">
+                  <p className="mt-1 text-sm text-slate-600 dark:text-navy-400">
                     {selectedCouncil.organization_type === "student_council"
                       ? "College-wide Student Council"
                       : departmentLabel(selectedCouncil, departments.data?.data ?? [])}
@@ -231,6 +232,7 @@ export default function CouncilMembersPage() {
                 />
                 <div className="space-y-1.5">
                   <select
+                    aria-label="New member position"
                     value={selectedPosition}
                     onChange={(event) => setSelectedPosition(event.target.value)}
                     className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
@@ -247,7 +249,7 @@ export default function CouncilMembersPage() {
               </div>
 
               <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-navy-800">
-                <div className="grid grid-cols-[1fr_180px_80px] bg-slate-50 px-4 py-2 text-xs font-semibold uppercase text-slate-500 dark:bg-navy-900 dark:text-navy-400">
+                <div className="grid grid-cols-[1fr_180px_80px] bg-slate-50 px-4 py-2 text-xs font-semibold uppercase text-slate-600 dark:bg-navy-900 dark:text-navy-400">
                   <span>Member</span>
                   <span>Position</span>
                   <span className="text-right">Action</span>
@@ -256,25 +258,27 @@ export default function CouncilMembersPage() {
                   <div key={member.user_id} className="grid grid-cols-[1fr_180px_80px] items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm dark:border-navy-800">
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-navy-900 dark:text-white">{member.full_name}</p>
-                      <p className="truncate text-xs text-slate-500 dark:text-navy-400">{member.student_number ?? member.email}</p>
+                      <p className="truncate text-xs text-slate-600 dark:text-navy-400">{member.student_number ?? member.email}</p>
                     </div>
                     <select
+                      aria-label={`Position for ${member.full_name}`}
                       value={member.position}
                       onChange={(event) => updatePosition(member.user_id, event.target.value)}
                       className="h-10 rounded-lg border border-slate-200 bg-white px-2 text-sm text-navy-900 dark:border-navy-800 dark:bg-navy-900 dark:text-navy-100"
                     >
-                      {!positions.includes(member.position) && <option value={member.position}>{member.position || "Missing position"}</option>}
+                      {!positions.includes(member.position) && <option aria-label={`Position for ${member.full_name}`}
+                      value={member.position}>{member.position || "Missing position"}</option>}
                       {positions.map((position) => <option key={position} value={position}>{position}</option>)}
                     </select>
                     <div className="text-right">
-                      <Button size="sm" variant="danger" onClick={() => removeMember(member.user_id)}>
+                      <Button size="sm" variant="danger" aria-label={`Remove ${member.full_name}`} onClick={() => removeMember(member.user_id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
                 ))}
                 {!members.isLoading && visibleMembers.length === 0 && (
-                  <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-sm text-slate-500 dark:text-navy-400">
+                  <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-sm text-slate-600 dark:text-navy-400">
                     <Users className="h-8 w-8" />
                     No members assigned.
                   </div>
@@ -284,7 +288,7 @@ export default function CouncilMembersPage() {
               <Badge tone="info">Saving distributes this council's saved positions to selected members.</Badge>
             </div>
           ) : (
-            <div className="py-12 text-center text-sm text-slate-500 dark:text-navy-400">Select a council to manage members.</div>
+            <div className="py-12 text-center text-sm text-slate-600 dark:text-navy-400">Select a council to manage members.</div>
           )}
         </Card>
       </div>
@@ -326,6 +330,7 @@ function StudentCandidateSearch({
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-navy-400" />
         <input
+          aria-label="Search council candidates"
           value={search}
           placeholder="Search student ID, first name, last name, email, username"
           onChange={(event) => setSearch(event.target.value)}
@@ -347,13 +352,13 @@ function StudentCandidateSearch({
               className="block w-full px-3 py-2 text-left text-sm text-navy-900 hover:bg-blue-50 dark:text-navy-100 dark:hover:bg-navy-900"
             >
               <span className="block font-semibold">{candidate.full_name}</span>
-              <span className="mt-0.5 block text-xs text-slate-500 dark:text-navy-400">
+              <span className="mt-0.5 block text-xs text-slate-600 dark:text-navy-400">
                 {[candidate.student_number, candidate.username, candidate.email].filter(Boolean).join(" | ")}
               </span>
             </button>
           ))}
           {results.length === 0 && (
-            <div className="px-3 py-3 text-sm text-slate-500 dark:text-navy-400">No matching students.</div>
+            <div className="px-3 py-3 text-sm text-slate-600 dark:text-navy-400">No matching students.</div>
           )}
         </div>
       )}

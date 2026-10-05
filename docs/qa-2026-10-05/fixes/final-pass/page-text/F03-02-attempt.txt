@@ -1,0 +1,213 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+TEACHING
+
+My Events
+New Event
+Attendance
+Announcements
+
+INSIGHTS
+
+Calendar
+Q
+
+QA Teacher
+
+teacher@qa.schoolconnect.example
+
+Log out
+
+PROFESSOR
+
+1
+
+EVENT DISCOVERY
+
+Events
+
+Manage your event proposals, approved rosters, and attendance-ready events.
+
+New Event
+All
+Upcoming
+Happening Now
+Past
+All categories
+QA Seminar
+Team only
+QA Auto Event Edited
+Approved
+Dec 1, 2026
+9:00 AM - 11:00 AM
+Reviewed Hall
+Open capacity
+No seat limit
+Deadline 11/30/2026
+View details
+Scenario UI Team Championship
+QA Seminar
+
+Synthetic scenario event created entirely using UI controls.
+
+Approved
+Nov 12, 2026
+9:00 AM - 11:00 AM
+Scenario UI Hall
+0 / 8
+Seats filled
+Team event
+Up to 4 members
+Registration approval
+View details
+QA Pagination 19
+Approved
+Oct 24, 2026
+2:39 PM - 3:39 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 09
+Approved
+Oct 24, 2026
+1:49 PM - 2:49 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 18
+Approved
+Oct 23, 2026
+2:34 PM - 3:34 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 08
+Approved
+Oct 23, 2026
+1:44 PM - 2:44 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 17
+Approved
+Oct 22, 2026
+2:29 PM - 3:29 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 07
+Approved
+Oct 22, 2026
+1:39 PM - 2:39 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 16
+Approved
+Oct 21, 2026
+2:24 PM - 3:24 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 06
+Approved
+Oct 21, 2026
+1:34 PM - 2:34 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 15
+Approved
+Oct 20, 2026
+2:19 PM - 3:19 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 05
+Approved
+Oct 20, 2026
+1:29 PM - 2:29 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 24
+Approved
+Oct 19, 2026
+3:04 PM - 4:04 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 14
+Approved
+Oct 19, 2026
+2:14 PM - 3:14 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 04
+Approved
+Oct 19, 2026
+1:24 PM - 2:24 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 23
+Approved
+Oct 18, 2026
+2:59 PM - 3:59 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 13
+Approved
+Oct 18, 2026
+2:09 PM - 3:09 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 03
+Approved
+Oct 18, 2026
+1:19 PM - 2:19 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 22
+Approved
+Oct 17, 2026
+2:54 PM - 3:54 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+QA Pagination 12
+Approved
+Oct 17, 2026
+2:04 PM - 3:04 PM
+0 / 100
+Seats filled
+Registration approval
+View details
+Page 1 of 2
+Previous
+Next

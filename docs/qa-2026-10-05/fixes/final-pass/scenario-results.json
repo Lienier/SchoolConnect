@@ -1,0 +1,632 @@
+[
+  {
+    "id": "S01",
+    "title": "New student completes profile, registers, and receives organizer approval",
+    "preconditions": "Incomplete student profile; open event requires approval.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as incomplete",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1392,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S01-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Attempt registration with incomplete profile",
+        "expected": "Registration is blocked with a profile-completion message",
+        "observed": "Complete your college profile before registering for events.",
+        "status": "passed",
+        "milliseconds": 1201,
+        "url": "http://127.0.0.1:5174/events/8adf063b-5bf1-4b7a-9966-51ff058691cb",
+        "screenshot": "screenshots/S01-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Complete college details through Profile",
+        "expected": "Profile is saved and displays Complete",
+        "observed": "College profile completed and Complete badge shown",
+        "status": "passed",
+        "milliseconds": 4960,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/S01-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Register for the open seminar",
+        "expected": "Pending receipt is displayed",
+        "observed": "Pending registration recorded",
+        "status": "passed",
+        "milliseconds": 735,
+        "url": "http://127.0.0.1:5174/events/8adf063b-5bf1-4b7a-9966-51ff058691cb",
+        "screenshot": "screenshots/S01-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Find registration under Pending",
+        "expected": "QA Open Seminar appears",
+        "observed": "QA Open Seminar appears under Pending",
+        "status": "passed",
+        "milliseconds": 223,
+        "url": "http://127.0.0.1:5174/registrations/mine",
+        "screenshot": "screenshots/S01-05.png"
+      },
+      {
+        "number": 6,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1242,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/S01-06.png"
+      },
+      {
+        "number": 7,
+        "title": "Approve the student from the event roster",
+        "expected": "QA Incomplete changes to approved",
+        "observed": "QA Incompleteapproved",
+        "status": "passed",
+        "milliseconds": 1828,
+        "url": "http://127.0.0.1:5174/events/8adf063b-5bf1-4b7a-9966-51ff058691cb",
+        "screenshot": "screenshots/S01-07.png"
+      },
+      {
+        "number": 8,
+        "title": "Student checks Active after organizer approval",
+        "expected": "Approved seminar appears without a full reload",
+        "observed": "Approved seminar appears under Active",
+        "status": "passed",
+        "milliseconds": 109,
+        "url": "http://127.0.0.1:5174/registrations/mine",
+        "screenshot": "screenshots/S01-08.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S02",
+    "title": "Organizer publishes a categorized team event with a photo",
+    "preconditions": "Teacher can publish an event; QA Seminar category exists.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1241,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/S02-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Fill event title, schedule, category, team size, and photo",
+        "expected": "Valid event form contains all selected values",
+        "observed": "QA Seminar selected; 09:00–11:00; team size 4; photo attached",
+        "status": "passed",
+        "milliseconds": 1483,
+        "url": "http://127.0.0.1:5174/events/new",
+        "screenshot": "screenshots/S02-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Publish and open the new event",
+        "expected": "Event title, team state, and photo are visible",
+        "observed": "Team event and uploaded photo visible",
+        "status": "passed",
+        "milliseconds": 953,
+        "url": "http://127.0.0.1:5174/events/ee64e0cf-df4a-4467-aaf6-bd46cc30680a",
+        "screenshot": "screenshots/S02-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Verify saved category in event details",
+        "expected": "QA Seminar badge is present",
+        "observed": "Category retained",
+        "status": "passed",
+        "milliseconds": 5,
+        "url": "http://127.0.0.1:5174/events/ee64e0cf-df4a-4467-aaf6-bd46cc30680a",
+        "screenshot": "screenshots/S02-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Verify saved local schedule",
+        "expected": "Start and end remain 09:00 and 11:00 in Manila",
+        "observed": "Local times retained",
+        "status": "passed",
+        "milliseconds": 3,
+        "url": "http://127.0.0.1:5174/events/ee64e0cf-df4a-4467-aaf6-bd46cc30680a",
+        "screenshot": "screenshots/S02-05.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S03",
+    "title": "Students create and join a team, then organizer approves both",
+    "preconditions": "New team event from S02 exists, even if category failed.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 2007,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S03-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Create a team through registration dialog",
+        "expected": "Pending receipt includes team name and join code",
+        "observed": "Scenario UI Titans created; Pending; join code visible",
+        "status": "passed",
+        "milliseconds": 1260,
+        "url": "http://127.0.0.1:5174/events/ee64e0cf-df4a-4467-aaf6-bd46cc30680a",
+        "screenshot": "screenshots/S03-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Sign in as student2",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1254,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S03-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Join the team using the displayed code",
+        "expected": "Team code normalizes and matching team receipt appears",
+        "observed": "Lowercase code normalized; joined Scenario UI Titans",
+        "status": "passed",
+        "milliseconds": 1521,
+        "url": "http://127.0.0.1:5174/events/ee64e0cf-df4a-4467-aaf6-bd46cc30680a",
+        "screenshot": "screenshots/S03-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1337,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/S03-05.png"
+      },
+      {
+        "number": 6,
+        "title": "Approve both team participants",
+        "expected": "Roster displays both as approved",
+        "observed": "QA Student2approvedTeam: Scenario UI Titans; QA StudentapprovedTeam: Scenario UI Titans",
+        "status": "passed",
+        "milliseconds": 6033,
+        "url": "http://127.0.0.1:5174/events/ee64e0cf-df4a-4467-aaf6-bd46cc30680a",
+        "screenshot": "screenshots/S03-06.png"
+      },
+      {
+        "number": 7,
+        "title": "Student sees approved team registration",
+        "expected": "Active card includes team name",
+        "observed": "Approved team card and join code visible under Active",
+        "status": "passed",
+        "milliseconds": 466,
+        "url": "http://127.0.0.1:5174/registrations/mine",
+        "screenshot": "screenshots/S03-07.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S04",
+    "title": "Student joins a full event, cancels waitlist, and tries a closed deadline",
+    "preconditions": "Full event has one approved seat; separate event deadline passed.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1296,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S04-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Register for the full event",
+        "expected": "Waitlisted receipt is displayed",
+        "observed": "At-capacity registration placed on Waitlisted",
+        "status": "passed",
+        "milliseconds": 1385,
+        "url": "http://127.0.0.1:5174/events/b5d5c0b3-23ef-46b1-99bd-9dae87b4047a",
+        "screenshot": "screenshots/S04-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Find and cancel the waitlisted registration",
+        "expected": "Registration moves into Cancelled",
+        "observed": "Cancelled card shows QA Full Event",
+        "status": "passed",
+        "milliseconds": 1003,
+        "url": "http://127.0.0.1:5174/registrations/mine",
+        "screenshot": "screenshots/S04-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Attempt a deadline-expired event",
+        "expected": "Registration closed button is disabled",
+        "observed": "Registration closed; unavailable action is disabled",
+        "status": "passed",
+        "milliseconds": 344,
+        "url": "http://127.0.0.1:5174/events/7620df68-d286-4515-afab-019669b675fe",
+        "screenshot": "screenshots/S04-04.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S05",
+    "title": "Event-day attendance check-in and administrator reporting",
+    "preconditions": "QA Live Attendance has two approved synthetic students.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1341,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/S05-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Set one approved student absent",
+        "expected": "Roster shows QA Student as Absent",
+        "observed": "QA Student is Absent",
+        "status": "passed",
+        "milliseconds": 1189,
+        "url": "http://127.0.0.1:5174/attendance",
+        "screenshot": "screenshots/S05-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Generate reusable event check-in code",
+        "expected": "Code and QR image appear",
+        "observed": "Event QR image and reusable code visible (masked in evidence)",
+        "status": "passed",
+        "milliseconds": 1154,
+        "url": "http://127.0.0.1:5174/attendance",
+        "screenshot": "screenshots/S05-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1621,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S05-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Check in using the UI code field on mobile",
+        "expected": "Success message and Present attendance history appear",
+        "observed": "Mobile check-in succeeds; attendance history shows Present",
+        "status": "passed",
+        "milliseconds": 5416,
+        "url": "http://127.0.0.1:5174/attendance/mine",
+        "screenshot": "screenshots/S05-05.png"
+      },
+      {
+        "number": 6,
+        "title": "Refresh attendance and export roster",
+        "expected": "QA Student is Present; downloaded CSV contains that row",
+        "observed": "Roster Present; CSV downloaded through UI matches student",
+        "status": "passed",
+        "milliseconds": 2600,
+        "url": "http://127.0.0.1:5174/attendance",
+        "screenshot": "screenshots/S05-06.png"
+      },
+      {
+        "number": 7,
+        "title": "Sign in as admin",
+        "expected": "Role dashboard opens",
+        "observed": "Administrator Dashboard",
+        "status": "passed",
+        "milliseconds": 1313,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/S05-07.png"
+      },
+      {
+        "number": 8,
+        "title": "Compare report attendance with department participation",
+        "expected": "Department percentage is above 0 for successful check-in",
+        "observed": "QA Computer Studies\n33.33%",
+        "status": "passed",
+        "milliseconds": 437,
+        "url": "http://127.0.0.1:5174/reports",
+        "screenshot": "screenshots/S05-08.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S06",
+    "title": "Administrator creates and edits a department",
+    "preconditions": "Administrator account; new department code does not exist.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as admin",
+        "expected": "Role dashboard opens",
+        "observed": "Administrator Dashboard",
+        "status": "passed",
+        "milliseconds": 1454,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/S06-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Create a department",
+        "expected": "New department appears in the table",
+        "observed": "Department created and listed",
+        "status": "passed",
+        "milliseconds": 1302,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/S06-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Edit the department name",
+        "expected": "Updated name is saved and dialog closes",
+        "observed": "Updated department listed",
+        "status": "passed",
+        "milliseconds": 1158,
+        "url": "http://127.0.0.1:5174/school",
+        "screenshot": "screenshots/S06-03.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S07",
+    "title": "Administrator issues account, disables access, and restores access",
+    "preconditions": "New synthetic student account, existing course/section.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as admin",
+        "expected": "Role dashboard opens",
+        "observed": "Administrator Dashboard",
+        "status": "passed",
+        "milliseconds": 1376,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/S07-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Issue a student account through Add User",
+        "expected": "New student appears in User Management",
+        "observed": "Synthetic student account listed",
+        "status": "passed",
+        "milliseconds": 4527,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/S07-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Disable the new account",
+        "expected": "Account shows Inactive and offers Reactivate",
+        "observed": "Account disabled; Reactivate offered",
+        "status": "passed",
+        "milliseconds": 484,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/S07-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Try signing into the disabled account",
+        "expected": "Login is denied",
+        "observed": "SchoolConnect\n\nSign in to your account\n\nEmail\nPassword\nShow\nSign In\n\nAccounts are issued by the College administrator.\n\nError\nThis account is not active.\nNotification ErrorThis account is not active.",
+        "status": "passed",
+        "milliseconds": 1102,
+        "url": "http://127.0.0.1:5174/login",
+        "screenshot": "screenshots/S07-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Reactivate the student account",
+        "expected": "Active status and Disable control return",
+        "observed": "Account reactivated",
+        "status": "passed",
+        "milliseconds": 560,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/S07-05.png"
+      },
+      {
+        "number": 6,
+        "title": "Sign in after reactivation",
+        "expected": "Student dashboard opens",
+        "observed": "Student dashboard opens for Scenario Student",
+        "status": "passed",
+        "milliseconds": 916,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S07-06.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S08",
+    "title": "Shared computer switches between students without leaking profile",
+    "preconditions": "Two synthetic students use the same SPA session.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1423,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S08-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Open first student Profile",
+        "expected": "QA Student name and email are displayed",
+        "observed": "QA Student profile loaded",
+        "status": "passed",
+        "milliseconds": 318,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/S08-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Confirm logout and sign in as second student",
+        "expected": "Sidebar identifies QA Student2",
+        "observed": "QA Student2 signed in after confirmed logout",
+        "status": "passed",
+        "milliseconds": 1131,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S08-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Open Profile without reloading",
+        "expected": "Only QA Student2 profile is visible",
+        "observed": "Only second student profile displayed",
+        "status": "passed",
+        "milliseconds": 367,
+        "url": "http://127.0.0.1:5174/profile",
+        "screenshot": "screenshots/S08-04.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S09",
+    "title": "Teacher posts an announcement and student reads it",
+    "preconditions": "Teacher can publish a public announcement.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1288,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/S09-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Post an important announcement with image",
+        "expected": "Announcement posting succeeds",
+        "observed": "Important notice visible in the teacher feed",
+        "status": "passed",
+        "milliseconds": 1983,
+        "url": "http://127.0.0.1:5174/announcements",
+        "screenshot": "screenshots/S09-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Sign in as student",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, QA.",
+        "status": "passed",
+        "milliseconds": 1343,
+        "url": "http://127.0.0.1:5174/student",
+        "screenshot": "screenshots/S09-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Find the new announcement in the student feed",
+        "expected": "Announcement heading and body are visible",
+        "observed": "New notice and message visible to student",
+        "status": "passed",
+        "milliseconds": 204,
+        "url": "http://127.0.0.1:5174/announcements",
+        "screenshot": "screenshots/S09-04.png"
+      },
+      {
+        "number": 5,
+        "title": "Read notification updates",
+        "expected": "Mark all read leaves 0 unread",
+        "observed": "Notifications marked read; 0 unread",
+        "status": "passed",
+        "milliseconds": 524,
+        "url": "http://127.0.0.1:5174/notifications",
+        "screenshot": "screenshots/S09-05.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  },
+  {
+    "id": "S10",
+    "title": "Keyboard user opens and dismisses Create User dialog",
+    "preconditions": "Administrator navigates with keyboard after opening modal.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as admin",
+        "expected": "Role dashboard opens",
+        "observed": "Administrator Dashboard",
+        "status": "passed",
+        "milliseconds": 1373,
+        "url": "http://127.0.0.1:5174/admin",
+        "screenshot": "screenshots/S10-01.png"
+      },
+      {
+        "number": 2,
+        "title": "Open Create User and inspect focus",
+        "expected": "Focus moves into the dialog",
+        "observed": "Focus is inside Create User",
+        "status": "passed",
+        "milliseconds": 604,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/S10-02.png"
+      },
+      {
+        "number": 3,
+        "title": "Press Tab repeatedly",
+        "expected": "Focus remains within modal controls",
+        "observed": "All four Tab destinations remain inside dialog",
+        "status": "passed",
+        "milliseconds": 420,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/S10-03.png"
+      },
+      {
+        "number": 4,
+        "title": "Dismiss dialog with Escape",
+        "expected": "Dialog closes and focus returns",
+        "observed": "Dialog closed",
+        "status": "passed",
+        "milliseconds": 218,
+        "url": "http://127.0.0.1:5174/users",
+        "screenshot": "screenshots/S10-04.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "passed"
+  }
+]

@@ -1,5 +1,5 @@
 /** Lightweight table primitives (shadcn/ui new-york style). */
-import { type ReactNode } from "react";
+import { type ReactNode, type HTMLAttributes, type ThHTMLAttributes, type TdHTMLAttributes } from "react";
 
 import { cn } from "@/utils/cn";
 
@@ -23,14 +23,14 @@ export function TBody({ children }: { children: ReactNode }) {
   return <tbody className="divide-y divide-slate-100 dark:divide-navy-800">{children}</tbody>;
 }
 
-export function TR({ className, children }: { className?: string; children: ReactNode }) {
-  return <tr className={cn("hover:bg-slate-50/70 dark:hover:bg-navy-900/70", className)}>{children}</tr>;
+export function TR({ className, children, ...props }: HTMLAttributes<HTMLTableRowElement>) {
+  return <tr {...props} className={cn("hover:bg-slate-50/70 dark:hover:bg-navy-900/70", className)}>{children}</tr>;
 }
 
-export function TH({ children }: { children: ReactNode }) {
-  return <th className="px-4 py-3 font-medium">{children}</th>;
+export function TH({ children, className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
+  return <th {...props} className={cn("px-4 py-3 font-medium", className)}>{children}</th>;
 }
 
-export function TD({ className, children }: { className?: string; children: ReactNode }) {
-  return <td className={cn("px-4 py-3 text-slate-700 dark:text-navy-200", className)}>{children}</td>;
+export function TD({ className, children, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
+  return <td {...props} className={cn("px-4 py-3 text-slate-700 dark:text-navy-200", className)}>{children}</td>;
 }

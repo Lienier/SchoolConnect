@@ -7,6 +7,8 @@ import uuid
 from flask import Blueprint, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from app.utils.datetime import utc_iso
+
 from app.attendance.service import AttendanceService
 from app.attendance.validators import (
     GenerateQrRequest,
@@ -114,7 +116,7 @@ def generate_qr():
         "qr_generated",
         entity_id=token.id,
         message="Attendance QR generated.",
-        data={"event_id": str(token.event_id), "expires_at": token.expires_at.isoformat() if token.expires_at else None},
+        data={"event_id": str(token.event_id), "expires_at": utc_iso(token.expires_at) if token.expires_at else None},
     )
     return success_response(data=token.to_dict(), message="QR token generated.", status_code=201)
 

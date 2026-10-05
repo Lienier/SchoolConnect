@@ -24,6 +24,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.utils.datetime import utc_iso
+
 from app.extensions import db
 from app.utils.datetime import utcnow
 
@@ -97,8 +99,8 @@ class Attendance(db.Model):
             "user_id": str(self.user_id),
             "registration_id": str(self.registration_id) if self.registration_id else None,
             "status": self.status,
-            "check_in_at": self.check_in_at.isoformat() if self.check_in_at else None,
-            "check_out_at": self.check_out_at.isoformat() if self.check_out_at else None,
+            "check_in_at": utc_iso(self.check_in_at) if self.check_in_at else None,
+            "check_out_at": utc_iso(self.check_out_at) if self.check_out_at else None,
             "method": self.method,
             "recorded_by": str(self.recorded_by) if self.recorded_by else None,
             "event_title": getattr(self.event, "title", None),
@@ -169,7 +171,7 @@ class QrToken(db.Model):
             "event_id": str(self.event_id),
             "user_id": str(self.user_id) if self.user_id else None,
             "token": self.token,
-            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "expires_at": utc_iso(self.expires_at) if self.expires_at else None,
             "used": self.used,
             "qr_data_url": _qr_data_url(self.token),
         }

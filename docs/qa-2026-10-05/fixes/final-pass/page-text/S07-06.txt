@@ -1,0 +1,72 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+S
+
+Scenario Student
+
+scenario-user@qa.schoolconnect.example
+
+Log out
+
+STUDENT
+
+Log out
+
+STUDENT HOME
+
+Welcome back, Scenario.
+
+Your college feed, registrations, check-ins, and event updates are ready from one place.
+
+Find an event
+Check in
+
+5
+
+UPCOMING
+
+0
+
+REGISTERED
+
+0
+
+UNREAD
+
+Browse Events
+My Registrations
+Check In
+Notifications
+Profile
+All Updates
+Announcements
+Upcoming Events
+Pinned
+Next events
+View all
+
+Loading events...
+
+Attendance
+
+No attendance records yet.
+
+Open check-in
+Error
+This account is not active.
+Success
+Welcome back!
+Notification SuccessWelcome back!

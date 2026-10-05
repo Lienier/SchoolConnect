@@ -1,3 +1,4 @@
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,10 +12,11 @@ import { notificationsApi } from "@/features/notifications/services/notification
 import { useToast } from "@/providers/ToastProvider";
 
 export default function NotificationsPage() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [page, setPage] = useState(1);
-  const query = useQuery({ queryKey: ["notifications", page], queryFn: () => notificationsApi.list(page) });
+  const query = useQuery({ queryKey: ["notifications", user?.id, page], queryFn: () => notificationsApi.list(page) });
   const mark = useMutation({
     mutationFn: notificationsApi.markRead,
     onSuccess: () => {
@@ -67,18 +69,17 @@ export default function NotificationsPage() {
                     <StatusBadge tone={item.status === "unread" ? "info" : "neutral"}>{item.status}</StatusBadge>
                   </span>
                   <span className="mt-1 block text-sm leading-6 text-slate-600 dark:text-navy-300">{item.body}</span>
-                  <span className="mt-2 block text-xs text-slate-400 dark:text-navy-500">{new Date(item.created_at).toLocaleString()}</span>
+                  <span className="mt-2 block text-xs text-slate-600 dark:text-navy-500">{new Date(item.created_at).toLocaleString()}</span>
                 </span>
-                {href && <ExternalLink size={16} className="mt-1 shrink-0 text-slate-400" />}
+                {href && <ExternalLink size={16} className="mt-1 shrink-0 text-slate-600" />}
               </div>
             );
             return (
               <div
                 key={item.id}
                 className={`p-5 transition hover:bg-slate-50 dark:hover:bg-navy-900 ${item.status === "unread" ? "bg-blue-50/50 dark:bg-blue-950/20" : ""}`}
-                onClick={() => item.status === "unread" && !mark.isPending && mark.mutate(item.id)}
               >
-                {href ? <Link to={href}>{card}</Link> : card}
+                {href ? <Link to={href} onClick={() => item.status === "unread" && !mark.isPending && mark.mutate(item.id)}>{card}</Link> : <button type="button" className="w-full text-left" disabled={mark.isPending || item.status !== "unread"} onClick={() => mark.mutate(item.id)} aria-label={`Mark ${item.title} as read`}>{card}</button>}
               </div>
             );
           })}

@@ -1,0 +1,76 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+ENGAGE
+
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+My Attendance
+Profile
+Q
+
+QA Student
+
+student@qa.schoolconnect.example
+
+Log out
+
+SchoolConnect
+
+1
+Dashboard
+Browse Events
+My Registrations
+Announcements
+Notifications
+Calendar
+
+STUDENT HOME
+
+Welcome back, QA.
+
+Your college feed, registrations, check-ins, and event updates are ready from one place.
+
+Find an event
+Check in
+
+31
+
+UPCOMING
+
+29
+
+REGISTERED
+
+1
+
+UNREAD
+
+Browse Events
+My Registrations
+Check In
+Notifications
+Profile
+All Updates
+Announcements
+Upcoming Events
+Pinned
+Next events
+View all
+
+Loading events...
+
+Attendance
+
+No attendance records yet.
+
+Open check-in
+Success
+Welcome back!
+Notification SuccessWelcome back!

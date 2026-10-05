@@ -14,7 +14,9 @@ from app.users.model import (
 
 def _iso(value) -> str | None:
     """Return an ISO-formatted date/datetime string or ``None``."""
-    return value.isoformat() if value is not None else None
+    from datetime import datetime
+    from app.utils.datetime import utc_iso
+    return utc_iso(value) if isinstance(value, datetime) else value.isoformat() if value is not None else None
 
 
 def department_to_dict(d: Department) -> dict:

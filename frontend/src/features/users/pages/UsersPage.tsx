@@ -228,20 +228,20 @@ export default function UsersPage() {
 
       <Card className="p-4">
         <div className="mb-4 grid gap-3 sm:grid-cols-3">
-          <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="All statuses" /></SelectTrigger>
+          <Select value={status || "all"} onValueChange={(v) => { setStatus(v === "all" ? "" : v); setPage(1); }}>
+            <SelectTrigger aria-label="User status filter"><SelectValue placeholder="All statuses" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All statuses</SelectItem>
+              <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
               <SelectItem value="suspended">Suspended</SelectItem>
               <SelectItem value="invited">Invited</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={role} onValueChange={(v) => { setRole(v); setPage(1); }}>
-            <SelectTrigger><SelectValue placeholder="All roles" /></SelectTrigger>
+          <Select value={role || "all"} onValueChange={(v) => { setRole(v === "all" ? "" : v); setPage(1); }}>
+            <SelectTrigger aria-label="User role filter"><SelectValue placeholder="All roles" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All roles</SelectItem>
+              <SelectItem value="all">All roles</SelectItem>
               {roleOptions.map((item) => <SelectItem key={item} value={item}>{roleLabel(item)}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -505,7 +505,7 @@ function FloatingInput({
         onChange={(event) => onChange(event.target.value)}
         className="peer h-12 w-full rounded-lg border border-slate-200 bg-white px-4 pb-1 pt-5 text-sm text-navy-900 outline-none transition focus:ring-2 focus:ring-navy-400 dark:border-navy-700 dark:bg-navy-900 dark:text-navy-100 dark:focus:ring-blue-700"
       />
-      <span className="pointer-events-none absolute left-4 top-1.5 text-[11px] font-semibold text-slate-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-slate-400 peer-focus:top-1.5 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:text-blue-700 dark:text-navy-400 dark:peer-placeholder-shown:text-navy-500 dark:peer-focus:text-blue-300">
+      <span className="pointer-events-none absolute left-4 top-1.5 text-[11px] font-semibold text-slate-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-sm peer-placeholder-shown:font-normal peer-placeholder-shown:text-slate-600 peer-focus:top-1.5 peer-focus:text-[11px] peer-focus:font-semibold peer-focus:text-blue-700 dark:text-navy-400 dark:peer-placeholder-shown:text-navy-500 dark:peer-focus:text-blue-300">
         {label}
       </span>
     </label>

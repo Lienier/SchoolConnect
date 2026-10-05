@@ -29,7 +29,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           aria-invalid={error ? "true" : "false"}
           aria-describedby={cn(errorId, hintId)}
           className={cn(
-            "w-full min-h-[100px] rounded-lg border bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-slate-400 dark:bg-navy-900 dark:text-navy-100 dark:placeholder:text-navy-500",
+            "w-full min-h-[100px] rounded-lg border bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-slate-600 dark:bg-navy-900 dark:text-navy-100 dark:placeholder:text-navy-500",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-400 dark:focus-visible:ring-blue-700",
             "disabled:opacity-60 disabled:cursor-not-allowed",
             error

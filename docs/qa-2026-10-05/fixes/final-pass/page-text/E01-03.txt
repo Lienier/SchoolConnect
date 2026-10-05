@@ -1,0 +1,88 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+College Structure
+
+Build the college hierarchy used by accounts, registrations, reports, and event targeting.
+
+STEP 1
+Department
+
+Create the college unit first, for example CICS or CTE.
+
+STEP 2
+Organizations and Leaders
+
+Create the Student Council and one department organization per department, then define elected positions.
+
+STEP 3
+Course
+
+Attach each course or program to exactly one department.
+
+STEP 4
+Academic Year and Semester
+
+Create the period where sections will exist.
+
+STEP 5
+Section
+
+Attach the saved section to a course and semester.
+
+Departments
+Courses
+Sections
+Organizations
+Academic Years
+Semesters
+Course records
+
+Programs or courses offered by a department. Choose the department before saving.
+
+Add Course
+CODE	NAME	DEPARTMENT
+QA-BSIT	QA IT Reviewed	QA-CCS - QA Computer Studies Reviewed
+Edit
+Delete
+Page 1 of 1
+Previous
+Next

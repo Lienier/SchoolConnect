@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-05",
+  "baselineCommit": "e3be41f",
+  "scenarios": 22,
+  "steps": 131,
+  "failedScenarios": 0,
+  "browserErrors": 0,
+  "backendTestsPassed": 39,
+  "uiMode": "visible Chrome / Playwright",
+  "uiApplicationApiCalls": 0,
+  "lightAccessibilityScans": 22,
+  "actualDarkAccessibilityScans": 1,
+  "wcagViolations": 0,
+  "width320Overflow": false,
+  "results": [
+    "scenario-results.json",
+    "extended-results.json",
+    "attendance-followup-results.json",
+    "theme-followup-results.json",
+    "roster-followup-results.json",
+    "validation-followup-results.json",
+    "closed-edit-followup-results.json",
+    "console-followup-results.json"
+  ],
+  "limitations": [
+    "SQLite/local storage fixture; PostgreSQL concurrency unverified",
+    "Authenticated Cloudinary mocked; legacy public assets require remote migration",
+    "Actual camera and production email unverified",
+    "Root environment used; setup script not tested on a clean machine"
+  ],
+  "targetedConsoleErrors": 0
+}

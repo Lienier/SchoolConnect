@@ -155,7 +155,7 @@ export function CreateAnnouncementForm({
                       type="button"
                       aria-label={`Remove ${file.name}`}
                       onClick={() => setFiles((current) => current.filter((item) => item !== file))}
-                      className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      className="rounded-lg p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-700"
                     >
                       <X className="h-4 w-4" />
                     </button>

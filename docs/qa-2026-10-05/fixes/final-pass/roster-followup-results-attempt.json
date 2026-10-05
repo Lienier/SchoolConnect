@@ -1,0 +1,31 @@
+[
+  {
+    "id": "F03",
+    "title": "Roster beyond 100 and complete CSV export",
+    "preconditions": "105 additional synthetic participants on live event.",
+    "steps": [
+      {
+        "number": 1,
+        "title": "Sign in as teacher",
+        "expected": "Role dashboard opens",
+        "observed": "Welcome back, Professor Teacher.",
+        "status": "passed",
+        "milliseconds": 1262,
+        "url": "http://127.0.0.1:5174/professor",
+        "screenshot": "screenshots/F03-01.png"
+      },
+      {
+        "number": 2,
+        "title": "View the complete event roster",
+        "expected": "All 105 extra participants appear across API batches",
+        "status": "needs-review",
+        "observed": "locator.click: Timeout 6500ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href=\"/events/e9c4c5ea-4304-4a03-b5ab-3764d9692f60\"]').filter({ hasText: 'View details' }).first()\u001b[22m\n",
+        "milliseconds": 6700,
+        "url": "http://127.0.0.1:5174/events",
+        "screenshot": "screenshots/F03-02.png"
+      }
+    ],
+    "browserErrors": [],
+    "status": "running"
+  }
+]

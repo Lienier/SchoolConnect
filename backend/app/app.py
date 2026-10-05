@@ -102,10 +102,12 @@ def _configure_jwt() -> None:
         except (ValueError, TypeError):
             return True
         user = db.session.get(User, user_id)
+        from app.auth.service import AuthService
         return (
             user is None
             or user.deleted_at is not None
             or user.status != "active"
+            or not AuthService.session_active(jwt_data)
         )
 
 

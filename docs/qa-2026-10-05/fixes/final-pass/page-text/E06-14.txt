@@ -1,0 +1,55 @@
+SchoolConnect
+
+OVERVIEW
+
+Dashboard
+
+MANAGEMENT
+
+User Management
+Council Members
+Roles & Permissions
+College Structure
+
+CONTENT
+
+Announcements
+Events
+Registrations
+Attendance
+
+INSIGHTS
+
+Reports
+Activity Logs
+Calendar
+
+SYSTEM
+
+Settings
+Notifications
+Q
+
+QA Admin
+
+admin@qa.schoolconnect.example
+
+Log out
+
+ADMINISTRATOR
+
+1
+Activity Logs
+
+Track important administrative actions and system activity.
+
+Refresh
+TIMESTAMP	ACTION	MODULE	ACTOR	IP ADDRESS
+10/5/2026, 1:05:18 PM	event.updated	Event	QA Teacher	127.0.0.1
+10/5/2026, 1:05:16 PM	event.published	Event	QA Teacher	127.0.0.1
+10/5/2026, 1:04:22 PM	announcement.published	Announcement	QA Teacher	127.0.0.1
+10/5/2026, 1:04:12 PM	user.reactivated	User	QA Admin	127.0.0.1
+10/5/2026, 1:04:09 PM	user.disabled	User	QA Admin	127.0.0.1
+10/5/2026, 1:04:08 PM	user.created	User	QA Admin	127.0.0.1
+10/5/2026, 1:03:13 PM	event.published	Event	QA Teacher	127.0.0.1
+10/5/2026, 1:03:03 PM	user.college_profile_completed	User	QA Incomplete	127.0.0.1
