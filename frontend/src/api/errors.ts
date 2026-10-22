@@ -9,6 +9,13 @@ interface ApiErrorPayload {
 export function apiErrorMessage(error: unknown, fallback: string): string {
   if (!isAxiosError<ApiErrorPayload>(error)) return fallback;
 
+  if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+    return "The server took too long to respond. Please try again.";
+  }
+  if (error.code === "ERR_NETWORK") {
+    return "Unable to connect to the server. Please try again.";
+  }
+
   const payload = error.response?.data;
 
   if (Array.isArray(payload?.errors)) {

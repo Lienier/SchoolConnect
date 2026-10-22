@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { apiErrorMessage } from "@/api/errors";
 import { ArrowRight, BookOpen, LogIn, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -20,6 +21,7 @@ export default function HomePage() {
   const feed = useQuery({
     queryKey: ["home-feed"],
     queryFn: () => feedApi.list({ kind: "all", limit: 16 }),
+    retry: false,
   });
 
   const filteredItems = useMemo(() => {
@@ -121,12 +123,21 @@ export default function HomePage() {
           <FeatureCard title="Connected Community" text="Keep students, professors, officers, and admins aligned." to="/announcements" />
         </section>
 
+        {feed.isError && (
+          <div role="alert" className="mx-auto mb-6 max-w-7xl rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+            {apiErrorMessage(feed.error, "Unable to load announcements and events.")}
+            <button type="button" className="ml-3 font-semibold underline" disabled={feed.isFetching} onClick={() => void feed.refetch()}>
+              {feed.isFetching ? "Retrying..." : "Retry"}
+            </button>
+          </div>
+        )}
+
         <section className="mx-auto grid max-w-7xl gap-6 px-4 pb-12 sm:px-6 lg:grid-cols-[0.95fr_1.25fr] lg:px-8">
           <div id="announcements" className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-navy-800 dark:bg-navy-950 dark:shadow-none">
             <SectionHeader title="Latest Announcements" to="/announcements" />
             <div className="mt-4 divide-y divide-slate-100">
               {feed.isLoading && <p className="py-8 text-sm text-slate-500">Loading announcements...</p>}
-              {!feed.isLoading && announcements.length === 0 && (
+              {!feed.isLoading && !feed.isError && announcements.length === 0 && (
                 <p className="py-8 text-sm text-slate-500">No announcements found.</p>
               )}
               {announcements.map((item) => (
@@ -143,7 +154,7 @@ export default function HomePage() {
             <SectionHeader title="Upcoming Events" to="/events" />
             <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {feed.isLoading && <p className="col-span-full py-8 text-sm text-slate-500">Loading events...</p>}
-              {!feed.isLoading && events.length === 0 && (
+              {!feed.isLoading && !feed.isError && events.length === 0 && (
                 <p className="col-span-full py-8 text-sm text-slate-500">No upcoming events found.</p>
               )}
               {events.map((item, index) => (

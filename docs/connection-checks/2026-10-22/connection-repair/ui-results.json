@@ -1,0 +1,56 @@
+{
+  "results": [
+    {
+      "name": "PostgreSQL-backed public feed",
+      "status": "passed",
+      "observed": "HTTP 200; real local PostgreSQL feed renders",
+      "milliseconds": 1037
+    },
+    {
+      "name": "Sign in with the configured local administrator",
+      "status": "passed",
+      "observed": "Administrator dashboard opens",
+      "milliseconds": 480
+    },
+    {
+      "name": "Authenticated realtime connection",
+      "status": "passed",
+      "observed": "Socket.IO authenticated connection ready",
+      "milliseconds": 0
+    },
+    {
+      "name": "Events, notifications, reports and college structure",
+      "status": "passed",
+      "observed": "All four authenticated pages load without API 5xx responses",
+      "milliseconds": 4239
+    },
+    {
+      "name": "Sign out and restore route protection",
+      "status": "passed",
+      "observed": "Session signs out; admin route redirects to login",
+      "milliseconds": 196
+    },
+    {
+      "name": "Outage error and Retry recovery",
+      "status": "passed",
+      "observed": "Specific outage shown; Retry restores actual local feed",
+      "milliseconds": 1318
+    },
+    {
+      "name": "Hung request times out with recovery control",
+      "status": "passed",
+      "observed": "15-second timeout displays useful error; Retry recovers",
+      "milliseconds": 16203
+    },
+    {
+      "name": "Browser JavaScript and unexpected server errors",
+      "status": "passed",
+      "observed": "No JavaScript exceptions or unexpected API 5xx responses",
+      "milliseconds": 0
+    }
+  ],
+  "browserErrors": [],
+  "serverErrors": [],
+  "environment": "Local PostgreSQL, local Flask and Vite",
+  "credentialsSaved": false
+}

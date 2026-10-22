@@ -31,6 +31,16 @@ def _get_int(key: str, default: int) -> int:
     return int(value)
 
 
+def _database_engine_options(uri: str) -> dict:
+    options = {"pool_pre_ping": True}
+    if uri.startswith(("postgresql:", "postgresql+")):
+        options.update(
+            pool_timeout=_get_int("DATABASE_POOL_TIMEOUT_SECONDS", 10),
+            connect_args={"connect_timeout": _get_int("DATABASE_CONNECT_TIMEOUT_SECONDS", 10)},
+        )
+    return options
+
+
 class Config:
     """Base configuration shared across all environments."""
 
@@ -45,7 +55,7 @@ class Config:
         "DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/schoolconnect"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
-    SQLALCHEMY_ENGINE_OPTIONS: dict = {"pool_pre_ping": True}
+    SQLALCHEMY_ENGINE_OPTIONS: dict = _database_engine_options(SQLALCHEMY_DATABASE_URI)
 
     # JWT
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
@@ -106,6 +116,7 @@ class TestingConfig(Config):
 
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.getenv("TEST_DATABASE_URL", "sqlite:///:memory:")
+    SQLALCHEMY_ENGINE_OPTIONS = _database_engine_options(SQLALCHEMY_DATABASE_URI)
     RATELIMIT_ENABLED = False
 
 

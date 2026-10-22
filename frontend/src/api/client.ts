@@ -15,6 +15,7 @@ import {
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 15000,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
@@ -37,7 +38,7 @@ async function rotateToken(): Promise<string> {
     const promise = (async () => {
       const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
         refresh_token: refreshToken,
-      });
+      }, { timeout: 15000 });
       const tokens = data.data;
       if (localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) !== refreshToken) {
         throw new Error("Session changed during refresh");

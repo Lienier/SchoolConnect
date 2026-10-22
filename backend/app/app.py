@@ -7,6 +7,8 @@ the app easy to configure per-environment and to instantiate in tests.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from flask import Flask
 
 from app.common.registry import register_blueprints
@@ -33,6 +35,11 @@ def create_app(config_name: str | None = None) -> Flask:
     config = get_config(config_name)
     validate_security_config(config)
     app.config.from_object(config)
+
+    upload_folder = Path(app.config.get("UPLOAD_FOLDER", "uploads"))
+    if not upload_folder.is_absolute():
+        upload_folder = Path(__file__).resolve().parents[1] / upload_folder
+    app.config["UPLOAD_FOLDER"] = str(upload_folder.resolve())
 
     configure_logging(app)
     _init_extensions(app)

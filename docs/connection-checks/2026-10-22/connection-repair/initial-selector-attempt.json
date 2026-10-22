@@ -1,0 +1,56 @@
+{
+  "results": [
+    {
+      "name": "PostgreSQL-backed public feed",
+      "status": "passed",
+      "observed": "HTTP 200; real local PostgreSQL feed renders",
+      "milliseconds": 2167
+    },
+    {
+      "name": "Sign in with the configured local administrator",
+      "status": "passed",
+      "observed": "Administrator dashboard opens",
+      "milliseconds": 573
+    },
+    {
+      "name": "Authenticated realtime connection",
+      "status": "passed",
+      "observed": "Socket.IO authenticated connection ready",
+      "milliseconds": 0
+    },
+    {
+      "name": "Events, notifications, reports and college structure",
+      "status": "passed",
+      "observed": "All four authenticated pages load without API 5xx responses",
+      "milliseconds": 4447
+    },
+    {
+      "name": "Sign out and restore route protection",
+      "status": "passed",
+      "observed": "Session signs out; admin route redirects to login",
+      "milliseconds": 215
+    },
+    {
+      "name": "Outage error and Retry recovery",
+      "status": "failed",
+      "observed": "locator.waitFor: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('alert').getByText('Synthetic backend outage', { exact: true }) to be visible\u001b[22m\n",
+      "milliseconds": 10224
+    },
+    {
+      "name": "Hung request times out with recovery control",
+      "status": "failed",
+      "observed": "locator.waitFor: Timeout 20000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('alert').getByText('The server took too long to respond. Please try again.', { exact: true }) to be visible\u001b[22m\n",
+      "milliseconds": 20230
+    },
+    {
+      "name": "Browser JavaScript and unexpected server errors",
+      "status": "passed",
+      "observed": "No JavaScript exceptions or unexpected API 5xx responses",
+      "milliseconds": 0
+    }
+  ],
+  "browserErrors": [],
+  "serverErrors": [],
+  "environment": "Local PostgreSQL, local Flask and Vite",
+  "credentialsSaved": false
+}
