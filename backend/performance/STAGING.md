@@ -40,7 +40,7 @@ $env:DURATION = '10m'
 $env:PREALLOCATED_VUS = '50'
 $env:MAX_VUS = '100'
 $env:K6_WEB_DASHBOARD = 'true'
-$staging = 'https://YOUR-PERFORMANCE-SERVICE.onrender.com'
+$staging = 'https://schoolconnect-performance.onrender.com'
 .\backend\performance\run.ps1 -Profile smoke -BaseUrl $staging -Label staging-smoke
 ```
 

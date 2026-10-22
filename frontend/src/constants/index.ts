@@ -2,7 +2,11 @@
 
 export const APP_NAME = "SchoolConnect";
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.PROD
+    ? "https://schoolconnect-performance.onrender.com/api"
+    : "/api");
 
 export const TOKEN_STORAGE_KEY = "sc_access_token";
 export const REFRESH_TOKEN_STORAGE_KEY = "sc_refresh_token";

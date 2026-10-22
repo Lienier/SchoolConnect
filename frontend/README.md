@@ -47,5 +47,13 @@ Copy-Item .env.example .env   # adjust if needed
 npm run dev
 ```
 
-The dev server proxies `/api` to `VITE_API_TARGET` (default
-`http://localhost:5000`).
+The selected backend is `schoolconnect-performance` at
+`https://schoolconnect-performance.onrender.com`. The dev server proxies `/api`
+and `/socket.io` to `VITE_API_TARGET`, defaulting to this service. Set
+`VITE_API_TARGET=http://localhost:5000` to use a local backend instead.
+
+For Vercel, the build command in `vercel.json` explicitly sets
+`VITE_API_BASE_URL=https://schoolconnect-performance.onrender.com/api`.
+This ensures a new build uses the selected service even if the dashboard still
+has an older API URL. Redeploy to update the live bundle. Historical QA fixtures
+still use their explicit local API target.

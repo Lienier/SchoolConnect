@@ -32,6 +32,16 @@ If Supabase gives a URL starting with `postgresql://`, change only the prefix to
 
 ## 3. Render Backend
 
+The selected existing service is `schoolconnect-performance`
+(`srv-dah8ueijnfac738qk4vg`):
+
+- Dashboard: https://dashboard.render.com/web/srv-dah8ueijnfac738qk4vg
+- Public backend: https://schoolconnect-performance.onrender.com
+- API base URL: https://schoolconnect-performance.onrender.com/api
+
+Use that existing service when configuring the frontend. The dashboard URL is
+for administration and must not be used as the frontend API URL.
+
 Use the included `render.yaml` blueprint, or create the service manually:
 
 - Service type: Web Service
@@ -89,10 +99,14 @@ Create a Vercel project from the same GitHub repo:
 Set this Vercel environment variable:
 
 ```txt
-VITE_API_BASE_URL=https://<render-service>.onrender.com/api
+VITE_API_BASE_URL=https://schoolconnect-performance.onrender.com/api
 ```
 
 The included `frontend/vercel.json` keeps React Router pages working on refresh.
+The build command in `frontend/vercel.json` sets this API URL explicitly, so a
+stale dashboard variable cannot select the old backend for a new build. Keep
+the dashboard variable consistent when managing the project there. Vite embeds
+the API URL at build time, so the frontend must be redeployed for a switch.
 
 ## 5. Baseline Accounts
 

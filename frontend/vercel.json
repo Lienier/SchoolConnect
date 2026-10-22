@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "VITE_API_BASE_URL=https://schoolconnect-performance.onrender.com/api npm run build",
   "outputDirectory": "dist",
   "rewrites": [
     {

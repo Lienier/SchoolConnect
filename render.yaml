@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: schoolconnect-backend
+    name: schoolconnect-performance
     runtime: docker
     rootDir: backend
     plan: free

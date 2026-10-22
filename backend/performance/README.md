@@ -24,8 +24,10 @@ calls `refresh_lifecycle()`, which can update event state.
 
 ### Existing deployment without an account
 
-The deployed frontend's public bundle points to
-`https://schoolconnect-backend-5yrj.onrender.com/api`. To test only the public feed:
+The selected API target is
+`https://schoolconnect-performance.onrender.com/api`. The frontend must be
+redeployed to replace an older bundle that still uses the previous backend.
+To test only the public feed:
 
 ```powershell
 $env:PUBLIC_ONLY = 'true'
@@ -35,7 +37,7 @@ $env:RATE = '1'
 $env:DURATION = '30s'
 $env:PREALLOCATED_VUS = '5'
 $env:MAX_VUS = '10'
-$testBase = 'https://schoolconnect-backend-5yrj.onrender.com'
+$testBase = 'https://schoolconnect-performance.onrender.com'
 .\backend\performance\run.ps1 -Profile smoke -BaseUrl $testBase
 .\backend\performance\run.ps1 -Profile load -BaseUrl $testBase
 .\backend\performance\run.ps1 -Profile stress -BaseUrl $testBase
