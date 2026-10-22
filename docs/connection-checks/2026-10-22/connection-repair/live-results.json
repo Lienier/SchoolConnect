@@ -1,0 +1,53 @@
+{
+  "timestamp": "2026-10-22T13:02:48.162Z",
+  "frontend": "https://school-connect-ashen.vercel.app",
+  "backend": "https://schoolconnect-performance.onrender.com",
+  "results": [
+    {
+      "name": "Production frontend",
+      "status": "passed",
+      "httpStatus": 200
+    },
+    {
+      "name": "/health",
+      "status": "failed",
+      "observed": "apiRequestContext.get: Timeout 15000ms exceeded."
+    },
+    {
+      "name": "/ready",
+      "status": "failed",
+      "observed": "apiRequestContext.get: Timeout 15000ms exceeded."
+    },
+    {
+      "name": "/api/feed?limit=1",
+      "status": "failed",
+      "observed": "apiRequestContext.get: Timeout 15000ms exceeded."
+    },
+    {
+      "name": "/socket.io/?EIO=4&transport=polling",
+      "status": "failed",
+      "observed": "apiRequestContext.get: Timeout 15000ms exceeded."
+    },
+    {
+      "name": "Deployed outage feedback",
+      "status": "passed",
+      "observed": "The server took too long to respond. Please try again.Retry"
+    },
+    {
+      "name": "Retry control",
+      "status": "passed"
+    },
+    {
+      "name": "Selected production API target",
+      "status": "passed"
+    },
+    {
+      "name": "Browser JavaScript exceptions",
+      "status": "passed",
+      "observed": []
+    }
+  ],
+  "feedTargets": [
+    "https://schoolconnect-performance.onrender.com/api/feed?kind=all&limit=16"
+  ]
+}

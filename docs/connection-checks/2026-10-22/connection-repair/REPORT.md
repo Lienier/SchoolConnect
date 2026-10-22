@@ -37,3 +37,14 @@ Render and Supabase account connections are unavailable in this session. Their p
 To finish: connect the owning Render and Supabase accounts, read the actual Render database configuration and Supabase connection details, repair the live configuration, deploy/migrate, then rerun live health, feed, authentication, realtime and upload checks.
 
 Local QA endpoints are `http://127.0.0.1:5000` (backend) and `http://127.0.0.1:5175` (frontend); these are separate from the production deployment.
+
+## Deployment and final live check
+
+Source fixes were pushed to `main` in commit `a26adac`. GitHub reported the Vercel deployment successful. A fresh read-only Playwright check at 21:02 Asia/Manila confirmed:
+
+- Production frontend returned HTTP 200 and requested the selected performance backend.
+- The deployed homepage displayed the new timeout message and Retry control.
+- No uncaught browser JavaScript exceptions occurred.
+- Render health, readiness, public feed and Socket.IO polling each timed out after 15 seconds. Production remains unavailable for backend-dependent features.
+
+See [live-results.json](live-results.json) and the reproducible [live-check.cjs](live-check.cjs). Local QA services were left running on the addresses above at handoff. No Render environment changes or remote migrations were performed.
